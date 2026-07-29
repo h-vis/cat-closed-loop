@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Closed Loop Puzzle Prototype</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <section class="game-panel">
+      <header class="panel-header">
+        <p class="eyebrow">Canvas Puzzle Prototype</p>
+        <h1>Closed Loop</h1>
+        <p class="subtitle">
+          マスを塗って閉ループを作り、同じ空間だけを移動して攻略するパズルです。
+        </p>
+      </header>
+
+      <canvas
+        id="gameCanvas"
+        width="480"
+        height="480"
+        aria-label="Closed Loop puzzle game canvas"
+      ></canvas>
+
+      <section class="hud" aria-label="ゲーム情報">
+        <div class="button-row mode-row" aria-label="ゲームモード">
+          <button id="randomModeButton" class="is-active" type="button">ランダムモード</button>
+          <button id="tutorialModeButton" type="button">チュートリアル</button>
+          <button id="makerModeButton" type="button">ステージメーカー</button>
+        </div>
+
+        <p id="instructionText" class="instructions">
+          マウスドラッグでマスを塗ってループを描きます。矢印キーまたはWASDで移動します。
+        </p>
+
+        <div class="status-grid">
+          <p><span class="label">鍵</span><span id="keyStatus">未取得</span></p>
+          <p><span class="label">爆弾</span><span id="bombStatus">0個</span></p>
+          <p><span class="label">ニッパー</span><span id="disarmStatus">0個</span></p>
+          <p><span class="label">状態</span><span id="stateStatus">待機中</span></p>
+        </div>
+
+        <div class="button-row">
+          <button id="resetButton" type="button">リセット</button>
+          <button id="clearLoopButton" type="button">ループを消す</button>
+        </div>
+
+        <div id="tutorialButtonRow" class="button-row tutorial-row" hidden>
+          <button id="tutorialPrevButton" type="button">前のステージ</button>
+          <button id="tutorialNextButton" type="button">次のステージ</button>
+        </div>
+
+        <section id="makerPanel" class="maker-panel" hidden aria-label="ステージメーカー設定">
+          <div class="maker-size-row">
+            <label class="maker-field" for="makerWidthInput">
+              幅
+              <input id="makerWidthInput" type="number" min="6" max="14" value="10">
+            </label>
+            <label class="maker-field" for="makerHeightInput">
+              高さ
+              <input id="makerHeightInput" type="number" min="6" max="14" value="10">
+            </label>
+            <button id="makerApplySizeButton" type="button">サイズを適用</button>
+            <button id="makerResetButton" type="button">初期配置に戻す</button>
+          </div>
+
+          <div class="maker-palette" aria-label="配置ツール">
+            <button id="makerToolPlayer" class="maker-tool is-active" type="button">プレイヤー</button>
+            <button id="makerToolKey" class="maker-tool" type="button">鍵</button>
+            <button id="makerToolGoal" class="maker-tool" type="button">ゴール</button>
+            <button id="makerToolBomb" class="maker-tool" type="button">爆弾</button>
+            <button id="makerToolDisarm" class="maker-tool" type="button">ニッパー</button>
+            <button id="makerToolWall" class="maker-tool" type="button">壁ブロック</button>
+            <button id="makerToolErase" class="maker-tool" type="button">消しゴム</button>
+          </div>
+
+          <div class="button-row maker-action-row">
+            <button id="makerTestButton" type="button">テストプレイ開始</button>
+            <button id="makerEditButton" type="button" hidden>編集に戻る</button>
+          </div>
+
+          <p id="makerHint" class="maker-hint"></p>
+        </section>
+
+        <p id="stageInfo" class="stage-info"></p>
+      </section>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
