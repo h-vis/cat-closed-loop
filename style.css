@@ -176,6 +176,50 @@ button:disabled {
   margin-top: 12px;
 }
 
+.stage-loader {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(29, 49, 77, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.stage-loader-row,
+.maker-export-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.stage-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stage-field input {
+  width: 96px;
+  padding: 10px 12px;
+  border: 1px solid rgba(29, 49, 77, 0.2);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+}
+
+.status-text {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.status-text.is-error {
+  color: #a11d33;
+}
+
 .maker-panel {
   margin-top: 12px;
   padding: 16px;
@@ -194,6 +238,10 @@ button:disabled {
 
 .maker-palette,
 .maker-action-row {
+  margin-top: 12px;
+}
+
+.maker-export-row {
   margin-top: 12px;
 }
 
@@ -235,6 +283,19 @@ button:disabled {
   line-height: 1.6;
 }
 
+.maker-json-output {
+  width: 100%;
+  min-height: 180px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(29, 49, 77, 0.2);
+  border-radius: 14px;
+  background: #f7fafc;
+  color: var(--text);
+  font: 0.92rem/1.5 "Consolas", "SFMono-Regular", monospace;
+  resize: vertical;
+}
+
 @media (max-width: 560px) {
   .game-panel {
     padding: 18px;
@@ -247,11 +308,14 @@ button:disabled {
 
   .maker-size-row,
   .maker-palette,
-  .maker-action-row {
+  .maker-action-row,
+  .maker-export-row,
+  .stage-loader-row {
     flex-direction: column;
   }
 
-  .maker-field {
+  .maker-field,
+  .stage-field {
     justify-content: space-between;
   }
 
@@ -259,7 +323,8 @@ button:disabled {
     width: 100%;
   }
 
-  .maker-field input {
+  .maker-field input,
+  .stage-field input {
     width: 112px;
   }
 }

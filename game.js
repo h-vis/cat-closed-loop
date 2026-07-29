@@ -28,8 +28,8 @@ const CONFIG = {
 const STATUS = {
   idle: "待機中",
   drawing: "描画中",
-  movable: "移動可能",
-  outsideLoop: "現在の空間では移動不可",
+  movable: "ループ成立中",
+  outsideLoop: "ループ成立中",
   gameOver: "ゲームオーバー",
   clear: "クリア",
   makerEdit: "メーカー編集中",
@@ -68,22 +68,22 @@ const MAKER_TOOL_LABELS = {
   [MAKER_TOOL.key]: "鍵",
   [MAKER_TOOL.goal]: "ゴール",
   [MAKER_TOOL.bomb]: "爆弾",
-  [MAKER_TOOL.disarm]: "ニッパー",
+  [MAKER_TOOL.disarm]: "水入りバケツ",
   [MAKER_TOOL.erase]: "消しゴム",
 };
 
 const CONTROL_HINT_TEXT =
-  "操作: マウスドラッグでマスを塗って閉ループを作り、矢印キーまたはWASDで移動します。Rでリセット、Shift+Rでランダム再生成です。";
+  "操作: マウスドラッグでマスを塗って閉ループを作ります。Rでリセット、Shift+Rでランダム再生成です。";
 
 const RANDOM_STAGE_INSTRUCTION_TEXT =
-  "ランダムモードです。オブジェクトのあるマスを避けて閉ループを作り、プレイヤーと同じ空間に爆弾を入れないように鍵とゴールをつなぎます。プレイヤーのいない空間では、爆弾とニッパーが同数で対消滅します。"
+  "ランダムモードです。オブジェクトのあるマスを避けて閉ループを作り、プレイヤーを含む空間に鍵とゴールをそろえます。プレイヤーのいない空間では、爆弾と水入りバケツが同数で対消滅します。"
   + CONTROL_HINT_TEXT;
 
 const MAKER_EDIT_INSTRUCTION_TEXT =
-  "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。プレイヤー・鍵・ゴールは1つずつ、爆弾・ニッパーは複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。";
+  "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。プレイヤー・鍵・ゴールは1つずつ、爆弾・水入りバケツは複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。";
 
 const MAKER_TEST_INSTRUCTION_TEXT =
-  "ステージメーカーのテストプレイ中です。通常ルールでループを描いて遊べます。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。";
+  "ステージメーカーのテストプレイ中です。プレイヤーは移動せず、ループで空間の分かれ方だけを調整します。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。";
 
 // ルールを一つずつ確認できるチュートリアルステージ
 const TUTORIAL_STAGES = [
@@ -127,7 +127,7 @@ const TUTORIAL_STAGES = [
   {
     title: "爆弾は即爆発",
     tutorialText:
-      "プレイヤーと同じ空間に爆弾が入ると、その瞬間にゲームオーバーです。同数のニッパーがあっても、プレイヤー空間では助かりません。",
+      "プレイヤーと同じ空間に爆弾が入ると、その瞬間にゲームオーバーです。同数の水入りバケツがあっても、プレイヤー空間では助かりません。",
     designNote:
       "このステージは鍵取得済みです。爆弾だけを別空間に閉じ込め、プレイヤーは外側空間でゴールとつながる形を狙ってみましょう。",
     playerStart: { x: 1, y: 1 },
@@ -140,9 +140,9 @@ const TUTORIAL_STAGES = [
   {
     title: "同数で対消滅",
     tutorialText:
-      "プレイヤーを含まない空間では、爆弾とニッパーが同数だけ入ったときに対消滅します。数が合わないと残ります。",
+      "プレイヤーを含まない空間では、爆弾と水入りバケツが同数だけ入ったときに対消滅します。数が合わないと残ります。",
     designNote:
-      "このステージは鍵取得済みです。爆弾2個とニッパー2個をまとめて別空間へ入れて消し、そのあとゴールと同じ空間を作ってみましょう。",
+      "このステージは鍵取得済みです。爆弾2個と水入りバケツ2個をまとめて別空間へ入れて消し、そのあとゴールと同じ空間を作ってみましょう。",
     playerStart: { x: 1, y: 1 },
     keyPosition: { x: 1, y: 1 },
     goalPosition: { x: 6, y: 5 },
@@ -159,9 +159,9 @@ const TUTORIAL_STAGES = [
   {
     title: "総合演習",
     tutorialText:
-      "最後は総合問題です。鍵取得、外側空間、爆弾の危険、ニッパーの対消滅に加えて、シールドで危険空間へ一度だけ踏み込む選択も考えます。",
+      "最後は総合問題です。鍵取得、外側空間、爆弾の危険、水入りバケツの対消滅をまとめて考えます。",
     designNote:
-      "まず安全な空間で鍵を取り、その後に爆弾を孤立させるか、シールドで一度だけ危険空間へ踏み込むか、プレイヤーのいない空間でニッパーと同数にそろえるかを考えてみましょう。",
+      "まず安全な空間で鍵を取り、その後に爆弾を孤立させるか、プレイヤーのいない空間で水入りバケツと同数にそろえるかを考えてみましょう。",
     playerStart: { x: 2, y: 1 },
     keyPosition: { x: 1, y: 5 },
     goalPosition: { x: 8, y: 8 },
@@ -176,7 +176,7 @@ const TUTORIAL_STAGES = [
   },
 ];
 
-// 近接しすぎないよう、爆弾とニッパーを離したベースパターン
+// 近接しすぎないよう、爆弾と水入りバケツを離したベースパターン
 TUTORIAL_STAGES.length -= 1;
 
 const STAGE_PATTERNS = [
@@ -352,7 +352,7 @@ const STAGE_TRANSFORMS = [
   },
 ];
 
-// 同じ配置でも残す爆弾とニッパーを変え、勝ち筋の型を増やす
+// 同じ配置でも残す爆弾と水入りバケツを変え、勝ち筋の型を増やす
 const STAGE_VARIANTS = [
   {
     id: "mixed",
@@ -365,7 +365,7 @@ const STAGE_VARIANTS = [
     id: "cleanup",
     label: "対消滅型",
     style: "cleanup",
-    strategyNote: "爆弾とニッパーを同数でまとめて消す",
+    strategyNote: "爆弾と水入りバケツを同数でまとめて消す",
     plannedLoopOffset: 0,
   },
   {
@@ -386,7 +386,7 @@ const STAGE_VARIANTS = [
     id: "breach",
     label: "突破型",
     style: "shield",
-    strategyNote: "シールドで危険空間を一度だけ踏み抜く",
+    strategyNote: "危険空間を分断して安全側を確保する",
     plannedLoopOffset: 0,
   },
 ];
@@ -804,7 +804,7 @@ function buildStageNote(layout) {
     `鍵(${layout.keyPosition.x},${layout.keyPosition.y})`,
     `ゴール(${layout.goalPosition.x},${layout.goalPosition.y})`,
     `爆弾${layout.bombs.length}個`,
-    `ニッパー${layout.disarmItems.length}個`,
+    `水入りバケツ${layout.disarmItems.length}個`,
     `最短距離${minimumToolDistance}`,
     `狙い:${layout.strategyNote ?? "状況判断"}`,
     `目安: ${layout.plannedLoops}ループ前後`,
@@ -1239,9 +1239,9 @@ function getMakerToolHint(tool) {
     [MAKER_TOOL.key]: "鍵を置きます。1つだけ存在でき、プレイヤーと同じ空間に入ると取得されます。",
     [MAKER_TOOL.goal]: "ゴールを置きます。1つだけ存在でき、鍵取得後に同じ空間へ入るとクリアです。",
     [MAKER_TOOL.bomb]: "爆弾を置くか外します。プレイヤー空間に入ると即爆発します。",
-    [MAKER_TOOL.disarm]: "ニッパーを置くか外します。プレイヤーのいない空間で爆弾と同数なら相殺します。",
+    [MAKER_TOOL.disarm]: "水入りバケツを置くか外します。プレイヤーのいない空間で爆弾と同数なら相殺します。",
     [MAKER_TOOL.wall]: "壁ブロックを置くか外します。描画したループに接続したときだけ、壁の一部として機能します。",
-    [MAKER_TOOL.erase]: "爆弾・ニッパー・壁ブロックを消します。プレイヤー・鍵・ゴールはそれぞれのツールで動かしてください。",
+    [MAKER_TOOL.erase]: "爆弾・水入りバケツ・壁ブロックを消します。プレイヤー・鍵・ゴールはそれぞれのツールで動かしてください。",
   };
 
   return hints[tool] ?? "";
@@ -2119,7 +2119,7 @@ function updateStatus() {
 
 // プレイヤー空間ではシールド回収後に爆弾判定を行い、
 // シールドがなければ即死、あれば1回だけ耐えて爆弾を消す。
-// それ以外の空間では同数の爆弾とニッパーを相殺する。
+// それ以外の空間では同数の爆弾と水入りバケツを相殺する。
 function applyLoopEffects() {
   gameState.explodedBombs = [];
   gameState.playerSpaceId = getGridSpaceId(gameState.player);
@@ -2457,7 +2457,7 @@ function drawLoopCells() {
   );
 }
 
-function drawWallBlocks() {
+drawWallBlocks = function drawWallBlocksWithIcons() {
   if (gameState.wallBlocks.length === 0) {
     return;
   }
@@ -2790,7 +2790,7 @@ function drawOverlay() {
 function buildMakerObjectSummary() {
   return [
     `爆弾${gameState.bombs.length}個`,
-    `ニッパー${gameState.disarmItems.length}個`,
+    `水入りバケツ${gameState.disarmItems.length}個`,
     `壁${gameState.wallBlocks.length}個`,
   ].join(" / ");
 }
@@ -2923,9 +2923,9 @@ function getMakerToolHint(tool) {
     [MAKER_TOOL.key]: "鍵を置きます。プレイヤーと同じ空間に入ると取得されます。",
     [MAKER_TOOL.goal]: "ゴールを置きます。鍵取得後に同じ空間へ入るとクリアです。",
     [MAKER_TOOL.bomb]: "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
-    [MAKER_TOOL.disarm]: "ニッパーを置きます。プレイヤーがいない空間で爆弾と同数なら相殺します。",
+    [MAKER_TOOL.disarm]: "水入りバケツを置きます。プレイヤーがいない空間で爆弾と同数なら相殺します。",
     [MAKER_TOOL.wall]: "壁ブロックを置きます。描いた線に接続したときだけループ壁として使われます。",
-    [MAKER_TOOL.erase]: "爆弾・ニッパー・壁ブロックを消します。",
+    [MAKER_TOOL.erase]: "爆弾・水入りバケツ・壁ブロックを消します。",
   };
 
   return hints[tool] ?? "";
@@ -2934,7 +2934,7 @@ function getMakerToolHint(tool) {
 function buildMakerObjectSummary() {
   return [
     `爆弾${gameState.bombs.length}個`,
-    `ニッパー${gameState.disarmItems.length}個`,
+    `水入りバケツ${gameState.disarmItems.length}個`,
     `壁${gameState.wallBlocks.length}個`,
   ].join(" / ");
 }
@@ -3091,3 +3091,2659 @@ for (const [tool, button] of Object.entries(makerToolButtons)) {
 updateCanvasMetrics(initialRandomStage);
 updateStatus();
 render();
+
+function getStageModeKey() {
+  if (!GAME_MODE.stage) {
+    GAME_MODE.stage = "stage";
+  }
+
+  return GAME_MODE.stage;
+}
+
+function getStageJsonState() {
+  if (!globalThis.__closedLoopStageJsonState) {
+    globalThis.__closedLoopStageJsonState = {
+      rememberedStage: null,
+      rememberedStageNumber: null,
+      folderStagesByNumber: new Map(),
+      directoryHandle: null,
+      directoryStageNumbers: [],
+    };
+  }
+
+  return globalThis.__closedLoopStageJsonState;
+}
+
+function getStageJsonUi() {
+  return {
+    stageNumberInput: document.getElementById("stageNumberInput"),
+    loadStageButton: document.getElementById("loadStageButton"),
+    chooseStageFolderButton: document.getElementById("chooseStageFolderButton"),
+    stageFolderInput: document.getElementById("stageFolderInput"),
+    stageLoaderStatus: document.getElementById("stageLoaderStatus"),
+    makerExportNumberInput: document.getElementById("makerExportNumberInput"),
+    makerExportJsonButton: document.getElementById("makerExportJsonButton"),
+    makerExportStatus: document.getElementById("makerExportStatus"),
+    makerJsonOutput: document.getElementById("makerJsonOutput"),
+  };
+}
+
+function setStatusText(element, message, isError = false) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent = message;
+  element.classList.toggle("is-error", isError);
+}
+
+function getDefaultStageLoaderMessage() {
+  return globalThis.location?.protocol === "file:"
+    ? "`index.html` を直接開いている場合は、最初に番号付きJSONファイルを選ぶと番号指定で遊べます。"
+    : "`stage/001.json` のような番号付きJSONを番号指定で読み込めます。ローカルで直接開いた場合は「JSONファイルを選ぶ」を使ってください。";
+}
+
+function setStageLoaderStatus(message, isError = false) {
+  const { stageLoaderStatus } = getStageJsonUi();
+  setStatusText(stageLoaderStatus, message, isError);
+}
+
+function setMakerExportStatus(message, isError = false) {
+  const { makerExportStatus } = getStageJsonUi();
+  setStatusText(makerExportStatus, message, isError);
+}
+
+function formatStageNumber(stageNumber) {
+  return String(stageNumber).padStart(3, "0");
+}
+
+function parseStageNumber(value) {
+  const parsed = Number.parseInt(String(value), 10);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error("ステージ番号は1以上の整数で指定してください。");
+  }
+
+  return parsed;
+}
+
+function parseStageNumberFromFileName(fileName) {
+  const match = /^(\d+)\.json$/i.exec(fileName.trim());
+
+  if (!match) {
+    return null;
+  }
+
+  const stageNumber = Number.parseInt(match[1], 10);
+  return Number.isInteger(stageNumber) && stageNumber > 0 ? stageNumber : null;
+}
+
+function getStageFileNameCandidates(stageNumber) {
+  return [`${formatStageNumber(stageNumber)}.json`, `${stageNumber}.json`];
+}
+
+function normalizeStagePoint(point, label) {
+  const x = Number(point?.x);
+  const y = Number(point?.y);
+
+  if (!Number.isInteger(x) || !Number.isInteger(y)) {
+    throw new Error(`${label} は x / y を持つ整数座標で指定してください。`);
+  }
+
+  return { x, y };
+}
+
+function normalizeStagePointList(points, label) {
+  if (points == null) {
+    return [];
+  }
+
+  if (!Array.isArray(points)) {
+    throw new Error(`${label} は配列で指定してください。`);
+  }
+
+  return getUniqueCells(
+    points.map((point, index) => normalizeStagePoint(point, `${label}[${index}]`))
+  );
+}
+
+function validateStageDefinitionForJson(stage) {
+  const boardSize = getStageBoardSize(stage);
+  const entries = [
+    ["playerStart", stage.playerStart],
+    ["keyPosition", stage.keyPosition],
+    ["goalPosition", stage.goalPosition],
+    ...stage.bombs.map((point, index) => [`bombs[${index}]`, point]),
+    ...stage.disarmItems.map((point, index) => [`disarmItems[${index}]`, point]),
+    ...stage.wallBlocks.map((point, index) => [`wallBlocks[${index}]`, point]),
+  ];
+  const occupiedByKey = new Map();
+
+  for (const [label, point] of entries) {
+    if (!isInsideMap(point, boardSize)) {
+      throw new Error(`${label} が盤面の外にあります。`);
+    }
+
+    const pointKey = getCellKey(point);
+    if (occupiedByKey.has(pointKey)) {
+      throw new Error(`${label} が ${occupiedByKey.get(pointKey)} と重なっています。`);
+    }
+
+    occupiedByKey.set(pointKey, label);
+  }
+}
+
+function normalizeStageJsonDefinition(stageJson, stageNumber = null) {
+  const boardSize = normalizeBoardSize(stageJson?.boardSize ?? createBoardSize());
+  const normalizedStage = {
+    boardSize,
+    playerStart: normalizeStagePoint(stageJson?.playerStart, "playerStart"),
+    keyPosition: normalizeStagePoint(stageJson?.keyPosition, "keyPosition"),
+    goalPosition: normalizeStagePoint(stageJson?.goalPosition, "goalPosition"),
+    bombs: normalizeStagePointList(stageJson?.bombs, "bombs"),
+    disarmItems: normalizeStagePointList(stageJson?.disarmItems, "disarmItems"),
+    wallBlocks: normalizeStagePointList(stageJson?.wallBlocks, "wallBlocks"),
+    designLabel:
+      typeof stageJson?.designLabel === "string" && stageJson.designLabel.trim()
+        ? stageJson.designLabel.trim()
+        : `ステージ ${formatStageNumber(stageNumber ?? 1)}`,
+    designNote: typeof stageJson?.designNote === "string" ? stageJson.designNote : "",
+    instructionText:
+      typeof stageJson?.instructionText === "string" && stageJson.instructionText.trim()
+        ? stageJson.instructionText.trim()
+        : "",
+    keyInitiallyCollected: Boolean(stageJson?.keyInitiallyCollected),
+    mode: getStageModeKey(),
+    tutorialIndex: null,
+    stageNumber,
+  };
+
+  validateStageDefinitionForJson(normalizedStage);
+  return normalizedStage;
+}
+
+function buildStageJsonDefinition(stage, stageNumber = null) {
+  const boardSize = getStageBoardSize(stage);
+
+  return {
+    version: 1,
+    boardSize: {
+      width: boardSize.width,
+      height: boardSize.height,
+    },
+    playerStart: clonePosition(stage.playerStart),
+    keyPosition: clonePosition(stage.keyPosition),
+    goalPosition: clonePosition(stage.goalPosition),
+    bombs: clonePositions(stage.bombs ?? []),
+    disarmItems: clonePositions(stage.disarmItems ?? []),
+    wallBlocks: clonePositions(stage.wallBlocks ?? []),
+    designLabel:
+      typeof stage.designLabel === "string" && stage.designLabel.trim()
+        ? stage.designLabel
+        : `ステージ ${formatStageNumber(stageNumber ?? 1)}`,
+    designNote: typeof stage.designNote === "string" ? stage.designNote : "",
+    instructionText: typeof stage.instructionText === "string" ? stage.instructionText : "",
+    keyInitiallyCollected: Boolean(stage.keyInitiallyCollected),
+  };
+}
+
+function describeStageNumberList(stageNumbers) {
+  if (stageNumbers.length === 0) {
+    return "番号付きJSONはまだ見つかっていません。";
+  }
+
+  const preview = stageNumbers.slice(0, 6).map(formatStageNumber).join(", ");
+  const suffix = stageNumbers.length > 6 ? " ..." : "";
+  return `${stageNumbers.length}件のステージを見つけました: ${preview}${suffix}`;
+}
+
+function isElementFocused(element) {
+  if (!element) {
+    return false;
+  }
+
+  return document.activeElement === element;
+}
+
+function getKnownStageNumbers() {
+  const stageJsonState = getStageJsonState();
+  const numbers = new Set([
+    ...stageJsonState.folderStagesByNumber.keys(),
+    ...stageJsonState.directoryStageNumbers,
+  ]);
+
+  return [...numbers].sort((left, right) => left - right);
+}
+
+function refreshStageNumberInputs() {
+  const stageNumbers = getKnownStageNumbers();
+  const { stageNumberInput, makerExportNumberInput } = getStageJsonUi();
+
+  if (stageNumberInput && stageNumbers.length > 0 && !isElementFocused(stageNumberInput)) {
+    stageNumberInput.value = String(stageNumbers[0]);
+  }
+
+  if (makerExportNumberInput && !isElementFocused(makerExportNumberInput)) {
+    const nextStageNumber = stageNumbers.length > 0 ? stageNumbers[stageNumbers.length - 1] + 1 : 1;
+    makerExportNumberInput.value = String(nextStageNumber);
+  }
+}
+
+async function scanStageDirectoryNumbers(directoryHandle) {
+  const numbers = [];
+
+  for await (const entry of directoryHandle.values()) {
+    if (entry.kind !== "file") {
+      continue;
+    }
+
+    const stageNumber = parseStageNumberFromFileName(entry.name);
+    if (stageNumber !== null) {
+      numbers.push(stageNumber);
+    }
+  }
+
+  return numbers.sort((left, right) => left - right);
+}
+
+async function chooseStageFolder() {
+  const { stageFolderInput } = getStageJsonUi();
+
+  try {
+    if (!stageFolderInput) {
+      return;
+    }
+
+    if (typeof stageFolderInput.showPicker === "function") {
+      stageFolderInput.showPicker();
+      return;
+    }
+
+    stageFolderInput.click();
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      return;
+    }
+
+    setStageLoaderStatus(`JSONファイル選択を開けませんでした: ${error.message}`, true);
+  }
+}
+
+async function handleStageFolderInputChange(event) {
+  const stageJsonState = getStageJsonState();
+  const files = [...(event.target?.files ?? [])];
+
+  if (files.length === 0) {
+    return;
+  }
+
+  try {
+    const nextStageMap = new Map();
+
+    for (const file of files) {
+      const stageNumber = parseStageNumberFromFileName(file.name);
+      if (stageNumber === null) {
+        continue;
+      }
+
+      if (nextStageMap.has(stageNumber)) {
+        throw new Error(`${file.name} と同じ番号のJSONが複数あります。`);
+      }
+
+      const parsedJson = JSON.parse(await file.text());
+      nextStageMap.set(stageNumber, normalizeStageJsonDefinition(parsedJson, stageNumber));
+    }
+
+    if (nextStageMap.size === 0) {
+      throw new Error("番号付きJSONが見つかりませんでした。`001.json` のような名前にしてください。");
+    }
+
+    stageJsonState.folderStagesByNumber = nextStageMap;
+    stageJsonState.directoryHandle = null;
+    stageJsonState.directoryStageNumbers = [...nextStageMap.keys()].sort((left, right) => left - right);
+    setStageLoaderStatus(`JSONファイルを読み込みました。${describeStageNumberList(stageJsonState.directoryStageNumbers)}`);
+    refreshStageNumberInputs();
+  } catch (error) {
+    setStageLoaderStatus(`JSONファイルの読み込みに失敗しました: ${error.message}`, true);
+  } finally {
+    if (event.target) {
+      event.target.value = "";
+    }
+  }
+}
+
+async function loadStageFromDirectoryHandle(stageNumber) {
+  const stageJsonState = getStageJsonState();
+
+  if (!stageJsonState.directoryHandle) {
+    return null;
+  }
+
+  for (const fileName of getStageFileNameCandidates(stageNumber)) {
+    try {
+      const fileHandle = await stageJsonState.directoryHandle.getFileHandle(fileName);
+      const file = await fileHandle.getFile();
+      const parsedJson = JSON.parse(await file.text());
+      return normalizeStageJsonDefinition(parsedJson, stageNumber);
+    } catch (error) {
+      if (error?.name === "NotFoundError") {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  return null;
+}
+
+async function fetchStageByNumber(stageNumber) {
+  if (globalThis.location?.protocol === "file:") {
+    return null;
+  }
+
+  for (const fileName of getStageFileNameCandidates(stageNumber)) {
+    const response = await fetch(`stage/${fileName}`, { cache: "no-store" }).catch(() => null);
+    if (!response || !response.ok) {
+      continue;
+    }
+
+    const parsedJson = await response.json();
+    return normalizeStageJsonDefinition(parsedJson, stageNumber);
+  }
+
+  return null;
+}
+
+async function resolveStageByNumber(stageNumber) {
+  const stageJsonState = getStageJsonState();
+
+  const directoryStage = await loadStageFromDirectoryHandle(stageNumber);
+  if (directoryStage) {
+    return directoryStage;
+  }
+
+  if (stageJsonState.folderStagesByNumber.has(stageNumber)) {
+    return cloneStageDefinition(stageJsonState.folderStagesByNumber.get(stageNumber));
+  }
+
+  const fetchedStage = await fetchStageByNumber(stageNumber);
+  if (fetchedStage) {
+    return fetchedStage;
+  }
+
+  if (globalThis.location?.protocol === "file:") {
+    throw new Error("ローカル表示では `stage` フォルダを自動参照できないため、先に番号付きJSONファイルを選んでください。");
+  }
+
+  throw new Error(`stage/${formatStageNumber(stageNumber)}.json が見つかりませんでした。`);
+}
+
+async function playStageByNumber() {
+  const { stageNumberInput } = getStageJsonUi();
+
+  try {
+    const stageNumber = parseStageNumber(stageNumberInput?.value ?? "1");
+    setStageLoaderStatus(`ステージ ${formatStageNumber(stageNumber)} を読み込んでいます...`);
+
+    const loadedStage = await resolveStageByNumber(stageNumber);
+    loadedStage.mode = getStageModeKey();
+    loadedStage.stageNumber = stageNumber;
+    if (!loadedStage.designLabel) {
+      loadedStage.designLabel = `ステージ ${formatStageNumber(stageNumber)}`;
+    }
+
+    applyStage(loadedStage);
+    if (stageNumberInput) {
+      stageNumberInput.value = String(stageNumber);
+    }
+    setStageLoaderStatus(`ステージ ${formatStageNumber(stageNumber)} を読み込みました。`);
+  } catch (error) {
+    setStageLoaderStatus(error.message, true);
+  }
+}
+
+function downloadJsonFile(fileName, jsonText) {
+  const blob = new Blob([jsonText], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
+async function saveStageJsonFile(fileName, jsonText) {
+  const stageJsonState = getStageJsonState();
+
+  if (stageJsonState.directoryHandle) {
+    try {
+      const fileHandle = await stageJsonState.directoryHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(jsonText);
+      await writable.close();
+
+      const stageNumber = parseStageNumberFromFileName(fileName);
+      if (stageNumber !== null && !stageJsonState.directoryStageNumbers.includes(stageNumber)) {
+        stageJsonState.directoryStageNumbers.push(stageNumber);
+        stageJsonState.directoryStageNumbers.sort((left, right) => left - right);
+      }
+
+      return "directory";
+    } catch (_error) {
+      // 権限や実行コンテキストの都合で書き込めない場合は別手段へ退避する
+      stageJsonState.directoryHandle = null;
+      stageJsonState.directoryStageNumbers = [];
+    }
+  }
+
+  downloadJsonFile(fileName, jsonText);
+  return "download";
+}
+
+async function exportMakerStageJson() {
+  if (gameState.mode !== GAME_MODE.maker) {
+    return;
+  }
+
+  const { makerExportNumberInput, makerJsonOutput } = getStageJsonUi();
+
+  try {
+    const stageNumber = parseStageNumber(makerExportNumberInput?.value ?? "1");
+    const stageJson = buildStageJsonDefinition(gameState.stage, stageNumber);
+    const jsonText = `${JSON.stringify(stageJson, null, 2)}\n`;
+    const fileName = `${formatStageNumber(stageNumber)}.json`;
+
+    if (makerJsonOutput) {
+      makerJsonOutput.value = jsonText;
+    }
+
+    const saveMode = await saveStageJsonFile(fileName, jsonText);
+
+    setMakerExportStatus(
+      saveMode === "directory"
+        ? `${fileName} を接続中のフォルダへ保存しました。`
+        : `${fileName} をダウンロードしました。必要なら stage フォルダへ移動してください。`
+    );
+
+    refreshStageNumberInputs();
+  } catch (error) {
+    setMakerExportStatus(`JSON出力に失敗しました: ${error.message}`, true);
+  }
+}
+
+function applyStage(stage) {
+  const stageJsonState = getStageJsonState();
+  const nextStage = cloneStageDefinition(stage);
+
+  if (nextStage.mode === GAME_MODE.tutorial) {
+    rememberedTutorialIndex = nextStage.tutorialIndex ?? 0;
+  } else if (nextStage.mode === GAME_MODE.maker) {
+    rememberedMakerStage = cloneStageDefinition(nextStage);
+  } else if (nextStage.mode === getStageModeKey()) {
+    stageJsonState.rememberedStage = cloneStageDefinition(nextStage);
+    stageJsonState.rememberedStageNumber = nextStage.stageNumber ?? null;
+  } else {
+    rememberedRandomStage = nextStage;
+  }
+
+  Object.assign(gameState, createInitialState(nextStage));
+  updateCanvasMetrics(nextStage);
+  render();
+}
+
+function setGameMode(mode) {
+  if (mode === gameState.mode) {
+    return;
+  }
+
+  if (gameState.mode === GAME_MODE.maker) {
+    rememberedMakerStage = cloneStageDefinition(gameState.stage);
+  }
+
+  if (mode === GAME_MODE.tutorial) {
+    applyStage(createTutorialStage(rememberedTutorialIndex));
+    return;
+  }
+
+  if (mode === GAME_MODE.maker) {
+    applyStage(cloneStageDefinition(rememberedMakerStage));
+    return;
+  }
+
+  if (mode === getStageModeKey()) {
+    const rememberedStage = getStageJsonState().rememberedStage;
+    if (rememberedStage) {
+      applyStage(cloneStageDefinition(rememberedStage));
+    }
+    return;
+  }
+
+  applyStage(cloneStageDefinition(rememberedRandomStage));
+}
+
+function resetGame(regenerateStage = false) {
+  if (gameState.mode === GAME_MODE.tutorial) {
+    goToTutorialStage(gameState.tutorialIndex ?? rememberedTutorialIndex);
+    return;
+  }
+
+  if (gameState.mode === GAME_MODE.maker) {
+    applyStage(cloneStageDefinition(gameState.stage));
+    return;
+  }
+
+  if (gameState.mode === getStageModeKey()) {
+    const rememberedStage = getStageJsonState().rememberedStage ?? gameState.stage;
+    applyStage(cloneStageDefinition(rememberedStage));
+    return;
+  }
+
+  const nextRandomStage = regenerateStage ? createRandomDesignedStage() : rememberedRandomStage;
+  applyStage(cloneStageDefinition(nextRandomStage));
+}
+
+function getMakerToolHint(tool) {
+  const hints = {
+    [MAKER_TOOL.player]: "プレイヤーの開始位置を置きます。ループの中だけ移動できます。",
+    [MAKER_TOOL.key]: "鍵を置きます。プレイヤーと同じ空間に入ると取得されます。",
+    [MAKER_TOOL.goal]: "ゴールを置きます。鍵取得後に同じ空間へ入るとクリアです。",
+    [MAKER_TOOL.bomb]: "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
+    [MAKER_TOOL.disarm]: "水入りバケツを置きます。プレイヤーのいない空間で爆弾と同数なら対消滅します。",
+    [MAKER_TOOL.wall]: "壁ブロックを置きます。線は通れず、ループの切り方も変わります。",
+    [MAKER_TOOL.erase]: "爆弾、水入りバケツ、壁ブロックを消します。",
+  };
+
+  return hints[tool] ?? "";
+}
+
+function buildMakerObjectSummary() {
+  return [
+    `爆弾${gameState.bombs.length}個`,
+    `水入りバケツ${gameState.disarmItems.length}個`,
+    `壁${gameState.wallBlocks.length}個`,
+  ].join(" / ");
+}
+
+function buildStageInfoText() {
+  if (gameState.mode === GAME_MODE.tutorial) {
+    const currentNumber = (gameState.tutorialIndex ?? 0) + 1;
+    return `チュートリアル ${currentNumber}/${TUTORIAL_STAGES.length}\n${gameState.stage.designNote ?? ""}`.trim();
+  }
+
+  if (gameState.mode === getStageModeKey()) {
+    const stageNumberLabel = gameState.stage.stageNumber != null
+      ? `ステージ ${formatStageNumber(gameState.stage.stageNumber)}`
+      : "JSONステージ";
+    const detail = gameState.stage.designNote || "stage フォルダから読み込んだステージです。";
+    return `${stageNumberLabel}: ${gameState.stage.designLabel ?? "番号指定ステージ"}\n${detail}`;
+  }
+
+  if (gameState.mode === GAME_MODE.maker) {
+    const boardSize = getStageBoardSize(gameState.stage);
+    const modeLabel = gameState.maker.editing ? "編集中" : "テストプレイ中";
+    return `ステージメーカー ${modeLabel} ${boardSize.width}x${boardSize.height}\n${buildMakerObjectSummary()}`;
+  }
+
+  return `ランダムステージ\n${gameState.stage.designNote ?? ""}`.trim();
+}
+
+function getHudInstructionText() {
+  if (gameState.mode === GAME_MODE.maker) {
+    return gameState.maker.editing
+      ? "配置ツールを選んでキャンバスをクリックするとオブジェクトを置けます。"
+      : "テストプレイ中です。矢印キーまたはWASDで移動し、ループの判定を確認してください。";
+  }
+
+  if (gameState.mode === GAME_MODE.tutorial) {
+    return gameState.stage.instructionText || "チュートリアルステージです。ルールを順番に確認できます。";
+  }
+
+  if (gameState.mode === getStageModeKey()) {
+    return gameState.stage.instructionText || "番号指定で読み込んだJSONステージです。";
+  }
+
+  return gameState.stage.instructionText || RANDOM_STAGE_INSTRUCTION_TEXT;
+}
+
+function getHudStatusLabel() {
+  if (isMakerEditing()) {
+    return "メーカー編集中";
+  }
+
+  if (gameState.gameOver) {
+    return "ゲームオーバー";
+  }
+
+  if (gameState.clear) {
+    return "クリア";
+  }
+
+  if (gameState.drawing.active) {
+    return "描画中";
+  }
+
+  if (!gameState.loop) {
+    return "待機中";
+  }
+
+  return canPlayerMoveInCurrentSpace() ? "移動可能" : "ループ外のため移動不可";
+}
+
+function syncHud() {
+  const isTutorialMode = gameState.mode === GAME_MODE.tutorial;
+  const isMakerMode = gameState.mode === GAME_MODE.maker;
+  const { makerExportNumberInput, makerExportJsonButton, makerJsonOutput } = getStageJsonUi();
+
+  instructionTextElement.textContent = getHudInstructionText();
+  keyStatusElement.textContent = gameState.key.collected ? "取得済み" : "未取得";
+  bombStatusElement.textContent = `${gameState.bombs.length}個`;
+  disarmStatusElement.textContent = `${gameState.disarmItems.length}個`;
+  stateStatusElement.textContent = getHudStatusLabel();
+  stageInfoElement.textContent = buildStageInfoText();
+  tutorialButtonRow.hidden = !isTutorialMode;
+  makerPanel.hidden = !isMakerMode;
+  tutorialPrevButton.disabled = !isTutorialMode || (gameState.tutorialIndex ?? 0) <= 0;
+  tutorialNextButton.disabled =
+    !isTutorialMode || (gameState.tutorialIndex ?? 0) >= TUTORIAL_STAGES.length - 1;
+  randomModeButton.classList.toggle("is-active", gameState.mode === GAME_MODE.random);
+  tutorialModeButton.classList.toggle("is-active", isTutorialMode);
+  makerModeButton.classList.toggle("is-active", isMakerMode);
+
+  if (isMakerMode) {
+    makerWidthInput.value = String(gameState.maker.widthInput);
+    makerHeightInput.value = String(gameState.maker.heightInput);
+    makerWidthInput.disabled = !gameState.maker.editing;
+    makerHeightInput.disabled = !gameState.maker.editing;
+    makerApplySizeButton.disabled = !gameState.maker.editing;
+    makerResetButton.disabled = !gameState.maker.editing;
+    makerTestButton.hidden = !gameState.maker.editing;
+    makerEditButton.hidden = gameState.maker.editing;
+    makerHintElement.textContent = gameState.maker.editing
+      ? getMakerToolHint(gameState.maker.selectedTool)
+      : "テストプレイ中です。配置を直したいときは「編集に戻る」を使ってください。";
+
+    if (makerExportNumberInput) {
+      makerExportNumberInput.disabled = false;
+    }
+
+    if (makerExportJsonButton) {
+      makerExportJsonButton.disabled = false;
+    }
+
+    if (makerJsonOutput) {
+      makerJsonOutput.hidden = false;
+    }
+
+    for (const [tool, button] of Object.entries(makerToolButtons)) {
+      if (!button) {
+        continue;
+      }
+
+      button.classList.toggle("is-active", gameState.maker.selectedTool === tool);
+      button.disabled = !gameState.maker.editing;
+    }
+  }
+}
+
+function render() {
+  clearCanvas();
+  drawLoopSpaces();
+  drawWallBlocks();
+  drawLoopCells();
+  drawCurrentStroke();
+  drawGrid();
+  drawGoal();
+  drawBombs();
+  drawExplodedBombs();
+  drawDisarmItems();
+  drawKey();
+  drawPlayer();
+  drawOverlay();
+  syncHud();
+}
+
+async function handleStageNumberEnter(event) {
+  if (event.key !== "Enter") {
+    return;
+  }
+
+  event.preventDefault();
+  await playStageByNumber();
+}
+
+getStageModeKey();
+setStageLoaderStatus(getDefaultStageLoaderMessage());
+refreshStageNumberInputs();
+globalThis.closedLoopDebug.loadStageByNumber = playStageByNumber;
+globalThis.closedLoopDebug.exportMakerStageJson = exportMakerStageJson;
+getStageJsonUi().loadStageButton?.addEventListener("click", () => {
+  void playStageByNumber();
+});
+getStageJsonUi().chooseStageFolderButton?.addEventListener("click", () => {
+  void chooseStageFolder();
+});
+getStageJsonUi().stageFolderInput?.addEventListener("change", (event) => {
+  void handleStageFolderInputChange(event);
+});
+getStageJsonUi().stageNumberInput?.addEventListener("keydown", (event) => {
+  void handleStageNumberEnter(event);
+});
+getStageJsonUi().makerExportJsonButton?.addEventListener("click", () => {
+  void exportMakerStageJson();
+});
+render();
+
+const AUTO_SOLVER_CONFIG = {
+  maxSteps: 6,
+  maxVisitedStates: 4000,
+  maxRectanglePerimeter: 52,
+  buildYieldInterval: 240,
+  searchYieldInterval: 18,
+  animationMoveMs: 70,
+  animationLoopPreviewMs: 140,
+  animationLoopApplyMs: 220,
+};
+
+function getMakerAutoSolveState() {
+  if (!globalThis.__closedLoopMakerAutoSolveState) {
+    globalThis.__closedLoopMakerAutoSolveState = {
+      running: false,
+      runId: 0,
+      message: "",
+      error: false,
+      cacheByStageKey: new Map(),
+      lastSolution: null,
+    };
+  }
+
+  return globalThis.__closedLoopMakerAutoSolveState;
+}
+
+function getMakerAutoSolveUi() {
+  return {
+    button: document.getElementById("makerAutoSolveButton"),
+    status: document.getElementById("makerSolveStatus"),
+  };
+}
+
+function setMakerAutoSolveStatus(message, isError = false) {
+  const autoSolveState = getMakerAutoSolveState();
+  autoSolveState.message = message;
+  autoSolveState.error = isError;
+
+  const { status } = getMakerAutoSolveUi();
+  setStatusText(status, message, isError);
+}
+
+function syncMakerAutoSolveHud() {
+  const autoSolveState = getMakerAutoSolveState();
+  const { button, status } = getMakerAutoSolveUi();
+  const isMakerMode = gameState.mode === GAME_MODE.maker;
+
+  if (button) {
+    button.disabled = !isMakerMode || autoSolveState.running;
+    button.textContent = autoSolveState.running ? "自動解法中..." : "自動で解く";
+  }
+
+  if (status) {
+    status.hidden = !isMakerMode;
+    setStatusText(status, autoSolveState.message, autoSolveState.error);
+  }
+}
+
+function cancelMakerAutoSolve(message = "") {
+  const autoSolveState = getMakerAutoSolveState();
+
+  if (!autoSolveState.running) {
+    return false;
+  }
+
+  autoSolveState.running = false;
+  autoSolveState.runId += 1;
+
+  if (message) {
+    setMakerAutoSolveStatus(message, false);
+  }
+
+  render();
+  return true;
+}
+
+function waitForAutoSolveTick(delayMs = 0) {
+  return new Promise((resolve) => {
+    globalThis.setTimeout(resolve, delayMs);
+  });
+}
+
+function isAutoSolveRunCancelled(runId) {
+  const autoSolveState = getMakerAutoSolveState();
+  return autoSolveState.runId !== runId;
+}
+
+function buildPolylineCells(vertices) {
+  if (vertices.length === 0) {
+    return [];
+  }
+
+  const cells = [clonePosition(vertices[0])];
+
+  for (let index = 1; index < vertices.length; index += 1) {
+    const previous = vertices[index - 1];
+    const current = vertices[index];
+
+    if (previous.x !== current.x && previous.y !== current.y) {
+      return [];
+    }
+
+    cells.push(...buildCellSegment(previous, current));
+  }
+
+  return getUniqueCells(cells);
+}
+
+function createAutoSolveCandidateKey(stage) {
+  const boardSize = getStageBoardSize(stage);
+  const wallSignature = clonePositions(stage.wallBlocks ?? [])
+    .sort(compareGridPositions)
+    .map(getCellKey)
+    .join("|");
+
+  return `${boardSize.width}x${boardSize.height}|${wallSignature}`;
+}
+
+function createAutoSolveCandidate(loop, drawnCells, kind) {
+  const cellsBySpaceId = new Map();
+  const cellKeySetBySpaceId = new Map();
+  const cellSignatureBySpaceId = new Map();
+
+  for (const space of loop.spaces) {
+    const cells = clonePositions(space.cells);
+    cellsBySpaceId.set(space.id, cells);
+    cellKeySetBySpaceId.set(space.id, new Set(cells.map(getCellKey)));
+    cellSignatureBySpaceId.set(
+      space.id,
+      cells.map(getCellKey).sort().join("|")
+    );
+  }
+
+  return {
+    kind,
+    drawnCells: clonePositions(drawnCells),
+    drawnCellKeys: new Set(drawnCells.map(getCellKey)),
+    lineCells: clonePositions(loop.lineCells),
+    lineCellKeys: new Set(loop.lineCells.map(getCellKey)),
+    lineCellCount: loop.lineCells.length,
+    spaces: loop.spaces.map((space) => ({
+      id: space.id,
+      kind: space.kind,
+      touchesBorder: space.touchesBorder,
+      cells: cellsBySpaceId.get(space.id),
+    })),
+    cellsBySpaceId,
+    cellKeySetBySpaceId,
+    cellSignatureBySpaceId,
+    spaceByCellKey: new Map(loop.spaceByCellKey),
+    usesOuterWall: loop.usesOuterWall,
+  };
+}
+
+function addAutoSolveCandidate(candidateMap, stage, drawnCells, kind) {
+  if (drawnCells.length === 0) {
+    return;
+  }
+
+  const loop = buildLoopFromCells(
+    drawnCells,
+    getStageBoardSize(stage),
+    stage.wallBlocks ?? []
+  );
+
+  if (!loop) {
+    return;
+  }
+
+  const signature = [...loop.lineCellKeys].sort().join("|");
+  if (candidateMap.has(signature)) {
+    return;
+  }
+
+  candidateMap.set(signature, createAutoSolveCandidate(loop, drawnCells, kind));
+}
+
+function buildRectangleLoopCells(left, top, right, bottom) {
+  return buildPolylineCells([
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom },
+    { x: left, y: top },
+  ]);
+}
+
+function buildAutoSolveBorderCells(boardSize) {
+  const borderCells = [];
+
+  for (let x = 0; x < boardSize.width; x += 1) {
+    borderCells.push({ x, y: 0 });
+    if (boardSize.height > 1) {
+      borderCells.push({ x, y: boardSize.height - 1 });
+    }
+  }
+
+  for (let y = 1; y < boardSize.height - 1; y += 1) {
+    borderCells.push({ x: 0, y });
+    if (boardSize.width > 1) {
+      borderCells.push({ x: boardSize.width - 1, y });
+    }
+  }
+
+  return getUniqueCells(borderCells).sort(compareGridPositions);
+}
+
+function getBorderSideName(cell, boardSize) {
+  if (cell.y === 0) {
+    return "top";
+  }
+
+  if (cell.x === boardSize.width - 1) {
+    return "right";
+  }
+
+  if (cell.y === boardSize.height - 1) {
+    return "bottom";
+  }
+
+  return "left";
+}
+
+async function buildAutoSolveCandidates(stage, runId = null) {
+  const autoSolveState = getMakerAutoSolveState();
+  const cacheKey = createAutoSolveCandidateKey(stage);
+  if (autoSolveState.cacheByStageKey.has(cacheKey)) {
+    return autoSolveState.cacheByStageKey.get(cacheKey);
+  }
+
+  const candidateMap = new Map();
+  const boardSize = getStageBoardSize(stage);
+  const borderCells = buildAutoSolveBorderCells(boardSize);
+  let generatedCount = 0;
+
+  for (let top = 0; top < boardSize.height - 2; top += 1) {
+    for (let left = 0; left < boardSize.width - 2; left += 1) {
+      for (let bottom = top + 2; bottom < boardSize.height; bottom += 1) {
+        for (let right = left + 2; right < boardSize.width; right += 1) {
+          const perimeter =
+            2 * ((right - left + 1) + (bottom - top + 1)) - 4;
+          if (perimeter > AUTO_SOLVER_CONFIG.maxRectanglePerimeter) {
+            continue;
+          }
+
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildRectangleLoopCells(left, top, right, bottom),
+            "rectangle"
+          );
+          generatedCount += 1;
+
+          if (generatedCount % AUTO_SOLVER_CONFIG.buildYieldInterval === 0) {
+            if (runId !== null && isAutoSolveRunCancelled(runId)) {
+              return [];
+            }
+
+            await waitForAutoSolveTick();
+          }
+        }
+      }
+    }
+  }
+
+  for (let startIndex = 0; startIndex < borderCells.length; startIndex += 1) {
+    const startCell = borderCells[startIndex];
+    const startSide = getBorderSideName(startCell, boardSize);
+
+    for (let endIndex = startIndex + 1; endIndex < borderCells.length; endIndex += 1) {
+      const endCell = borderCells[endIndex];
+      const endSide = getBorderSideName(endCell, boardSize);
+
+      addAutoSolveCandidate(
+        candidateMap,
+        stage,
+        buildPolylineCells([startCell, endCell]),
+        "border-straight"
+      );
+      generatedCount += 1;
+
+      if (startCell.x !== endCell.x && startCell.y !== endCell.y) {
+        addAutoSolveCandidate(
+          candidateMap,
+          stage,
+          buildPolylineCells([
+            startCell,
+            { x: startCell.x, y: endCell.y },
+            endCell,
+          ]),
+          "border-bend"
+        );
+        addAutoSolveCandidate(
+          candidateMap,
+          stage,
+          buildPolylineCells([
+            startCell,
+            { x: endCell.x, y: startCell.y },
+            endCell,
+          ]),
+          "border-bend"
+        );
+        generatedCount += 2;
+      }
+
+      if (
+        (startSide === "top" && endSide === "top") ||
+        (startSide === "bottom" && endSide === "bottom")
+      ) {
+        const innerYRange =
+          startSide === "top"
+            ? { from: 1, to: boardSize.height - 2 }
+            : { from: 0, to: boardSize.height - 2 };
+
+        for (let innerY = innerYRange.from; innerY <= innerYRange.to; innerY += 1) {
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildPolylineCells([
+              startCell,
+              { x: startCell.x, y: innerY },
+              { x: endCell.x, y: innerY },
+              endCell,
+            ]),
+            "border-u"
+          );
+          generatedCount += 1;
+        }
+      }
+
+      if (
+        (startSide === "left" && endSide === "left") ||
+        (startSide === "right" && endSide === "right")
+      ) {
+        const innerXRange =
+          startSide === "left"
+            ? { from: 1, to: boardSize.width - 2 }
+            : { from: 0, to: boardSize.width - 2 };
+
+        for (let innerX = innerXRange.from; innerX <= innerXRange.to; innerX += 1) {
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildPolylineCells([
+              startCell,
+              { x: innerX, y: startCell.y },
+              { x: innerX, y: endCell.y },
+              endCell,
+            ]),
+            "border-u"
+          );
+          generatedCount += 1;
+        }
+      }
+
+      const oppositeVertical =
+        (startSide === "top" && endSide === "bottom") ||
+        (startSide === "bottom" && endSide === "top");
+      const oppositeHorizontal =
+        (startSide === "left" && endSide === "right") ||
+        (startSide === "right" && endSide === "left");
+
+      if (oppositeVertical) {
+        for (let innerY = 1; innerY < boardSize.height - 1; innerY += 1) {
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildPolylineCells([
+              startCell,
+              { x: startCell.x, y: innerY },
+              { x: endCell.x, y: innerY },
+              endCell,
+            ]),
+            "border-bridge"
+          );
+          generatedCount += 1;
+        }
+      }
+
+      if (oppositeHorizontal) {
+        for (let innerX = 1; innerX < boardSize.width - 1; innerX += 1) {
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildPolylineCells([
+              startCell,
+              { x: innerX, y: startCell.y },
+              { x: innerX, y: endCell.y },
+              endCell,
+            ]),
+            "border-bridge"
+          );
+          generatedCount += 1;
+        }
+      }
+
+      if (generatedCount % AUTO_SOLVER_CONFIG.buildYieldInterval === 0) {
+        if (runId !== null && isAutoSolveRunCancelled(runId)) {
+          return [];
+        }
+
+        await waitForAutoSolveTick();
+      }
+    }
+  }
+
+  const candidates = [...candidateMap.values()].sort((left, right) => {
+    if (left.lineCellCount !== right.lineCellCount) {
+      return left.lineCellCount - right.lineCellCount;
+    }
+
+    if (left.usesOuterWall !== right.usesOuterWall) {
+      return left.usesOuterWall ? -1 : 1;
+    }
+
+    return left.drawnCells.length - right.drawnCells.length;
+  });
+
+  autoSolveState.cacheByStageKey.set(cacheKey, candidates);
+  return candidates;
+}
+
+function createAutoSolveSearchState(stage) {
+  const playerStart = clonePosition(stage.playerStart);
+  const reachableCells = [playerStart];
+  return {
+    reachableCells,
+    reachableSignature: reachableCells.map(getCellKey).join("|"),
+    keyCollected: Boolean(stage.keyInitiallyCollected),
+    bombs: clonePositions(stage.bombs),
+    disarmItems: clonePositions(stage.disarmItems),
+    clear: false,
+    history: [],
+  };
+}
+
+function serializeAutoSolveSearchState(state) {
+  const bombSignature = clonePositions(state.bombs)
+    .sort(compareGridPositions)
+    .map(getCellKey)
+    .join("|");
+  const disarmSignature = clonePositions(state.disarmItems)
+    .sort(compareGridPositions)
+    .map(getCellKey)
+    .join("|");
+
+  return [
+    state.keyCollected ? "1" : "0",
+    state.reachableSignature,
+    bombSignature,
+    disarmSignature,
+  ].join("||");
+}
+
+function getLoopSpaceIdFromPosition(loopCandidate, position) {
+  if (loopCandidate.lineCellKeys.has(getCellKey(position))) {
+    return null;
+  }
+
+  return loopCandidate.spaceByCellKey.get(getCellKey(position)) ?? null;
+}
+
+function groupPositionsByLoopSpaceForAutoSolve(positions, loopCandidate) {
+  const grouped = new Map();
+
+  for (const position of positions) {
+    const spaceId = getLoopSpaceIdFromPosition(loopCandidate, position);
+    if (spaceId === null) {
+      continue;
+    }
+
+    if (!grouped.has(spaceId)) {
+      grouped.set(spaceId, []);
+    }
+
+    grouped.get(spaceId).push(position);
+  }
+
+  return grouped;
+}
+
+function buildAutoSolveForbiddenKeys(stage, searchState) {
+  const forbiddenKeys = new Set([
+    getCellKey(stage.goalPosition),
+    ...searchState.bombs.map(getCellKey),
+    ...searchState.disarmItems.map(getCellKey),
+  ]);
+
+  if (!searchState.keyCollected) {
+    forbiddenKeys.add(getCellKey(stage.keyPosition));
+  }
+
+  return forbiddenKeys;
+}
+
+function canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys) {
+  for (const cellKey of forbiddenKeys) {
+    if (loopCandidate.lineCellKeys.has(cellKey)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function collectAutoSolveReachableSpaces(searchState, loopCandidate) {
+  const reachableSpaces = new Map();
+
+  for (const cell of searchState.reachableCells) {
+    const spaceId = getLoopSpaceIdFromPosition(loopCandidate, cell);
+    if (spaceId === null || reachableSpaces.has(spaceId)) {
+      continue;
+    }
+
+    reachableSpaces.set(spaceId, clonePosition(cell));
+  }
+
+  return reachableSpaces;
+}
+
+function buildAutoSolveNextState(stage, currentState, loopCandidate, spaceId, anchorCell) {
+  const bombsBySpace = groupPositionsByLoopSpaceForAutoSolve(
+    currentState.bombs,
+    loopCandidate
+  );
+  const disarmBySpace = groupPositionsByLoopSpaceForAutoSolve(
+    currentState.disarmItems,
+    loopCandidate
+  );
+  const bombsInPlayerSpace = bombsBySpace.get(spaceId) || [];
+
+  if (bombsInPlayerSpace.length > 0) {
+    return null;
+  }
+
+  const removedBombKeys = new Set();
+  const removedDisarmKeys = new Set();
+  const allSpaceIds = new Set([
+    ...bombsBySpace.keys(),
+    ...disarmBySpace.keys(),
+  ]);
+
+  for (const targetSpaceId of allSpaceIds) {
+    if (targetSpaceId === spaceId) {
+      continue;
+    }
+
+    const bombsInSpace = bombsBySpace.get(targetSpaceId) || [];
+    const disarmInSpace = disarmBySpace.get(targetSpaceId) || [];
+
+    if (bombsInSpace.length > 0 && bombsInSpace.length === disarmInSpace.length) {
+      for (const bomb of bombsInSpace) {
+        removedBombKeys.add(getCellKey(bomb));
+      }
+
+      for (const item of disarmInSpace) {
+        removedDisarmKeys.add(getCellKey(item));
+      }
+    }
+  }
+
+  const nextBombs = currentState.bombs.filter(
+    (bomb) => !removedBombKeys.has(getCellKey(bomb))
+  );
+  const nextDisarmItems = currentState.disarmItems.filter(
+    (item) => !removedDisarmKeys.has(getCellKey(item))
+  );
+  const nextKeyCollected =
+    currentState.keyCollected ||
+    getLoopSpaceIdFromPosition(loopCandidate, stage.keyPosition) === spaceId;
+  const goalSharesPlayerSpace =
+    getLoopSpaceIdFromPosition(loopCandidate, stage.goalPosition) === spaceId;
+  const nextReachableCells = clonePositions(
+    loopCandidate.cellsBySpaceId.get(spaceId) ?? []
+  );
+  const nextReachableSignature = nextReachableCells
+    .map(getCellKey)
+    .sort()
+    .join("|");
+
+  if (
+    nextReachableSignature === currentState.reachableSignature &&
+    nextKeyCollected === currentState.keyCollected &&
+    nextBombs.length === currentState.bombs.length &&
+    nextDisarmItems.length === currentState.disarmItems.length
+  ) {
+    return null;
+  }
+
+  return {
+    reachableCells: nextReachableCells,
+    reachableSignature: nextReachableSignature,
+    keyCollected: nextKeyCollected,
+    bombs: nextBombs,
+    disarmItems: nextDisarmItems,
+    clear: nextKeyCollected && goalSharesPlayerSpace,
+    history: [
+      ...currentState.history,
+      {
+        anchorCell: clonePosition(anchorCell),
+        drawnCells: clonePositions(loopCandidate.drawnCells),
+        kind: loopCandidate.kind,
+      },
+    ],
+  };
+}
+
+async function findStageAutoSolveSolution(stage, runId = null) {
+  const candidates = await buildAutoSolveCandidates(stage, runId);
+  if (runId !== null && isAutoSolveRunCancelled(runId)) {
+    return null;
+  }
+
+  const initialState = createAutoSolveSearchState(stage);
+  const queue = [initialState];
+  const visitedStates = new Set([serializeAutoSolveSearchState(initialState)]);
+  let exploredStates = 0;
+
+  while (queue.length > 0 && visitedStates.size <= AUTO_SOLVER_CONFIG.maxVisitedStates) {
+    if (runId !== null && isAutoSolveRunCancelled(runId)) {
+      return null;
+    }
+
+    const currentState = queue.shift();
+    exploredStates += 1;
+
+    if (exploredStates % AUTO_SOLVER_CONFIG.searchYieldInterval === 0) {
+      setMakerAutoSolveStatus(
+        `自動解法を探索中... ${exploredStates}状態 / ${visitedStates.size}記録`
+      );
+      render();
+      await waitForAutoSolveTick();
+    }
+
+    if (currentState.clear) {
+      return currentState.history;
+    }
+
+    if (currentState.history.length >= AUTO_SOLVER_CONFIG.maxSteps) {
+      continue;
+    }
+
+    const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, currentState);
+
+    for (const loopCandidate of candidates) {
+      if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
+        continue;
+      }
+
+      const reachableSpaces = collectAutoSolveReachableSpaces(
+        currentState,
+        loopCandidate
+      );
+
+      if (reachableSpaces.size === 0) {
+        continue;
+      }
+
+      for (const [spaceId, anchorCell] of reachableSpaces) {
+        const nextState = buildAutoSolveNextState(
+          stage,
+          currentState,
+          loopCandidate,
+          spaceId,
+          anchorCell
+        );
+
+        if (!nextState) {
+          continue;
+        }
+
+        if (nextState.clear) {
+          return nextState.history;
+        }
+
+        const signature = serializeAutoSolveSearchState(nextState);
+        if (visitedStates.has(signature)) {
+          continue;
+        }
+
+        visitedStates.add(signature);
+        queue.push(nextState);
+      }
+    }
+  }
+
+  return null;
+}
+
+function findPathWithinAllowedCells(startCell, goalCell, allowedCellKeys) {
+  const startKey = getCellKey(startCell);
+  const goalKey = getCellKey(goalCell);
+
+  if (startKey === goalKey) {
+    return [clonePosition(startCell)];
+  }
+
+  const queue = [clonePosition(startCell)];
+  const visitedKeys = new Set([startKey]);
+  const parentByKey = new Map();
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    for (const neighbor of getCellNeighbors(current, activeBoardSize)) {
+      const neighborKey = getCellKey(neighbor);
+      if (!allowedCellKeys.has(neighborKey) || visitedKeys.has(neighborKey)) {
+        continue;
+      }
+
+      parentByKey.set(neighborKey, current);
+      if (neighborKey === goalKey) {
+        const path = [clonePosition(goalCell)];
+        let cursor = current;
+
+        while (cursor) {
+          path.push(clonePosition(cursor));
+          const parentKey = getCellKey(cursor);
+          cursor = parentByKey.get(parentKey) ?? null;
+        }
+
+        return path.reverse();
+      }
+
+      visitedKeys.add(neighborKey);
+      queue.push(neighbor);
+    }
+  }
+
+  return null;
+}
+
+async function movePlayerAlongPath(path, runId) {
+  for (let index = 1; index < path.length; index += 1) {
+    if (isAutoSolveRunCancelled(runId)) {
+      return false;
+    }
+
+    gameState.player = clonePosition(path[index]);
+    render();
+    await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationMoveMs);
+  }
+
+  return true;
+}
+
+function clearLoopStateWithoutRender() {
+  gameState.loop = null;
+  gameState.drawing.active = false;
+  gameState.drawing.cells = [];
+  gameState.playerSpaceId = null;
+  gameState.playerInsideLoop = false;
+  gameState.goalInsideLoop = false;
+  gameState.goalSharesPlayerSpace = false;
+  gameState.explodedBombs = [];
+  updateStatus();
+}
+
+async function playAutoSolveSolution(stage, solution, runId) {
+  applyStage(cloneStageDefinition(stage));
+
+  for (const step of solution) {
+    if (isAutoSolveRunCancelled(runId)) {
+      return false;
+    }
+
+    const movementAllowedKeys =
+      gameState.loop && gameState.playerSpaceId !== null
+        ? new Set(
+            (gameState.loop.spaces.find(
+              (space) => space.id === gameState.playerSpaceId
+            )?.cells ?? []).map(getCellKey)
+          )
+        : new Set([getCellKey(gameState.player)]);
+    const movementPath = findPathWithinAllowedCells(
+      gameState.player,
+      step.anchorCell,
+      movementAllowedKeys
+    );
+
+    if (!movementPath) {
+      return false;
+    }
+
+    const moved = await movePlayerAlongPath(movementPath, runId);
+    if (!moved || isAutoSolveRunCancelled(runId)) {
+      return false;
+    }
+
+    clearLoopStateWithoutRender();
+    gameState.drawing.active = true;
+    gameState.drawing.cells = clonePositions(step.drawnCells);
+    updateStatus();
+    render();
+    await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopPreviewMs);
+
+    if (isAutoSolveRunCancelled(runId)) {
+      return false;
+    }
+
+    const nextLoop = buildLoopFromCells(
+      step.drawnCells,
+      activeBoardSize,
+      gameState.wallBlocks
+    );
+    if (!nextLoop) {
+      return false;
+    }
+
+    gameState.loop = nextLoop;
+    gameState.drawing.active = false;
+    gameState.drawing.cells = [];
+    applyLoopEffects();
+    render();
+    await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopApplyMs);
+  }
+
+  return gameState.clear;
+}
+
+function buildRandomStageDefinition(layout) {
+  return {
+    boardSize: cloneBoardSize(getStageBoardSize(layout)),
+    playerStart: clonePosition(layout.playerStart ?? BASE_STAGE.playerStart),
+    keyPosition: clonePosition(layout.keyPosition ?? BASE_STAGE.keyPosition),
+    goalPosition: clonePosition(layout.goalPosition ?? BASE_STAGE.goalPosition),
+    bombs: clonePositions(layout.bombs ?? []),
+    disarmItems: clonePositions(layout.disarmItems ?? []),
+    wallBlocks: clonePositions(layout.wallBlocks ?? []),
+    shields: clonePositions(layout.shields ?? []),
+    designLabel: layout.label ?? "ランダムステージ",
+    designNote: buildStageNote(layout),
+    instructionText: RANDOM_STAGE_INSTRUCTION_TEXT,
+    keyInitiallyCollected: false,
+    mode: GAME_MODE.random,
+    tutorialIndex: null,
+  };
+}
+
+// ランダム候補が尽きた場合でも、必ず解ける盤面を返すための保険
+function createFallbackRandomStageLayout() {
+  return {
+    ...BASE_STAGE,
+    keyPosition: { x: 3, y: 1 },
+    goalPosition: { x: 4, y: 3 },
+    bombs: [],
+    disarmItems: [],
+    wallBlocks: [],
+    shields: [],
+    label: "検証済みフォールバック",
+    plannedLoops: 1,
+    familyLabel: "フォールバック",
+    variantLabel: "安全策",
+    solutionStyle: "safe",
+    strategyNote: "必ず解ける配置だけを返すための保険です。",
+  };
+}
+
+function getRandomStageVerificationState() {
+  if (!globalThis.__closedLoopRandomStageVerificationState) {
+    globalThis.__closedLoopRandomStageVerificationState = {
+      solvableByStageKey: new Map(),
+    };
+  }
+
+  return globalThis.__closedLoopRandomStageVerificationState;
+}
+
+function buildAutoSolveCandidatesSync(stage) {
+  const autoSolveState = getMakerAutoSolveState();
+  const cacheKey = createAutoSolveCandidateKey(stage);
+  if (autoSolveState.cacheByStageKey.has(cacheKey)) {
+    return autoSolveState.cacheByStageKey.get(cacheKey);
+  }
+
+  const candidateMap = new Map();
+  const boardSize = getStageBoardSize(stage);
+  const borderCells = buildAutoSolveBorderCells(boardSize);
+
+  for (let top = 0; top < boardSize.height - 2; top += 1) {
+    for (let left = 0; left < boardSize.width - 2; left += 1) {
+      for (let bottom = top + 2; bottom < boardSize.height; bottom += 1) {
+        for (let right = left + 2; right < boardSize.width; right += 1) {
+          const perimeter =
+            2 * ((right - left + 1) + (bottom - top + 1)) - 4;
+          if (perimeter > AUTO_SOLVER_CONFIG.maxRectanglePerimeter) {
+            continue;
+          }
+
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildRectangleLoopCells(left, top, right, bottom),
+            "rectangle"
+          );
+        }
+      }
+    }
+  }
+
+  for (let startIndex = 0; startIndex < borderCells.length; startIndex += 1) {
+    const startCell = borderCells[startIndex];
+    const startSide = getBorderSideName(startCell, boardSize);
+
+    for (let endIndex = startIndex + 1; endIndex < borderCells.length; endIndex += 1) {
+      const endCell = borderCells[endIndex];
+      const endSide = getBorderSideName(endCell, boardSize);
+
+      addAutoSolveCandidate(
+        candidateMap,
+        stage,
+        buildPolylineCells([startCell, endCell]),
+        "border-straight"
+      );
+
+      if (startCell.x !== endCell.x && startCell.y !== endCell.y) {
+        addAutoSolveCandidate(
+          candidateMap,
+          stage,
+          buildPolylineCells([
+            startCell,
+            { x: startCell.x, y: endCell.y },
+            endCell,
+          ]),
+          "border-bend"
+        );
+        addAutoSolveCandidate(
+          candidateMap,
+          stage,
+          buildPolylineCells([
+            startCell,
+            { x: endCell.x, y: startCell.y },
+            endCell,
+          ]),
+          "border-bend"
+        );
+      }
+
+      if (
+        (startSide === "top" && endSide === "top") ||
+        (startSide === "bottom" && endSide === "bottom")
+      ) {
+        const innerYRange =
+          startSide === "top"
+            ? { from: 1, to: boardSize.height - 2 }
+            : { from: 0, to: boardSize.height - 2 };
+
+        for (let innerY = innerYRange.from; innerY <= innerYRange.to; innerY += 1) {
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildPolylineCells([
+              startCell,
+              { x: startCell.x, y: innerY },
+              { x: endCell.x, y: innerY },
+              endCell,
+            ]),
+            "border-u"
+          );
+        }
+      }
+
+      if (
+        (startSide === "left" && endSide === "left") ||
+        (startSide === "right" && endSide === "right")
+      ) {
+        const innerXRange =
+          startSide === "left"
+            ? { from: 1, to: boardSize.width - 2 }
+            : { from: 0, to: boardSize.width - 2 };
+
+        for (let innerX = innerXRange.from; innerX <= innerXRange.to; innerX += 1) {
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildPolylineCells([
+              startCell,
+              { x: innerX, y: startCell.y },
+              { x: innerX, y: endCell.y },
+              endCell,
+            ]),
+            "border-u"
+          );
+        }
+      }
+
+      const oppositeVertical =
+        (startSide === "top" && endSide === "bottom") ||
+        (startSide === "bottom" && endSide === "top");
+      const oppositeHorizontal =
+        (startSide === "left" && endSide === "right") ||
+        (startSide === "right" && endSide === "left");
+
+      if (oppositeVertical) {
+        for (let innerY = 1; innerY < boardSize.height - 1; innerY += 1) {
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildPolylineCells([
+              startCell,
+              { x: startCell.x, y: innerY },
+              { x: endCell.x, y: innerY },
+              endCell,
+            ]),
+            "border-bridge"
+          );
+        }
+      }
+
+      if (oppositeHorizontal) {
+        for (let innerX = 1; innerX < boardSize.width - 1; innerX += 1) {
+          addAutoSolveCandidate(
+            candidateMap,
+            stage,
+            buildPolylineCells([
+              startCell,
+              { x: innerX, y: startCell.y },
+              { x: innerX, y: endCell.y },
+              endCell,
+            ]),
+            "border-bridge"
+          );
+        }
+      }
+    }
+  }
+
+  const candidates = [...candidateMap.values()].sort((left, right) => {
+    if (left.lineCellCount !== right.lineCellCount) {
+      return left.lineCellCount - right.lineCellCount;
+    }
+
+    if (left.usesOuterWall !== right.usesOuterWall) {
+      return left.usesOuterWall ? -1 : 1;
+    }
+
+    return left.drawnCells.length - right.drawnCells.length;
+  });
+
+  autoSolveState.cacheByStageKey.set(cacheKey, candidates);
+  return candidates;
+}
+
+function findStageAutoSolveSolutionSync(stage) {
+  const candidates = buildAutoSolveCandidatesSync(stage);
+  const initialState = createAutoSolveSearchState(stage);
+  const queue = [initialState];
+  const visitedStates = new Set([serializeAutoSolveSearchState(initialState)]);
+
+  while (
+    queue.length > 0 &&
+    visitedStates.size <= AUTO_SOLVER_CONFIG.maxVisitedStates
+  ) {
+    const currentState = queue.shift();
+
+    if (currentState.clear) {
+      return currentState.history;
+    }
+
+    if (currentState.history.length >= AUTO_SOLVER_CONFIG.maxSteps) {
+      continue;
+    }
+
+    const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, currentState);
+
+    for (const loopCandidate of candidates) {
+      if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
+        continue;
+      }
+
+      const nextState = buildAutoSolveNextState(stage, currentState, loopCandidate);
+      if (!nextState) {
+        continue;
+      }
+
+      if (nextState.clear) {
+        return nextState.history;
+      }
+
+      const signature = serializeAutoSolveSearchState(nextState);
+      if (visitedStates.has(signature)) {
+        continue;
+      }
+
+      visitedStates.add(signature);
+      queue.push(nextState);
+    }
+  }
+
+  return null;
+}
+
+function isRandomStageDefinitionSolvable(stage) {
+  const verificationState = getRandomStageVerificationState();
+  const stageKey = buildStageLayoutKey(stage);
+
+  if (verificationState.solvableByStageKey.has(stageKey)) {
+    return verificationState.solvableByStageKey.get(stageKey);
+  }
+
+  const solution = findStageAutoSolveSolutionSync(stage);
+  const solvable = Array.isArray(solution) && solution.length > 0;
+  verificationState.solvableByStageKey.set(stageKey, solvable);
+  return solvable;
+}
+
+function isRandomStageLayoutSolvable(layout) {
+  return isRandomStageDefinitionSolvable(buildRandomStageDefinition(layout));
+}
+
+buildRandomStagePool = function buildVerifiedRandomStagePool(scoredLayouts) {
+  const pool = [];
+  const poolStageKeys = new Set();
+  const coveredStyles = new Set();
+  const coveredFamilies = new Set();
+
+  function tryAddCandidate(candidate) {
+    const stageKey = buildStageLayoutKey(candidate.layout);
+
+    if (poolStageKeys.has(stageKey)) {
+      return false;
+    }
+
+    if (!isRandomStageLayoutSolvable(candidate.layout)) {
+      return false;
+    }
+
+    pool.push(candidate);
+    poolStageKeys.add(stageKey);
+    coveredStyles.add(candidate.layout.solutionStyle ?? "mixed");
+    coveredFamilies.add(
+      candidate.layout.familyLabel ?? getStageFamilyLabel(candidate.layout.label)
+    );
+    return true;
+  }
+
+  for (const candidate of scoredLayouts) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    const style = candidate.layout.solutionStyle ?? "mixed";
+    if (!coveredStyles.has(style)) {
+      tryAddCandidate(candidate);
+    }
+  }
+
+  for (const candidate of scoredLayouts) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    const family = candidate.layout.familyLabel ?? getStageFamilyLabel(candidate.layout.label);
+    if (!coveredFamilies.has(family)) {
+      tryAddCandidate(candidate);
+    }
+  }
+
+  for (const candidate of scoredLayouts) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    tryAddCandidate(candidate);
+  }
+
+  return pool;
+};
+
+createRandomDesignedStage = function createVerifiedRandomDesignedStage() {
+  const layouts = STAGE_LIBRARY.length > 0
+    ? STAGE_LIBRARY
+    : [createFallbackRandomStageLayout()];
+
+  const scoredLayouts = shuffleArray(layouts)
+    .map((layout) => ({
+      layout,
+      score: scoreRandomStageCandidate(layout),
+    }))
+    .sort((layoutA, layoutB) => layoutB.score - layoutA.score);
+
+  const pool = buildRandomStagePool(scoredLayouts);
+  const layout = pool.length > 0
+    ? chooseRandomItem(pool).layout
+    : createFallbackRandomStageLayout();
+  const stageKey = buildStageLayoutKey(layout);
+
+  rememberRecentValue(
+    recentRandomStageKeys,
+    stageKey,
+    CONFIG.randomStageHistorySize
+  );
+  rememberRecentValue(
+    recentRandomFamilies,
+    layout.familyLabel ?? getStageFamilyLabel(layout.label),
+    CONFIG.randomFamilyHistorySize
+  );
+  rememberRecentValue(
+    recentRandomStyles,
+    layout.solutionStyle ?? "mixed",
+    CONFIG.randomStyleHistorySize
+  );
+
+  return buildRandomStageDefinition(layout);
+};
+
+globalThis.closedLoopDebug.findStageAutoSolveSolutionSync = findStageAutoSolveSolutionSync;
+globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
+
+if (!isRandomStageDefinitionSolvable(rememberedRandomStage)) {
+  const verifiedRandomStage = createRandomDesignedStage();
+  rememberedRandomStage = verifiedRandomStage;
+
+  if (gameState.mode === GAME_MODE.random) {
+    applyStage(verifiedRandomStage);
+  }
+}
+
+function handleCanvasClickAfterClear() {
+  if (!gameState.clear || gameState.mode !== GAME_MODE.random) {
+    return;
+  }
+
+  resetGame(true);
+}
+
+canvas.addEventListener("click", handleCanvasClickAfterClear);
+
+const ICON_SPRITE_SHEET_PATH = "sozai/icons.png";
+const ICON_SPRITE_DEFINITIONS = {
+  player: { x: 107, y: 339, width: 216, height: 222, padding: 3 },
+  goalOpen: { x: 383, y: 339, width: 220, height: 222, padding: 3 },
+  goalClosed: { x: 669, y: 339, width: 218, height: 222, padding: 3 },
+  key: { x: 1001, y: 353, width: 125, height: 208, padding: 6 },
+  bomb: { x: 120, y: 661, width: 178, height: 221, padding: 4 },
+  waterBucket: { x: 400, y: 684, width: 183, height: 198, padding: 4 },
+  emptyBucket: { x: 685, y: 684, width: 184, height: 198, padding: 4 },
+  wall: { x: 954, y: 683, width: 203, height: 199, padding: 1 },
+};
+
+const drawWallBlocksFallback = drawWallBlocks;
+const drawPlayerFallback = drawPlayer;
+const drawKeyFallback = drawKey;
+const drawGoalFallback = drawGoal;
+const drawBombsFallback = drawBombs;
+const drawDisarmItemsFallback = drawDisarmItems;
+
+function getIconSpriteState() {
+  if (!globalThis.__closedLoopIconSpriteState) {
+    globalThis.__closedLoopIconSpriteState = {
+      image: null,
+      loaded: false,
+      loading: false,
+      failed: false,
+    };
+  }
+
+  return globalThis.__closedLoopIconSpriteState;
+}
+
+function ensureIconSpriteSheet() {
+  const spriteState = getIconSpriteState();
+  if (spriteState.loaded || spriteState.loading || spriteState.failed) {
+    return spriteState;
+  }
+
+  if (typeof Image !== "function") {
+    spriteState.failed = true;
+    return spriteState;
+  }
+
+  const image = new Image();
+  spriteState.image = image;
+  spriteState.loading = true;
+  image.onload = () => {
+    spriteState.loading = false;
+    spriteState.loaded = true;
+    render();
+  };
+  image.onerror = () => {
+    spriteState.loading = false;
+    spriteState.failed = true;
+    render();
+  };
+  image.src = ICON_SPRITE_SHEET_PATH;
+
+  return spriteState;
+}
+
+function drawSpriteAtCell(spriteKey, cell, fallbackDraw) {
+  const spriteState = ensureIconSpriteSheet();
+  const sprite = ICON_SPRITE_DEFINITIONS[spriteKey];
+
+  if (!spriteState.loaded || !spriteState.image || !sprite) {
+    fallbackDraw();
+    return;
+  }
+
+  const pixelX = cell.x * CONFIG.cellSize;
+  const pixelY = cell.y * CONFIG.cellSize;
+  const innerSize = CONFIG.cellSize - sprite.padding * 2;
+  const scale = Math.min(innerSize / sprite.width, innerSize / sprite.height);
+  const drawWidth = Math.max(1, Math.round(sprite.width * scale));
+  const drawHeight = Math.max(1, Math.round(sprite.height * scale));
+  const drawX = pixelX + Math.round((CONFIG.cellSize - drawWidth) / 2);
+  const drawY = pixelY + Math.round((CONFIG.cellSize - drawHeight) / 2);
+
+  context.save();
+  context.imageSmoothingEnabled = false;
+  context.drawImage(
+    spriteState.image,
+    sprite.x,
+    sprite.y,
+    sprite.width,
+    sprite.height,
+    drawX,
+    drawY,
+    drawWidth,
+    drawHeight
+  );
+  context.restore();
+}
+
+function drawWallBlocks() {
+  if (gameState.wallBlocks.length === 0) {
+    return;
+  }
+
+  for (const wallBlock of gameState.wallBlocks) {
+    drawSpriteAtCell("wall", wallBlock, () => {
+      drawCells(
+        [wallBlock],
+        CONFIG.wallBlockFillStyle,
+        CONFIG.wallBlockStrokeStyle
+      );
+    });
+  }
+};
+
+drawPlayer = function drawPlayerWithIcon() {
+  drawSpriteAtCell("player", gameState.player, () => {
+    drawPlayerFallback();
+  });
+};
+
+drawKey = function drawKeyWithIcon() {
+  if (gameState.key.collected) {
+    return;
+  }
+
+  drawSpriteAtCell("key", gameState.key.position, () => {
+    drawKeyFallback();
+  });
+};
+
+drawGoal = function drawGoalWithIcon() {
+  drawSpriteAtCell(
+    gameState.key.collected ? "goalOpen" : "goalClosed",
+    gameState.goal.position,
+    () => {
+      drawGoalFallback();
+    }
+  );
+};
+
+drawBombs = function drawBombsWithIcons() {
+  const spriteState = ensureIconSpriteSheet();
+  if (!spriteState.loaded || !spriteState.image) {
+    drawBombsFallback();
+    return;
+  }
+
+  const explodedBombKeys = buildCellKeySet(gameState.explodedBombs);
+
+  for (const bomb of gameState.bombs) {
+    if (explodedBombKeys.has(getCellKey(bomb))) {
+      continue;
+    }
+
+    drawSpriteAtCell("bomb", bomb, drawBombsFallback);
+  }
+};
+
+drawDisarmItems = function drawDisarmItemsWithIcons() {
+  const spriteState = ensureIconSpriteSheet();
+  if (!spriteState.loaded || !spriteState.image) {
+    drawDisarmItemsFallback();
+    return;
+  }
+
+  for (const item of gameState.disarmItems) {
+    drawSpriteAtCell("waterBucket", item, drawDisarmItemsFallback);
+  }
+};
+
+getMakerToolHint = function getMakerToolHintWithBuckets(tool) {
+  const hints = {
+    [MAKER_TOOL.player]:
+      "プレイヤー開始位置を置きます。このマスを含む空間がプレイヤー側として判定されます。",
+    [MAKER_TOOL.key]:
+      "鍵を置きます。プレイヤーと同じ空間に入った瞬間に取得されます。",
+    [MAKER_TOOL.goal]:
+      "ゴールを置きます。鍵取得後にプレイヤーと同じ空間へ入るとクリアです。",
+    [MAKER_TOOL.bomb]:
+      "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
+    [MAKER_TOOL.disarm]:
+      "水入りバケツを置きます。プレイヤーのいない空間で爆弾と同数なら対消滅します。",
+    [MAKER_TOOL.wall]:
+      "壁ブロックを置きます。線は通れず、外壁と組み合わせたループ形状にも影響します。",
+    [MAKER_TOOL.erase]:
+      "爆弾、水入りバケツ、壁ブロックを消します。",
+  };
+
+  return hints[tool] ?? "";
+};
+
+buildMakerObjectSummary = function buildMakerObjectSummaryWithBuckets() {
+  return [
+    `爆弾${gameState.bombs.length}個`,
+    `水入りバケツ${gameState.disarmItems.length}個`,
+    `壁${gameState.wallBlocks.length}個`,
+  ].join(" / ");
+};
+
+getHudInstructionText = function getHudInstructionTextWithBuckets() {
+  if (gameState.mode === GAME_MODE.maker) {
+    return gameState.maker.editing
+      ? "配置ツールを選んでキャンバスをクリックするとオブジェクトを置けます。"
+      : "テストプレイ中です。プレイヤーは移動せず、ループの切り方だけで空間の所属を変えます。";
+  }
+
+  if (gameState.mode === GAME_MODE.tutorial) {
+    return "チュートリアルです。プレイヤーは移動せず、ループでプレイヤー側の空間を調整して各ルールを確認します。";
+  }
+
+  if (gameState.mode === getStageModeKey()) {
+    return "番号指定で読み込んだJSONステージです。プレイヤーは移動せず、ループだけで空間を切り替えます。";
+  }
+
+  return "ランダムモードです。オブジェクトのあるマスを避けて閉ループを作り、プレイヤーを含む空間に鍵とゴールをそろえます。プレイヤーのいない空間では、爆弾と水入りバケツが同数で対消滅します。"
+    + CONTROL_HINT_TEXT;
+};
+
+render();
+
+async function startMakerAutoSolve() {
+  if (gameState.mode !== GAME_MODE.maker) {
+    return;
+  }
+
+  const autoSolveState = getMakerAutoSolveState();
+  if (autoSolveState.running) {
+    return;
+  }
+
+  const stageToSolve = cloneStageDefinition(gameState.stage);
+  stageToSolve.mode = GAME_MODE.maker;
+  stageToSolve.makerEditing = false;
+  stageToSolve.selectedMakerTool = gameState.maker.selectedTool;
+  stageToSolve.instructionText = MAKER_TEST_INSTRUCTION_TEXT;
+
+  autoSolveState.running = true;
+  autoSolveState.runId += 1;
+  autoSolveState.lastSolution = null;
+  const runId = autoSolveState.runId;
+  setMakerAutoSolveStatus("自動解法を準備しています...");
+  render();
+
+  try {
+    const solution = await findStageAutoSolveSolution(stageToSolve, runId);
+    if (isAutoSolveRunCancelled(runId)) {
+      return;
+    }
+
+    if (!solution || solution.length === 0) {
+      autoSolveState.running = false;
+      setMakerAutoSolveStatus(
+        "現状の自動ソルバでは、解ける手順が見つかりませんでした。",
+        true
+      );
+      render();
+      return;
+    }
+
+    autoSolveState.lastSolution = solution;
+    setMakerAutoSolveStatus(
+      `${solution.length}手の解法が見つかりました。再生します...`
+    );
+    render();
+
+    const solved = await playAutoSolveSolution(stageToSolve, solution, runId);
+    if (isAutoSolveRunCancelled(runId)) {
+      return;
+    }
+
+    autoSolveState.running = false;
+    setMakerAutoSolveStatus(
+      solved
+        ? `${solution.length}手で自動クリアしました。`
+        : "解法の再生中に手順を再現できませんでした。",
+      !solved
+    );
+    render();
+  } catch (error) {
+    if (isAutoSolveRunCancelled(runId)) {
+      return;
+    }
+
+    autoSolveState.running = false;
+    setMakerAutoSolveStatus(`自動解法に失敗しました: ${error.message}`, true);
+    render();
+  }
+}
+
+const renderWithoutAutoSolveHud = render;
+render = function renderWithAutoSolveHud() {
+  renderWithoutAutoSolveHud();
+  syncMakerAutoSolveHud();
+};
+
+function registerMakerAutoSolveCancelHandlers() {
+  const cancelMessage = "自動解法を中断しました。";
+  const clickTargets = [
+    resetButton,
+    clearLoopButton,
+    randomModeButton,
+    tutorialModeButton,
+    makerModeButton,
+    tutorialPrevButton,
+    tutorialNextButton,
+    makerApplySizeButton,
+    makerResetButton,
+    makerTestButton,
+    makerEditButton,
+    getStageJsonUi().loadStageButton,
+    getStageJsonUi().chooseStageFolderButton,
+  ];
+
+  for (const target of clickTargets) {
+    target?.addEventListener("click", () => {
+      cancelMakerAutoSolve(cancelMessage);
+    });
+  }
+
+  canvas.addEventListener(
+    "mousedown",
+    () => {
+      cancelMakerAutoSolve(cancelMessage);
+    },
+    true
+  );
+
+  document.addEventListener(
+    "keydown",
+    () => {
+      cancelMakerAutoSolve(cancelMessage);
+    },
+    true
+  );
+}
+
+getMakerAutoSolveUi().button?.addEventListener("click", () => {
+  void startMakerAutoSolve();
+});
+registerMakerAutoSolveCancelHandlers();
+globalThis.closedLoopDebug.findStageAutoSolveSolution = findStageAutoSolveSolution;
+globalThis.closedLoopDebug.startMakerAutoSolve = startMakerAutoSolve;
+render();
+
+function updateStatus() {
+  if (isMakerEditing()) {
+    gameState.status = STATUS.makerEdit;
+    return;
+  }
+
+  if (gameState.gameOver) {
+    gameState.status = STATUS.gameOver;
+    return;
+  }
+
+  if (gameState.clear) {
+    gameState.status = STATUS.clear;
+    return;
+  }
+
+  if (gameState.drawing.active) {
+    gameState.status = STATUS.drawing;
+    return;
+  }
+
+  gameState.status = gameState.loop ? "ループ成立中" : STATUS.idle;
+}
+
+function handleKeyDown(event) {
+  const key = event.key.toLowerCase();
+
+  if (key === "r") {
+    event.preventDefault();
+    resetGame(event.shiftKey);
+    return;
+  }
+
+  if ([
+    "arrowup",
+    "arrowdown",
+    "arrowleft",
+    "arrowright",
+    "w",
+    "a",
+    "s",
+    "d",
+  ].includes(key)) {
+    event.preventDefault();
+  }
+}
+
+function getMakerToolHint(tool) {
+  const hints = {
+    [MAKER_TOOL.player]:
+      "プレイヤー開始位置を置きます。このマスを含む空間がプレイヤー側として判定されます。",
+    [MAKER_TOOL.key]:
+      "鍵を置きます。プレイヤーと同じ空間に入った瞬間に取得されます。",
+    [MAKER_TOOL.goal]:
+      "ゴールを置きます。鍵取得後にプレイヤーと同じ空間へ入るとクリアです。",
+    [MAKER_TOOL.bomb]:
+      "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
+    [MAKER_TOOL.disarm]:
+      "水入りバケツを置きます。プレイヤーのいない空間で爆弾と同数なら対消滅します。",
+    [MAKER_TOOL.wall]:
+      "壁ブロックを置きます。線は通れず、外壁と組み合わせたループ形状にも影響します。",
+    [MAKER_TOOL.erase]:
+      "爆弾、水入りバケツ、壁ブロックを消します。",
+  };
+
+  return hints[tool] ?? "";
+}
+
+function getHudInstructionText() {
+  if (gameState.mode === GAME_MODE.maker) {
+    return gameState.maker.editing
+      ? "配置ツールを選んでキャンバスをクリックするとオブジェクトを置けます。"
+      : "テストプレイ中です。プレイヤーは移動せず、ループの切り方だけで空間の所属を変えます。";
+  }
+
+  if (gameState.mode === GAME_MODE.tutorial) {
+    return "チュートリアルです。プレイヤーは移動せず、ループでプレイヤー側の空間を調整して各ルールを確認します。";
+  }
+
+  if (gameState.mode === getStageModeKey()) {
+    return "番号指定で読み込んだJSONステージです。プレイヤーは移動せず、ループだけで空間を切り替えます。";
+  }
+
+  return RANDOM_STAGE_INSTRUCTION_TEXT;
+}
+
+function getHudStatusLabel() {
+  if (isMakerEditing()) {
+    return "メーカー編集中";
+  }
+
+  if (gameState.gameOver) {
+    return "ゲームオーバー";
+  }
+
+  if (gameState.clear) {
+    return "クリア";
+  }
+
+  if (gameState.drawing.active) {
+    return "描画中";
+  }
+
+  if (!gameState.loop) {
+    return "待機中";
+  }
+
+  return "ループ成立中";
+}
+
+function createAutoSolveSearchState(stage) {
+  return {
+    keyCollected: Boolean(stage.keyInitiallyCollected),
+    bombs: clonePositions(stage.bombs),
+    disarmItems: clonePositions(stage.disarmItems),
+    clear: false,
+    history: [],
+  };
+}
+
+function getAutoSolvePositionSignature(positions) {
+  return clonePositions(positions)
+    .sort(compareGridPositions)
+    .map(getCellKey)
+    .join("|");
+}
+
+function serializeAutoSolveSearchState(state) {
+  return [
+    state.keyCollected ? "1" : "0",
+    getAutoSolvePositionSignature(state.bombs),
+    getAutoSolvePositionSignature(state.disarmItems),
+  ].join("||");
+}
+
+function buildAutoSolveForbiddenKeys(stage, searchState) {
+  const forbiddenKeys = new Set([
+    getCellKey(stage.playerStart),
+    getCellKey(stage.goalPosition),
+    ...searchState.bombs.map(getCellKey),
+    ...searchState.disarmItems.map(getCellKey),
+  ]);
+
+  if (!searchState.keyCollected) {
+    forbiddenKeys.add(getCellKey(stage.keyPosition));
+  }
+
+  return forbiddenKeys;
+}
+
+function buildAutoSolveNextState(stage, currentState, loopCandidate) {
+  const playerSpaceId = getLoopSpaceIdFromPosition(loopCandidate, stage.playerStart);
+  if (playerSpaceId === null) {
+    return null;
+  }
+
+  const bombsBySpace = groupPositionsByLoopSpaceForAutoSolve(
+    currentState.bombs,
+    loopCandidate
+  );
+  const disarmBySpace = groupPositionsByLoopSpaceForAutoSolve(
+    currentState.disarmItems,
+    loopCandidate
+  );
+  const bombsInPlayerSpace = bombsBySpace.get(playerSpaceId) || [];
+
+  if (bombsInPlayerSpace.length > 0) {
+    return null;
+  }
+
+  const removedBombKeys = new Set();
+  const removedDisarmKeys = new Set();
+  const targetSpaceIds = new Set([
+    ...bombsBySpace.keys(),
+    ...disarmBySpace.keys(),
+  ]);
+
+  for (const spaceId of targetSpaceIds) {
+    if (spaceId === playerSpaceId) {
+      continue;
+    }
+
+    const bombsInSpace = bombsBySpace.get(spaceId) || [];
+    const disarmItemsInSpace = disarmBySpace.get(spaceId) || [];
+
+    if (
+      bombsInSpace.length > 0 &&
+      bombsInSpace.length === disarmItemsInSpace.length
+    ) {
+      for (const bomb of bombsInSpace) {
+        removedBombKeys.add(getCellKey(bomb));
+      }
+
+      for (const item of disarmItemsInSpace) {
+        removedDisarmKeys.add(getCellKey(item));
+      }
+    }
+  }
+
+  const nextBombs = currentState.bombs.filter(
+    (bomb) => !removedBombKeys.has(getCellKey(bomb))
+  );
+  const nextDisarmItems = currentState.disarmItems.filter(
+    (item) => !removedDisarmKeys.has(getCellKey(item))
+  );
+  const nextKeyCollected =
+    currentState.keyCollected ||
+    getLoopSpaceIdFromPosition(loopCandidate, stage.keyPosition) === playerSpaceId;
+  const goalSharesPlayerSpace =
+    getLoopSpaceIdFromPosition(loopCandidate, stage.goalPosition) === playerSpaceId;
+  const currentBombSignature = getAutoSolvePositionSignature(currentState.bombs);
+  const currentDisarmSignature = getAutoSolvePositionSignature(currentState.disarmItems);
+  const nextBombSignature = getAutoSolvePositionSignature(nextBombs);
+  const nextDisarmSignature = getAutoSolvePositionSignature(nextDisarmItems);
+
+  if (
+    nextKeyCollected === currentState.keyCollected &&
+    currentBombSignature === nextBombSignature &&
+    currentDisarmSignature === nextDisarmSignature &&
+    !(nextKeyCollected && goalSharesPlayerSpace)
+  ) {
+    return null;
+  }
+
+  return {
+    keyCollected: nextKeyCollected,
+    bombs: nextBombs,
+    disarmItems: nextDisarmItems,
+    clear: nextKeyCollected && goalSharesPlayerSpace,
+    history: [
+      ...currentState.history,
+      {
+        drawnCells: clonePositions(loopCandidate.drawnCells),
+        kind: loopCandidate.kind,
+      },
+    ],
+  };
+}
+
+async function findStageAutoSolveSolution(stage, runId = null) {
+  const candidates = await buildAutoSolveCandidates(stage, runId);
+  if (runId !== null && isAutoSolveRunCancelled(runId)) {
+    return null;
+  }
+
+  const initialState = createAutoSolveSearchState(stage);
+  const queue = [initialState];
+  const visitedStates = new Set([serializeAutoSolveSearchState(initialState)]);
+  let exploredStates = 0;
+
+  while (queue.length > 0 && visitedStates.size <= AUTO_SOLVER_CONFIG.maxVisitedStates) {
+    if (runId !== null && isAutoSolveRunCancelled(runId)) {
+      return null;
+    }
+
+    const currentState = queue.shift();
+    exploredStates += 1;
+
+    if (exploredStates % AUTO_SOLVER_CONFIG.searchYieldInterval === 0) {
+      setMakerAutoSolveStatus(
+        `自動解法を探索中... ${exploredStates}状態 / ${visitedStates.size}記録`
+      );
+      render();
+      await waitForAutoSolveTick();
+    }
+
+    if (currentState.clear) {
+      return currentState.history;
+    }
+
+    if (currentState.history.length >= AUTO_SOLVER_CONFIG.maxSteps) {
+      continue;
+    }
+
+    const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, currentState);
+
+    for (const loopCandidate of candidates) {
+      if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
+        continue;
+      }
+
+      const nextState = buildAutoSolveNextState(stage, currentState, loopCandidate);
+      if (!nextState) {
+        continue;
+      }
+
+      if (nextState.clear) {
+        return nextState.history;
+      }
+
+      const signature = serializeAutoSolveSearchState(nextState);
+      if (visitedStates.has(signature)) {
+        continue;
+      }
+
+      visitedStates.add(signature);
+      queue.push(nextState);
+    }
+  }
+
+  return null;
+}
+
+async function playAutoSolveSolution(stage, solution, runId) {
+  applyStage(cloneStageDefinition(stage));
+
+  for (const step of solution) {
+    if (isAutoSolveRunCancelled(runId)) {
+      return false;
+    }
+
+    clearLoopStateWithoutRender();
+    gameState.drawing.active = true;
+    gameState.drawing.cells = clonePositions(step.drawnCells);
+    updateStatus();
+    render();
+    await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopPreviewMs);
+
+    if (isAutoSolveRunCancelled(runId)) {
+      return false;
+    }
+
+    const nextLoop = buildLoopFromCells(
+      step.drawnCells,
+      activeBoardSize,
+      gameState.wallBlocks
+    );
+    if (!nextLoop) {
+      return false;
+    }
+
+    gameState.loop = nextLoop;
+    gameState.drawing.active = false;
+    gameState.drawing.cells = [];
+    applyLoopEffects();
+    render();
+    await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopApplyMs);
+  }
+
+  return gameState.clear;
+}

@@ -13,7 +13,7 @@
         <p class="eyebrow">Canvas Puzzle Prototype</p>
         <h1>Closed Loop</h1>
         <p class="subtitle">
-          マスを塗って閉ループを作り、同じ空間だけを移動して攻略するパズルです。
+          マスを塗って閉ループを作り、空間の分断を利用して鍵とゴールを安全に確保するパズルです。
         </p>
       </header>
 
@@ -31,14 +31,35 @@
           <button id="makerModeButton" type="button">ステージメーカー</button>
         </div>
 
+        <section class="stage-loader" aria-label="ステージJSON読み込み">
+          <div class="stage-loader-row">
+            <label class="stage-field" for="stageNumberInput">
+              ステージ番号
+              <input id="stageNumberInput" type="number" min="1" step="1" value="1">
+            </label>
+            <button id="loadStageButton" type="button">番号でプレイ</button>
+            <button id="chooseStageFolderButton" type="button">JSONファイルを選ぶ</button>
+            <input
+              id="stageFolderInput"
+              type="file"
+              accept=".json,application/json"
+              multiple
+              hidden
+            >
+          </div>
+          <p id="stageLoaderStatus" class="status-text">
+            `001.json` のような番号付きJSONファイルを選ぶと、番号指定でプレイできます。
+          </p>
+        </section>
+
         <p id="instructionText" class="instructions">
-          マウスドラッグでマスを塗ってループを描きます。矢印キーまたはWASDで移動します。
+          マウスドラッグでマスを塗って閉ループを作ります。矢印キーまたはWASDで移動できます。
         </p>
 
         <div class="status-grid">
           <p><span class="label">鍵</span><span id="keyStatus">未取得</span></p>
           <p><span class="label">爆弾</span><span id="bombStatus">0個</span></p>
-          <p><span class="label">ニッパー</span><span id="disarmStatus">0個</span></p>
+          <p><span class="label">水入りバケツ</span><span id="disarmStatus">0個</span></p>
           <p><span class="label">状態</span><span id="stateStatus">待機中</span></p>
         </div>
 
@@ -63,7 +84,7 @@
               <input id="makerHeightInput" type="number" min="6" max="14" value="10">
             </label>
             <button id="makerApplySizeButton" type="button">サイズを適用</button>
-            <button id="makerResetButton" type="button">初期配置に戻す</button>
+            <button id="makerResetButton" type="button">配置を初期化</button>
           </div>
 
           <div class="maker-palette" aria-label="配置ツール">
@@ -71,7 +92,7 @@
             <button id="makerToolKey" class="maker-tool" type="button">鍵</button>
             <button id="makerToolGoal" class="maker-tool" type="button">ゴール</button>
             <button id="makerToolBomb" class="maker-tool" type="button">爆弾</button>
-            <button id="makerToolDisarm" class="maker-tool" type="button">ニッパー</button>
+            <button id="makerToolDisarm" class="maker-tool" type="button">水入りバケツ</button>
             <button id="makerToolWall" class="maker-tool" type="button">壁ブロック</button>
             <button id="makerToolErase" class="maker-tool" type="button">消しゴム</button>
           </div>
@@ -79,7 +100,24 @@
           <div class="button-row maker-action-row">
             <button id="makerTestButton" type="button">テストプレイ開始</button>
             <button id="makerEditButton" type="button" hidden>編集に戻る</button>
+            <button id="makerAutoSolveButton" type="button">自動で解く</button>
           </div>
+          <p id="makerSolveStatus" class="status-text"></p>
+
+          <div class="maker-export-row">
+            <label class="maker-field" for="makerExportNumberInput">
+              JSON番号
+              <input id="makerExportNumberInput" type="number" min="1" step="1" value="1">
+            </label>
+            <button id="makerExportJsonButton" type="button">JSON出力</button>
+          </div>
+          <p id="makerExportStatus" class="status-text"></p>
+          <textarea
+            id="makerJsonOutput"
+            class="maker-json-output"
+            readonly
+            placeholder="ここにステージJSONが表示されます。"
+          ></textarea>
 
           <p id="makerHint" class="maker-hint"></p>
         </section>
