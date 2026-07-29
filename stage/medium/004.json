@@ -5,12 +5,12 @@
     "height": 10
   },
   "playerStart": {
-    "x": 1,
+    "x": 9,
     "y": 8
   },
   "keyPosition": {
-    "x": 2,
-    "y": 6
+    "x": 3,
+    "y": 7
   },
   "goalPosition": {
     "x": 8,
@@ -18,40 +18,48 @@
   },
   "bombs": [
     {
+      "x": 8,
+      "y": 6
+    },
+    {
       "x": 3,
       "y": 3
     },
     {
-      "x": 7,
-      "y": 2
+      "x": 4,
+      "y": 1
     }
   ],
   "disarmItems": [
     {
-      "x": 4,
-      "y": 1
+      "x": 2,
+      "y": 0
     },
     {
-      "x": 7,
-      "y": 8
+      "x": 3,
+      "y": 6
     }
   ],
   "wallBlocks": [
     {
-      "x": 1,
-      "y": 4
-    },
-    {
-      "x": 2,
-      "y": 4
+      "x": 4,
+      "y": 0
     },
     {
       "x": 3,
-      "y": 4
+      "y": 0
+    },
+    {
+      "x": 3,
+      "y": 1
+    },
+    {
+      "x": 2,
+      "y": 1
     }
   ],
-  "designLabel": "Medium 004 - 遠隔分断 / 270度回転 / 対消滅型",
-  "designNote": "fixed pack / family=遠隔分断 / style=cleanup / minSteps=2 / winningFirstMoves=108",
+  "designLabel": "Normal 004 - 外縁分業 / 180度回転",
+  "designNote": "Normal pack / migrated from high / fixed pack / family=外縁分業 / style=relay / minSteps=3 / winningFirstMoves=8",
   "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }

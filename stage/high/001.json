@@ -5,61 +5,69 @@
     "height": 10
   },
   "playerStart": {
-    "x": 4,
-    "y": 9
+    "x": 8,
+    "y": 0
   },
   "keyPosition": {
-    "x": 0,
-    "y": 7
+    "x": 7,
+    "y": 3
   },
   "goalPosition": {
-    "x": 7,
-    "y": 2
+    "x": 1,
+    "y": 1
   },
   "bombs": [
     {
-      "x": 1,
-      "y": 0
-    },
-    {
-      "x": 4,
-      "y": 4
-    },
-    {
       "x": 6,
-      "y": 7
+      "y": 1
+    },
+    {
+      "x": 3,
+      "y": 9
+    },
+    {
+      "x": 1,
+      "y": 5
     }
   ],
   "disarmItems": [
     {
-      "x": 3,
+      "x": 0,
       "y": 7
     },
     {
-      "x": 7,
-      "y": 3
+      "x": 6,
+      "y": 6
     }
   ],
   "wallBlocks": [
     {
-      "x": 7,
-      "y": 4
-    },
-    {
-      "x": 8,
-      "y": 4
-    },
-    {
-      "x": 9,
-      "y": 4
-    },
-    {
-      "x": 9,
+      "x": 0,
       "y": 5
+    },
+    {
+      "x": 0,
+      "y": 6
+    },
+    {
+      "x": 1,
+      "y": 6
+    },
+    {
+      "x": 1,
+      "y": 7
+    },
+    {
+      "x": 4,
+      "y": 6
+    },
+    {
+      "x": 9,
+      "y": 7
     }
   ],
-  "designLabel": "High 001 - 三段迂回 / 主対角反転",
-  "designNote": "fixed pack / family=三段迂回 / style=gauntlet / minSteps=3 / winningFirstMoves=22",
+  "designLabel": "Hard 001 - single-lane / 副対角反転",
+  "designNote": "Hard pack / family=single-lane / style=needle / minSteps=3 / forcedSteps=1 / winningFirstMoves=1 / optimalEstimate=244",
   "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }
