@@ -6441,6 +6441,7 @@ function ensureIconSpriteSheet() {
   image.onload = () => {
     spriteState.loading = false;
     spriteState.loaded = true;
+    renderRuleSpriteIcons();
     render();
   };
   image.onerror = () => {
@@ -6451,6 +6452,52 @@ function ensureIconSpriteSheet() {
   image.src = ICON_SPRITE_SHEET_PATH;
 
   return spriteState;
+}
+
+function renderRuleSpriteIcons() {
+  const spriteState = ensureIconSpriteSheet();
+  if (!spriteState.loaded || !spriteState.image || typeof document === "undefined") {
+    return;
+  }
+
+  const canvases = document.querySelectorAll(".rule-sprite-icon[data-rule-sprite]");
+  for (const canvas of canvases) {
+    const spriteKey = canvas.dataset.ruleSprite;
+    const sprite = ICON_SPRITE_DEFINITIONS[spriteKey];
+    if (!sprite) {
+      continue;
+    }
+
+    const iconContext = canvas.getContext("2d");
+    if (!iconContext) {
+      continue;
+    }
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const innerPadding = 8;
+    const availableWidth = Math.max(1, width - innerPadding * 2);
+    const availableHeight = Math.max(1, height - innerPadding * 2);
+    const scale = Math.min(availableWidth / sprite.width, availableHeight / sprite.height);
+    const drawWidth = Math.max(1, Math.round(sprite.width * scale));
+    const drawHeight = Math.max(1, Math.round(sprite.height * scale));
+    const drawX = Math.round((width - drawWidth) / 2);
+    const drawY = Math.round((height - drawHeight) / 2);
+
+    iconContext.clearRect(0, 0, width, height);
+    iconContext.imageSmoothingEnabled = false;
+    iconContext.drawImage(
+      spriteState.image,
+      sprite.x,
+      sprite.y,
+      sprite.width,
+      sprite.height,
+      drawX,
+      drawY,
+      drawWidth,
+      drawHeight
+    );
+  }
 }
 
 function drawSpriteAtCell(spriteKey, cell, fallbackDraw) {
@@ -6608,6 +6655,7 @@ getHudInstructionText = function getHudInstructionTextWithBuckets() {
 };
 
 render();
+renderRuleSpriteIcons();
 
 async function startMakerAutoSolve() {
   if (gameState.mode !== GAME_MODE.maker) {

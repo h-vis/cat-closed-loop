@@ -332,57 +332,17 @@ button:disabled {
 }
 
 .rule-icon {
-  --icon-scale: 0.22;
-  --icon-sheet-size: calc(1254px * var(--icon-scale));
-  --icon-x: 0;
-  --icon-y: 0;
   width: 72px;
   height: 72px;
   margin-bottom: 12px;
   border-radius: 18px;
   background-color: #edf4fb;
-  background-image: url("sozai/icons.png");
-  background-repeat: no-repeat;
-  background-size: var(--icon-sheet-size) var(--icon-sheet-size);
-  background-position:
-    calc(var(--icon-x) * var(--icon-scale) * -1px)
-    calc(var(--icon-y) * var(--icon-scale) * -1px);
   box-shadow: inset 0 0 0 1px rgba(20, 55, 90, 0.08);
 }
 
-.sprite-player {
-  --icon-x: 107;
-  --icon-y: 339;
-}
-
-.sprite-goal-open {
-  --icon-x: 383;
-  --icon-y: 339;
-}
-
-.sprite-goal-closed {
-  --icon-x: 669;
-  --icon-y: 339;
-}
-
-.sprite-key {
-  --icon-x: 1001;
-  --icon-y: 353;
-}
-
-.sprite-bomb {
-  --icon-x: 120;
-  --icon-y: 661;
-}
-
-.sprite-water-bucket {
-  --icon-x: 400;
-  --icon-y: 684;
-}
-
-.sprite-wall {
-  --icon-x: 954;
-  --icon-y: 683;
+.rule-sprite-icon {
+  display: block;
+  padding: 8px;
 }
 
 .sprite-loop {
