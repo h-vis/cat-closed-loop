@@ -3234,6 +3234,36 @@ function getStageJsonUi() {
   };
 }
 
+function getScreenUi() {
+  return {
+    gameScreen: document.getElementById("gameScreen"),
+    rulesScreen: document.getElementById("rulesScreen"),
+    openRulesButton: document.getElementById("openRulesButton"),
+    closeRulesButton: document.getElementById("closeRulesButton"),
+  };
+}
+
+function showGameScreen() {
+  const { gameScreen, rulesScreen } = getScreenUi();
+  if (gameScreen) {
+    gameScreen.hidden = false;
+  }
+   if (rulesScreen) {
+    rulesScreen.hidden = true;
+  }
+}
+
+function showRulesScreen() {
+  const { gameScreen, rulesScreen } = getScreenUi();
+  if (gameScreen) {
+    gameScreen.hidden = true;
+  }
+  if (rulesScreen) {
+    rulesScreen.hidden = false;
+  }
+  globalThis.scrollTo?.({ top: 0, behavior: "smooth" });
+}
+
 function setStatusText(element, message, isError = false) {
   if (!element) {
     return;
@@ -4099,6 +4129,12 @@ globalThis.closedLoopDebug.loadStageByNumber = playStageByNumber;
 globalThis.closedLoopDebug.exportMakerStageJson = exportMakerStageJson;
 getStageJsonUi().stageDifficultySelect?.addEventListener("change", () => {
   handleStageDifficultyChange();
+});
+getScreenUi().openRulesButton?.addEventListener("click", () => {
+  showRulesScreen();
+});
+getScreenUi().closeRulesButton?.addEventListener("click", () => {
+  showGameScreen();
 });
 getStageJsonUi().loadStageButton?.addEventListener("click", () => {
   void playStageByNumber();
