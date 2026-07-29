@@ -49,9 +49,9 @@ const STAGE_DIFFICULTY = {
 };
 
 const STAGE_PACKS = {
-  [STAGE_DIFFICULTY.low]: { label: "Low", directory: "low", count: 10 },
-  [STAGE_DIFFICULTY.medium]: { label: "Medium", directory: "medium", count: 10 },
-  [STAGE_DIFFICULTY.high]: { label: "High", directory: "high", count: 10 },
+  [STAGE_DIFFICULTY.low]: { label: "Easy", directory: "low", count: 10 },
+  [STAGE_DIFFICULTY.medium]: { label: "Normal", directory: "medium", count: 10 },
+  [STAGE_DIFFICULTY.high]: { label: "Hard", directory: "high", count: 10 },
 };
 
 const DEFAULT_STAGE_DIFFICULTY = STAGE_DIFFICULTY.low;
@@ -3480,25 +3480,29 @@ function refreshStageNumberInputs(resetToFirst = false) {
   const { stageNumberInput, makerExportNumberInput } = getStageJsonUi();
 
   if (stageNumberInput) {
-    stageNumberInput.min = "1";
-    if (stageNumbers.length > 0) {
-      stageNumberInput.max = String(stageNumbers[stageNumbers.length - 1]);
-    } else {
-      stageNumberInput.removeAttribute("max");
-    }
-  }
-
-  if (
-    stageNumberInput &&
-    stageNumbers.length > 0 &&
-    (resetToFirst || !isElementFocused(stageNumberInput))
-  ) {
     const currentValue = Number.parseInt(stageNumberInput.value, 10);
-    stageNumberInput.value = String(
-      !resetToFirst && stageNumbers.includes(currentValue)
+    const nextValue =
+      stageNumbers.length > 0 &&
+      !resetToFirst &&
+      stageNumbers.includes(currentValue)
         ? currentValue
-        : stageNumbers[0]
-    );
+        : stageNumbers[0] ?? 1;
+
+    if (stageNumberInput.tagName === "SELECT") {
+      stageNumberInput.innerHTML = stageNumbers
+        .map((stageNumber) => {
+          const stageNumberLabel = formatStageNumber(stageNumber);
+          return `<option value="${stageNumber}">${stageNumberLabel}</option>`;
+        })
+        .join("");
+    }
+
+    if (
+      stageNumbers.length > 0 &&
+      (resetToFirst || !isElementFocused(stageNumberInput) || stageNumberInput.tagName === "SELECT")
+    ) {
+      stageNumberInput.value = String(nextValue);
+    }
   }
 
   if (makerExportNumberInput && !isElementFocused(makerExportNumberInput)) {
@@ -4105,8 +4109,8 @@ getStageJsonUi().chooseStageFolderButton?.addEventListener("click", () => {
 getStageJsonUi().stageFolderInput?.addEventListener("change", (event) => {
   void handleStageFolderInputChange(event);
 });
-getStageJsonUi().stageNumberInput?.addEventListener("keydown", (event) => {
-  void handleStageNumberEnter(event);
+getStageJsonUi().stageNumberInput?.addEventListener("change", () => {
+  void playStageByNumber();
 });
 getStageJsonUi().makerExportJsonButton?.addEventListener("click", () => {
   void exportMakerStageJson();
