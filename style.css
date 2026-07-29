@@ -176,13 +176,15 @@ button:disabled {
 .top-stage-loader {
   margin-top: 10px;
   margin-bottom: 0;
-  padding: 8px 10px;
+  padding: 6px 8px;
 }
 
 .top-stage-loader-row {
   flex-wrap: nowrap;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 4px;
+  align-items: center;
+  font-size: 0.78rem;
 }
 
 .stage-loader-row,
@@ -207,18 +209,33 @@ button:disabled {
   font-weight: 700;
   color: var(--text);
   white-space: nowrap;
+  font-size: 0.78rem;
 }
 
 .stage-field input,
 .stage-field select {
-  width: 82px;
+  width: 68px;
   min-width: 0;
-  padding: 7px 8px;
+  padding: 5px 6px;
   border: 1px solid rgba(29, 49, 77, 0.2);
   border-radius: 12px;
   background: #ffffff;
   color: var(--text);
   font: inherit;
+  font-size: 0.78rem;
+}
+
+.top-stage-loader-row .stage-field {
+  flex: 0 1 auto;
+}
+
+.top-stage-loader-row button {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 0.76rem;
+  white-space: nowrap;
 }
 
 .status-text {
@@ -325,6 +342,12 @@ button:disabled {
     flex-direction: column;
   }
 
+  .top-stage-loader-row {
+    flex-direction: row;
+    gap: 3px;
+    font-size: 0.7rem;
+  }
+
   .maker-field,
   .stage-field {
     justify-content: flex-start;
@@ -340,14 +363,24 @@ button:disabled {
 
   .top-stage-loader-row button {
     width: auto;
-    padding: 10px 12px;
+    padding: 6px 8px;
     flex: 0 0 auto;
+    font-size: 0.7rem;
   }
 
   .maker-field input,
   .stage-field input,
   .stage-field select {
-    width: 72px;
-    padding: 6px 7px;
+    width: 56px;
+    padding: 4px 5px;
+    font-size: 0.7rem;
+  }
+
+  .stage-row-label {
+    font-size: 0.7rem;
+  }
+
+  .top-stage-loader {
+    padding: 5px 6px;
   }
 }
