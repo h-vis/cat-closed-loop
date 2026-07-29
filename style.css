@@ -42,27 +42,13 @@ body {
 }
 
 .panel-header {
-  margin-bottom: 20px;
-}
-
-.eyebrow {
-  margin: 0 0 6px;
-  color: var(--accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  margin-bottom: 14px;
 }
 
 .panel-header h1 {
   margin: 0;
   font-size: clamp(2rem, 4vw, 2.7rem);
   line-height: 1.05;
-}
-
-.subtitle {
-  margin: 8px 0 0;
-  color: var(--muted);
 }
 
 #gameCanvas {
@@ -187,6 +173,17 @@ button:disabled {
   background: rgba(255, 255, 255, 0.88);
 }
 
+.top-stage-loader {
+  margin-top: 14px;
+  margin-bottom: 0;
+  padding: 10px 12px;
+}
+
+.top-stage-loader-row {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
 .stage-loader-row,
 .maker-export-row {
   display: flex;
@@ -205,8 +202,8 @@ button:disabled {
 
 .stage-field input,
 .stage-field select {
-  width: 96px;
-  padding: 10px 12px;
+  width: 88px;
+  padding: 8px 10px;
   border: 1px solid rgba(29, 49, 77, 0.2);
   border-radius: 12px;
   background: #ffffff;
@@ -330,6 +327,6 @@ button:disabled {
   .maker-field input,
   .stage-field input,
   .stage-field select {
-    width: 112px;
+    width: 88px;
   }
 }
