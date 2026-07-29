@@ -39,7 +39,22 @@ const GAME_MODE = {
   random: "random",
   tutorial: "tutorial",
   maker: "maker",
+  stage: "stage",
 };
+
+const STAGE_DIFFICULTY = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+};
+
+const STAGE_PACKS = {
+  [STAGE_DIFFICULTY.low]: { label: "Low", directory: "low", count: 10 },
+  [STAGE_DIFFICULTY.medium]: { label: "Medium", directory: "medium", count: 10 },
+  [STAGE_DIFFICULTY.high]: { label: "High", directory: "high", count: 10 },
+};
+
+const DEFAULT_STAGE_DIFFICULTY = STAGE_DIFFICULTY.low;
 
 const BASE_STAGE = {
   playerStart: { x: 1, y: 1 },
@@ -1343,16 +1358,26 @@ let rememberedMakerStage = createMakerStage();
 const gameState = createInitialState(initialRandomStage);
 
 function applyStage(stage) {
-  if (stage.mode === GAME_MODE.tutorial) {
-    rememberedTutorialIndex = stage.tutorialIndex ?? 0;
-  } else if (stage.mode === GAME_MODE.maker) {
-    rememberedMakerStage = cloneStageDefinition(stage);
+  const stageJsonState = getStageJsonState();
+  const nextStage = cloneStageDefinition(stage);
+
+  if (nextStage.mode === GAME_MODE.tutorial) {
+    rememberedTutorialIndex = nextStage.tutorialIndex ?? 0;
+  } else if (nextStage.mode === GAME_MODE.maker) {
+    rememberedMakerStage = cloneStageDefinition(nextStage);
+  } else if (nextStage.mode === getStageModeKey()) {
+    stageJsonState.rememberedStage = cloneStageDefinition(nextStage);
+    stageJsonState.rememberedStageNumber = nextStage.stageNumber ?? null;
+    stageJsonState.rememberedStageDifficulty = normalizeStageDifficulty(
+      nextStage.stageDifficulty ?? stageJsonState.selectedDifficulty
+    );
+    stageJsonState.selectedDifficulty = stageJsonState.rememberedStageDifficulty;
   } else {
-    rememberedRandomStage = stage;
+    rememberedRandomStage = nextStage;
   }
 
-  Object.assign(gameState, createInitialState(stage));
-  updateCanvasMetrics(stage);
+  Object.assign(gameState, createInitialState(nextStage));
+  updateCanvasMetrics(nextStage);
   render();
 }
 
@@ -1571,14 +1596,24 @@ function clearLoop() {
 }
 
 function getCanvasPoint(event) {
+  const sourcePoint =
+    event.touches?.[0] ??
+    event.changedTouches?.[0] ??
+    event;
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
 
   return {
-    x: (event.clientX - rect.left) * scaleX,
-    y: (event.clientY - rect.top) * scaleY,
+    x: (sourcePoint.clientX - rect.left) * scaleX,
+    y: (sourcePoint.clientY - rect.top) * scaleY,
   };
+}
+
+function preventTouchBrowserAction(event) {
+  if (event.cancelable) {
+    event.preventDefault();
+  }
 }
 
 function getGridCellFromPoint(point) {
@@ -2327,6 +2362,8 @@ function appendDrawingPath(rawCell) {
 }
 
 function startDrawing(event) {
+  preventTouchBrowserAction(event);
+
   if (gameState.gameOver || gameState.clear) {
     return;
   }
@@ -2360,6 +2397,7 @@ function updateDrawing(event) {
     return;
   }
 
+  preventTouchBrowserAction(event);
   appendDrawingPath(getGridCellFromPoint(getCanvasPoint(event)));
   render();
 }
@@ -2393,6 +2431,7 @@ function finishDrawing(event) {
     return;
   }
 
+  preventTouchBrowserAction(event);
   appendDrawingPath(getGridCellFromPoint(getCanvasPoint(event)));
   finalizeLoop();
 }
@@ -2798,19 +2837,31 @@ function buildMakerObjectSummary() {
 function buildStageInfoText() {
   if (gameState.mode === GAME_MODE.tutorial) {
     const currentNumber = (gameState.tutorialIndex ?? 0) + 1;
-    return `チュートリアル ${currentNumber}/${TUTORIAL_STAGES.length}: ${gameState.stage.designLabel}\n${gameState.stage.designNote}`;
+    return `??????? ${currentNumber}/${TUTORIAL_STAGES.length}
+${gameState.stage.designNote ?? ""}`.trim();
+  }
+
+  if (gameState.mode === getStageModeKey()) {
+    const stageDifficulty = normalizeStageDifficulty(
+      gameState.stage.stageDifficulty ?? getStageJsonState().selectedDifficulty
+    );
+    const stageNumberLabel = gameState.stage.stageNumber != null
+      ? `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(gameState.stage.stageNumber)}`
+      : `${getStageDifficultyLabel(stageDifficulty)} JSON`;
+    const detail = gameState.stage.designNote || "???????????????????";
+    return `${stageNumberLabel}: ${gameState.stage.designLabel ?? "????????"}
+${detail}`;
   }
 
   if (gameState.mode === GAME_MODE.maker) {
     const boardSize = getStageBoardSize(gameState.stage);
-    const headline = gameState.maker.editing
-      ? "ステージメーカー 編集中"
-      : "ステージメーカー テストプレイ中";
-
-    return `${headline} ${boardSize.width}x${boardSize.height}\n選択中: ${MAKER_TOOL_LABELS[gameState.maker.selectedTool]} / ${buildMakerObjectSummary()}`;
+    const modeLabel = gameState.maker.editing ? "???" : "???????";
+    return `???????? ${modeLabel} ${boardSize.width}x${boardSize.height}
+${buildMakerObjectSummary()}`;
   }
 
-  return `ランダムステージ: ${gameState.stage.designNote}\nShift + R で新しいランダムステージを生成できます。`;
+  return `????????
+${gameState.stage.designNote ?? ""}`.trim();
 }
 
 function getHudInstructionText() {
@@ -3065,6 +3116,10 @@ globalThis.closedLoopDebug = {
 canvas.addEventListener("mousedown", startDrawing);
 canvas.addEventListener("mousemove", updateDrawing);
 window.addEventListener("mouseup", finishDrawing);
+canvas.addEventListener("touchstart", startDrawing, { passive: false });
+window.addEventListener("touchmove", updateDrawing, { passive: false });
+window.addEventListener("touchend", finishDrawing, { passive: false });
+window.addEventListener("touchcancel", finishDrawing, { passive: false });
 document.addEventListener("keydown", handleKeyDown);
 resetButton.addEventListener("click", () => resetGame(false));
 clearLoopButton.addEventListener("click", clearLoop);
@@ -3105,9 +3160,19 @@ function getStageJsonState() {
     globalThis.__closedLoopStageJsonState = {
       rememberedStage: null,
       rememberedStageNumber: null,
-      folderStagesByNumber: new Map(),
+      rememberedStageDifficulty: DEFAULT_STAGE_DIFFICULTY,
+      selectedDifficulty: DEFAULT_STAGE_DIFFICULTY,
+      folderStagesByDifficulty: {
+        [STAGE_DIFFICULTY.low]: new Map(),
+        [STAGE_DIFFICULTY.medium]: new Map(),
+        [STAGE_DIFFICULTY.high]: new Map(),
+      },
       directoryHandle: null,
-      directoryStageNumbers: [],
+      directoryStageNumbersByDifficulty: {
+        [STAGE_DIFFICULTY.low]: [],
+        [STAGE_DIFFICULTY.medium]: [],
+        [STAGE_DIFFICULTY.high]: [],
+      },
     };
   }
 
@@ -3116,6 +3181,7 @@ function getStageJsonState() {
 
 function getStageJsonUi() {
   return {
+    stageDifficultySelect: document.getElementById("stageDifficultySelect"),
     stageNumberInput: document.getElementById("stageNumberInput"),
     loadStageButton: document.getElementById("loadStageButton"),
     chooseStageFolderButton: document.getElementById("chooseStageFolderButton"),
@@ -3139,8 +3205,8 @@ function setStatusText(element, message, isError = false) {
 
 function getDefaultStageLoaderMessage() {
   return globalThis.location?.protocol === "file:"
-    ? "`index.html` を直接開いている場合は、最初に番号付きJSONファイルを選ぶと番号指定で遊べます。"
-    : "`stage/001.json` のような番号付きJSONを番号指定で読み込めます。ローカルで直接開いた場合は「JSONファイルを選ぶ」を使ってください。";
+    ? "Built-in stage JSON can be loaded with the stage folder picker."
+    : "Built-in stages such as stage/low/001.json are available.";
 }
 
 function setStageLoaderStatus(message, isError = false) {
@@ -3157,11 +3223,63 @@ function formatStageNumber(stageNumber) {
   return String(stageNumber).padStart(3, "0");
 }
 
+function normalizeStageDifficulty(value) {
+  return Object.prototype.hasOwnProperty.call(STAGE_PACKS, value)
+    ? value
+    : DEFAULT_STAGE_DIFFICULTY;
+}
+
+function getStageDifficultyLabel(stageDifficulty) {
+  return STAGE_PACKS[normalizeStageDifficulty(stageDifficulty)].label;
+}
+
+function getBuiltInStageNumbers(stageDifficulty) {
+  const pack = STAGE_PACKS[normalizeStageDifficulty(stageDifficulty)];
+  return Array.from({ length: pack.count }, (_unused, index) => index + 1);
+}
+
+function getSelectedStageDifficulty() {
+  const stageJsonState = getStageJsonState();
+  const { stageDifficultySelect } = getStageJsonUi();
+  const stageDifficulty = normalizeStageDifficulty(
+    stageDifficultySelect?.value ?? stageJsonState.selectedDifficulty
+  );
+
+  stageJsonState.selectedDifficulty = stageDifficulty;
+  if (stageDifficultySelect && stageDifficultySelect.value !== stageDifficulty) {
+    stageDifficultySelect.value = stageDifficulty;
+  }
+
+  return stageDifficulty;
+}
+
+function parseSelectedStageFileReference(file, fallbackDifficulty) {
+  const relativePath = String(file?.webkitRelativePath ?? "").replace(/\\/g, "/");
+  const nestedMatch = /(?:^|\/)(low|medium|high)\/(\d+)\.json$/i.exec(relativePath);
+
+  if (nestedMatch) {
+    return {
+      stageDifficulty: normalizeStageDifficulty(nestedMatch[1].toLowerCase()),
+      stageNumber: Number.parseInt(nestedMatch[2], 10),
+    };
+  }
+
+  const stageNumber = parseStageNumberFromFileName(file?.name ?? "");
+  if (stageNumber === null) {
+    return null;
+  }
+
+  return {
+    stageDifficulty: normalizeStageDifficulty(fallbackDifficulty),
+    stageNumber,
+  };
+}
+
 function parseStageNumber(value) {
   const parsed = Number.parseInt(String(value), 10);
 
   if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new Error("ステージ番号は1以上の整数で指定してください。");
+    throw new Error("Stage number must be an integer greater than or equal to 1.");
   }
 
   return parsed;
@@ -3187,7 +3305,7 @@ function normalizeStagePoint(point, label) {
   const y = Number(point?.y);
 
   if (!Number.isInteger(x) || !Number.isInteger(y)) {
-    throw new Error(`${label} は x / y を持つ整数座標で指定してください。`);
+    throw new Error(`${label} must use integer x / y coordinates.`);
   }
 
   return { x, y };
@@ -3199,7 +3317,7 @@ function normalizeStagePointList(points, label) {
   }
 
   if (!Array.isArray(points)) {
-    throw new Error(`${label} は配列で指定してください。`);
+    throw new Error(`${label} must be an array.`);
   }
 
   return getUniqueCells(
@@ -3221,12 +3339,12 @@ function validateStageDefinitionForJson(stage) {
 
   for (const [label, point] of entries) {
     if (!isInsideMap(point, boardSize)) {
-      throw new Error(`${label} が盤面の外にあります。`);
+      throw new Error(`${label} is outside the board.`);
     }
 
     const pointKey = getCellKey(point);
     if (occupiedByKey.has(pointKey)) {
-      throw new Error(`${label} が ${occupiedByKey.get(pointKey)} と重なっています。`);
+      throw new Error(`${label} overlaps with ${occupiedByKey.get(pointKey)}.`);
     }
 
     occupiedByKey.set(pointKey, label);
@@ -3289,12 +3407,12 @@ function buildStageJsonDefinition(stage, stageNumber = null) {
 
 function describeStageNumberList(stageNumbers) {
   if (stageNumbers.length === 0) {
-    return "番号付きJSONはまだ見つかっていません。";
+    return "0 stages";
   }
 
   const preview = stageNumbers.slice(0, 6).map(formatStageNumber).join(", ");
   const suffix = stageNumbers.length > 6 ? " ..." : "";
-  return `${stageNumbers.length}件のステージを見つけました: ${preview}${suffix}`;
+  return `${stageNumbers.length} stages: ${preview}${suffix}`;
 }
 
 function isElementFocused(element) {
@@ -3305,22 +3423,42 @@ function isElementFocused(element) {
   return document.activeElement === element;
 }
 
-function getKnownStageNumbers() {
+function getKnownStageNumbers(stageDifficulty = getSelectedStageDifficulty()) {
   const stageJsonState = getStageJsonState();
+  const normalizedDifficulty = normalizeStageDifficulty(stageDifficulty);
   const numbers = new Set([
-    ...stageJsonState.folderStagesByNumber.keys(),
-    ...stageJsonState.directoryStageNumbers,
+    ...getBuiltInStageNumbers(normalizedDifficulty),
+    ...stageJsonState.folderStagesByDifficulty[normalizedDifficulty].keys(),
+    ...stageJsonState.directoryStageNumbersByDifficulty[normalizedDifficulty],
   ]);
 
   return [...numbers].sort((left, right) => left - right);
 }
 
-function refreshStageNumberInputs() {
+function refreshStageNumberInputs(resetToFirst = false) {
   const stageNumbers = getKnownStageNumbers();
   const { stageNumberInput, makerExportNumberInput } = getStageJsonUi();
 
-  if (stageNumberInput && stageNumbers.length > 0 && !isElementFocused(stageNumberInput)) {
-    stageNumberInput.value = String(stageNumbers[0]);
+  if (stageNumberInput) {
+    stageNumberInput.min = "1";
+    if (stageNumbers.length > 0) {
+      stageNumberInput.max = String(stageNumbers[stageNumbers.length - 1]);
+    } else {
+      stageNumberInput.removeAttribute("max");
+    }
+  }
+
+  if (
+    stageNumberInput &&
+    stageNumbers.length > 0 &&
+    (resetToFirst || !isElementFocused(stageNumberInput))
+  ) {
+    const currentValue = Number.parseInt(stageNumberInput.value, 10);
+    stageNumberInput.value = String(
+      !resetToFirst && stageNumbers.includes(currentValue)
+        ? currentValue
+        : stageNumbers[0]
+    );
   }
 
   if (makerExportNumberInput && !isElementFocused(makerExportNumberInput)) {
@@ -3365,8 +3503,25 @@ async function chooseStageFolder() {
       return;
     }
 
-    setStageLoaderStatus(`JSONファイル選択を開けませんでした: ${error.message}`, true);
+    setStageLoaderStatus(`Stage folder selection failed: ${error.message}`, true);
   }
+}
+
+function buildStageImportSummary(stageJsonState) {
+  const parts = [];
+
+  for (const stageDifficulty of Object.values(STAGE_DIFFICULTY)) {
+    const numbers = getKnownStageNumbers(stageDifficulty);
+    parts.push(`${getStageDifficultyLabel(stageDifficulty)} ${describeStageNumberList(numbers)}`);
+  }
+
+  return parts.join(" / ");
+}
+
+function handleStageDifficultyChange() {
+  const stageDifficulty = getSelectedStageDifficulty();
+  refreshStageNumberInputs(true);
+  setStageLoaderStatus(`Switched to ${getStageDifficultyLabel(stageDifficulty)} stage list.`);
 }
 
 async function handleStageFolderInputChange(event) {
@@ -3378,33 +3533,57 @@ async function handleStageFolderInputChange(event) {
   }
 
   try {
-    const nextStageMap = new Map();
+    const fallbackDifficulty = getSelectedStageDifficulty();
+    const nextStageMapsByDifficulty = {
+      [STAGE_DIFFICULTY.low]: new Map(),
+      [STAGE_DIFFICULTY.medium]: new Map(),
+      [STAGE_DIFFICULTY.high]: new Map(),
+    };
 
     for (const file of files) {
-      const stageNumber = parseStageNumberFromFileName(file.name);
-      if (stageNumber === null) {
+      const fileReference = parseSelectedStageFileReference(file, fallbackDifficulty);
+      if (!fileReference) {
         continue;
       }
 
-      if (nextStageMap.has(stageNumber)) {
-        throw new Error(`${file.name} と同じ番号のJSONが複数あります。`);
+      const targetStageMap = nextStageMapsByDifficulty[fileReference.stageDifficulty];
+      if (targetStageMap.has(fileReference.stageNumber)) {
+        throw new Error(`${file.name} duplicates another stage number.`);
       }
 
       const parsedJson = JSON.parse(await file.text());
-      nextStageMap.set(stageNumber, normalizeStageJsonDefinition(parsedJson, stageNumber));
+      targetStageMap.set(
+        fileReference.stageNumber,
+        normalizeStageJsonDefinition(parsedJson, fileReference.stageNumber)
+      );
     }
 
-    if (nextStageMap.size === 0) {
-      throw new Error("番号付きJSONが見つかりませんでした。`001.json` のような名前にしてください。");
+    const importedStageCount = Object.values(nextStageMapsByDifficulty).reduce(
+      (count, stageMap) => count + stageMap.size,
+      0
+    );
+
+    if (importedStageCount === 0) {
+      throw new Error("No readable stage JSON files were found.");
     }
 
-    stageJsonState.folderStagesByNumber = nextStageMap;
     stageJsonState.directoryHandle = null;
-    stageJsonState.directoryStageNumbers = [...nextStageMap.keys()].sort((left, right) => left - right);
-    setStageLoaderStatus(`JSONファイルを読み込みました。${describeStageNumberList(stageJsonState.directoryStageNumbers)}`);
+    for (const stageDifficulty of Object.values(STAGE_DIFFICULTY)) {
+      const stageMap = nextStageMapsByDifficulty[stageDifficulty];
+      if (stageMap.size === 0) {
+        continue;
+      }
+
+      stageJsonState.folderStagesByDifficulty[stageDifficulty] = stageMap;
+      stageJsonState.directoryStageNumbersByDifficulty[stageDifficulty] = [...stageMap.keys()].sort(
+        (left, right) => left - right
+      );
+    }
+
+    setStageLoaderStatus(`Imported stage JSON: ${buildStageImportSummary(stageJsonState)}`);
     refreshStageNumberInputs();
   } catch (error) {
-    setStageLoaderStatus(`JSONファイルの読み込みに失敗しました: ${error.message}`, true);
+    setStageLoaderStatus(`Stage JSON import failed: ${error.message}`, true);
   } finally {
     if (event.target) {
       event.target.value = "";
@@ -3412,8 +3591,9 @@ async function handleStageFolderInputChange(event) {
   }
 }
 
-async function loadStageFromDirectoryHandle(stageNumber) {
+async function loadStageFromDirectoryHandle(stageNumber, stageDifficulty) {
   const stageJsonState = getStageJsonState();
+  const normalizedDifficulty = normalizeStageDifficulty(stageDifficulty);
 
   if (!stageJsonState.directoryHandle) {
     return null;
@@ -3421,7 +3601,10 @@ async function loadStageFromDirectoryHandle(stageNumber) {
 
   for (const fileName of getStageFileNameCandidates(stageNumber)) {
     try {
-      const fileHandle = await stageJsonState.directoryHandle.getFileHandle(fileName);
+      const difficultyDirectory = await stageJsonState.directoryHandle.getDirectoryHandle(
+        STAGE_PACKS[normalizedDifficulty].directory
+      );
+      const fileHandle = await difficultyDirectory.getFileHandle(fileName);
       const file = await fileHandle.getFile();
       const parsedJson = JSON.parse(await file.text());
       return normalizeStageJsonDefinition(parsedJson, stageNumber);
@@ -3437,9 +3620,24 @@ async function loadStageFromDirectoryHandle(stageNumber) {
   return null;
 }
 
-async function fetchStageByNumber(stageNumber) {
+async function fetchStageByNumber(stageNumber, stageDifficulty) {
+  const normalizedDifficulty = normalizeStageDifficulty(stageDifficulty);
+
   if (globalThis.location?.protocol === "file:") {
     return null;
+  }
+
+  for (const fileName of getStageFileNameCandidates(stageNumber)) {
+    const response = await fetch(
+      `stage/${STAGE_PACKS[normalizedDifficulty].directory}/${fileName}`,
+      { cache: "no-store" }
+    ).catch(() => null);
+    if (!response || !response.ok) {
+      continue;
+    }
+
+    const parsedJson = await response.json();
+    return normalizeStageJsonDefinition(parsedJson, stageNumber);
   }
 
   for (const fileName of getStageFileNameCandidates(stageNumber)) {
@@ -3455,49 +3653,72 @@ async function fetchStageByNumber(stageNumber) {
   return null;
 }
 
-async function resolveStageByNumber(stageNumber) {
+async function resolveStageByNumber(stageNumber, stageDifficulty) {
   const stageJsonState = getStageJsonState();
+  const normalizedDifficulty = normalizeStageDifficulty(stageDifficulty);
 
-  const directoryStage = await loadStageFromDirectoryHandle(stageNumber);
+  const directoryStage = await loadStageFromDirectoryHandle(stageNumber, normalizedDifficulty);
   if (directoryStage) {
     return directoryStage;
   }
 
-  if (stageJsonState.folderStagesByNumber.has(stageNumber)) {
-    return cloneStageDefinition(stageJsonState.folderStagesByNumber.get(stageNumber));
+  if (stageJsonState.folderStagesByDifficulty[normalizedDifficulty].has(stageNumber)) {
+    return cloneStageDefinition(
+      stageJsonState.folderStagesByDifficulty[normalizedDifficulty].get(stageNumber)
+    );
   }
 
-  const fetchedStage = await fetchStageByNumber(stageNumber);
+  const fetchedStage = await fetchStageByNumber(stageNumber, normalizedDifficulty);
   if (fetchedStage) {
     return fetchedStage;
   }
 
   if (globalThis.location?.protocol === "file:") {
-    throw new Error("ローカル表示では `stage` フォルダを自動参照できないため、先に番号付きJSONファイルを選んでください。");
+    throw new Error("Automatic fetch is unavailable for local files. Choose a stage folder and import the JSON files.");
   }
 
-  throw new Error(`stage/${formatStageNumber(stageNumber)}.json が見つかりませんでした。`);
+  throw new Error(
+    `stage/${STAGE_PACKS[normalizedDifficulty].directory}/${formatStageNumber(stageNumber)}.json was not found.`
+  );
 }
 
-async function playStageByNumber() {
-  const { stageNumberInput } = getStageJsonUi();
+async function playStageByNumber(stageNumberOverride = null, stageDifficultyOverride = null) {
+  const stageJsonState = getStageJsonState();
+  const { stageDifficultySelect, stageNumberInput } = getStageJsonUi();
 
   try {
-    const stageNumber = parseStageNumber(stageNumberInput?.value ?? "1");
-    setStageLoaderStatus(`ステージ ${formatStageNumber(stageNumber)} を読み込んでいます...`);
+    const stageDifficulty = normalizeStageDifficulty(
+      stageDifficultyOverride ?? stageDifficultySelect?.value ?? stageJsonState.selectedDifficulty
+    );
+    const stageNumber = Number.isInteger(stageNumberOverride)
+      ? stageNumberOverride
+      : parseStageNumber(stageNumberInput?.value ?? "1");
 
-    const loadedStage = await resolveStageByNumber(stageNumber);
+    stageJsonState.selectedDifficulty = stageDifficulty;
+    if (stageDifficultySelect) {
+      stageDifficultySelect.value = stageDifficulty;
+    }
+
+    setStageLoaderStatus(
+      `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)} is loading...`
+    );
+
+    const loadedStage = await resolveStageByNumber(stageNumber, stageDifficulty);
     loadedStage.mode = getStageModeKey();
     loadedStage.stageNumber = stageNumber;
+    loadedStage.stageDifficulty = stageDifficulty;
     if (!loadedStage.designLabel) {
-      loadedStage.designLabel = `ステージ ${formatStageNumber(stageNumber)}`;
+      loadedStage.designLabel = `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)}`;
     }
 
     applyStage(loadedStage);
     if (stageNumberInput) {
       stageNumberInput.value = String(stageNumber);
     }
-    setStageLoaderStatus(`ステージ ${formatStageNumber(stageNumber)} を読み込みました。`);
+    refreshStageNumberInputs();
+    setStageLoaderStatus(
+      `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)} loaded.`
+    );
   } catch (error) {
     setStageLoaderStatus(error.message, true);
   }
@@ -3527,16 +3748,21 @@ async function saveStageJsonFile(fileName, jsonText) {
       await writable.close();
 
       const stageNumber = parseStageNumberFromFileName(fileName);
-      if (stageNumber !== null && !stageJsonState.directoryStageNumbers.includes(stageNumber)) {
-        stageJsonState.directoryStageNumbers.push(stageNumber);
-        stageJsonState.directoryStageNumbers.sort((left, right) => left - right);
+      const stageDifficulty = getSelectedStageDifficulty();
+      if (
+        stageNumber !== null &&
+        !stageJsonState.directoryStageNumbersByDifficulty[stageDifficulty].includes(stageNumber)
+      ) {
+        stageJsonState.directoryStageNumbersByDifficulty[stageDifficulty].push(stageNumber);
+        stageJsonState.directoryStageNumbersByDifficulty[stageDifficulty].sort(
+          (left, right) => left - right
+        );
       }
 
       return "directory";
     } catch (_error) {
-      // 権限や実行コンテキストの都合で書き込めない場合は別手段へ退避する
       stageJsonState.directoryHandle = null;
-      stageJsonState.directoryStageNumbers = [];
+      stageJsonState.directoryStageNumbersByDifficulty[getSelectedStageDifficulty()] = [];
     }
   }
 
@@ -3586,6 +3812,10 @@ function applyStage(stage) {
   } else if (nextStage.mode === getStageModeKey()) {
     stageJsonState.rememberedStage = cloneStageDefinition(nextStage);
     stageJsonState.rememberedStageNumber = nextStage.stageNumber ?? null;
+    stageJsonState.rememberedStageDifficulty = normalizeStageDifficulty(
+      nextStage.stageDifficulty ?? stageJsonState.selectedDifficulty
+    );
+    stageJsonState.selectedDifficulty = stageJsonState.rememberedStageDifficulty;
   } else {
     rememberedRandomStage = nextStage;
   }
@@ -3671,24 +3901,27 @@ function buildMakerObjectSummary() {
 function buildStageInfoText() {
   if (gameState.mode === GAME_MODE.tutorial) {
     const currentNumber = (gameState.tutorialIndex ?? 0) + 1;
-    return `チュートリアル ${currentNumber}/${TUTORIAL_STAGES.length}\n${gameState.stage.designNote ?? ""}`.trim();
+    return `??????? ${currentNumber}/${TUTORIAL_STAGES.length}\n${gameState.stage.designNote ?? ""}`.trim();
   }
 
   if (gameState.mode === getStageModeKey()) {
+    const stageDifficulty = normalizeStageDifficulty(
+      gameState.stage.stageDifficulty ?? getStageJsonState().selectedDifficulty
+    );
     const stageNumberLabel = gameState.stage.stageNumber != null
-      ? `ステージ ${formatStageNumber(gameState.stage.stageNumber)}`
-      : "JSONステージ";
-    const detail = gameState.stage.designNote || "stage フォルダから読み込んだステージです。";
-    return `${stageNumberLabel}: ${gameState.stage.designLabel ?? "番号指定ステージ"}\n${detail}`;
+      ? `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(gameState.stage.stageNumber)}`
+      : `${getStageDifficultyLabel(stageDifficulty)} JSON`;
+    const detail = gameState.stage.designNote || "???????????????????";
+    return `${stageNumberLabel}: ${gameState.stage.designLabel ?? "????????"}\n${detail}`;
   }
 
   if (gameState.mode === GAME_MODE.maker) {
     const boardSize = getStageBoardSize(gameState.stage);
-    const modeLabel = gameState.maker.editing ? "編集中" : "テストプレイ中";
-    return `ステージメーカー ${modeLabel} ${boardSize.width}x${boardSize.height}\n${buildMakerObjectSummary()}`;
+    const modeLabel = gameState.maker.editing ? "???" : "???????";
+    return `???????? ${modeLabel} ${boardSize.width}x${boardSize.height}\n${buildMakerObjectSummary()}`;
   }
 
-  return `ランダムステージ\n${gameState.stage.designNote ?? ""}`.trim();
+  return `????????\n${gameState.stage.designNote ?? ""}`.trim();
 }
 
 function getHudInstructionText() {
@@ -3820,6 +4053,9 @@ setStageLoaderStatus(getDefaultStageLoaderMessage());
 refreshStageNumberInputs();
 globalThis.closedLoopDebug.loadStageByNumber = playStageByNumber;
 globalThis.closedLoopDebug.exportMakerStageJson = exportMakerStageJson;
+getStageJsonUi().stageDifficultySelect?.addEventListener("change", () => {
+  handleStageDifficultyChange();
+});
 getStageJsonUi().loadStageButton?.addEventListener("click", () => {
   void playStageByNumber();
 });
@@ -3836,6 +4072,9 @@ getStageJsonUi().makerExportJsonButton?.addEventListener("click", () => {
   void exportMakerStageJson();
 });
 render();
+if (globalThis.location?.protocol !== "file:") {
+  void playStageByNumber(1, DEFAULT_STAGE_DIFFICULTY);
+}
 
 const AUTO_SOLVER_CONFIG = {
   maxSteps: 6,
@@ -4657,6 +4896,797 @@ async function playAutoSolveSolution(stage, solution, runId) {
   return gameState.clear;
 }
 
+buildRandomStagePool = function buildHardRandomStagePoolFinal(scoredLayouts) {
+  const analyzedCandidates = [];
+  const preferredCandidates = [];
+  const fallbackCandidates = [];
+  let narrowPreferredCount = 0;
+
+  for (const candidate of scoredLayouts) {
+    const analysis = analyzeRandomStageLayout(candidate.layout);
+    if (!analysis.solvable) {
+      continue;
+    }
+
+    const analyzedCandidate = {
+      ...candidate,
+      analysis,
+      finalScore: candidate.score + analysis.difficultyScore,
+    };
+
+    analyzedCandidates.push(analyzedCandidate);
+
+    if (analysis.minSteps >= HARD_RANDOM_STAGE_CONFIG.preferredMinSteps) {
+      preferredCandidates.push(analyzedCandidate);
+
+      if (
+        analysis.winningFirstMoves <=
+          HARD_RANDOM_STAGE_CONFIG.preferredMaxWinningFirstMoves &&
+        analysis.forcedStepCount >=
+          HARD_RANDOM_STAGE_CONFIG.preferredMinForcedSteps
+      ) {
+        narrowPreferredCount += 1;
+      }
+    }
+
+    if (analysis.minSteps >= HARD_RANDOM_STAGE_CONFIG.fallbackMinSteps) {
+      fallbackCandidates.push(analyzedCandidate);
+    }
+
+    if (
+      analyzedCandidates.length >= HARD_RANDOM_STAGE_CONFIG.maxAnalyzedCandidates &&
+      preferredCandidates.length >= CONFIG.randomStageChoiceCount
+    ) {
+      break;
+    }
+  }
+
+  const narrowPreferredCandidates = preferredCandidates.filter(
+    (candidate) =>
+      candidate.analysis.winningFirstMoves <=
+        HARD_RANDOM_STAGE_CONFIG.preferredMaxWinningFirstMoves &&
+      candidate.analysis.forcedStepCount >=
+        HARD_RANDOM_STAGE_CONFIG.preferredMinForcedSteps
+  );
+  const candidateSource = narrowPreferredCandidates.length > 0
+    ? narrowPreferredCandidates
+    : preferredCandidates.length >= CONFIG.randomStageChoiceCount
+      ? preferredCandidates
+      : fallbackCandidates.length >= CONFIG.randomStageChoiceCount
+        ? fallbackCandidates
+        : analyzedCandidates;
+  const sortedCandidates = [...candidateSource].sort((left, right) => {
+    if (left.analysis.minSteps !== right.analysis.minSteps) {
+      return right.analysis.minSteps - left.analysis.minSteps;
+    }
+
+    if (left.analysis.forcedStepCount !== right.analysis.forcedStepCount) {
+      return right.analysis.forcedStepCount - left.analysis.forcedStepCount;
+    }
+
+    if (left.analysis.winningFirstMoves !== right.analysis.winningFirstMoves) {
+      return left.analysis.winningFirstMoves - right.analysis.winningFirstMoves;
+    }
+
+    if (left.analysis.decoyFirstMoves !== right.analysis.decoyFirstMoves) {
+      return right.analysis.decoyFirstMoves - left.analysis.decoyFirstMoves;
+    }
+
+    return right.finalScore - left.finalScore;
+  });
+  const pool = [];
+  const poolStageKeys = new Set();
+  const coveredStyles = new Set();
+  const coveredFamilies = new Set();
+
+  function tryAddCandidate(candidate) {
+    const stageKey = buildStageLayoutKey(candidate.layout);
+
+    if (poolStageKeys.has(stageKey)) {
+      return false;
+    }
+
+    pool.push(candidate);
+    poolStageKeys.add(stageKey);
+    coveredStyles.add(candidate.layout.solutionStyle ?? "mixed");
+    coveredFamilies.add(
+      candidate.layout.familyLabel ?? getStageFamilyLabel(candidate.layout.label)
+    );
+    return true;
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    const style = candidate.layout.solutionStyle ?? "mixed";
+    if (!coveredStyles.has(style)) {
+      tryAddCandidate(candidate);
+    }
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    const family = candidate.layout.familyLabel ?? getStageFamilyLabel(candidate.layout.label);
+    if (!coveredFamilies.has(family)) {
+      tryAddCandidate(candidate);
+    }
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    tryAddCandidate(candidate);
+  }
+
+  return pool;
+};
+
+function chooseHardRandomPoolCandidate(pool) {
+  const shortlistSize = Math.min(pool.length, HARD_RANDOM_STAGE_CONFIG.topChoiceCount);
+  const shortlist = pool.slice(0, shortlistSize);
+  const totalWeight = shortlist.reduce(
+    (weight, candidate, index) =>
+      weight + (shortlistSize - index) * Math.max(1, candidate.analysis.minSteps),
+    0
+  );
+
+  let remainingWeight = Math.random() * totalWeight;
+  for (let index = 0; index < shortlist.length; index += 1) {
+    const candidate = shortlist[index];
+    remainingWeight -=
+      (shortlistSize - index) * Math.max(1, candidate.analysis.minSteps);
+    if (remainingWeight <= 0) {
+      return candidate;
+    }
+  }
+
+  return shortlist[0];
+}
+
+createRandomDesignedStage = function createHardRandomDesignedStageFinal() {
+  const layouts = getEnhancedRandomStageLayouts();
+  const scoredLayouts = shuffleArray(layouts)
+    .map((layout) => ({
+      layout,
+      score: scoreRandomStageCandidate(layout),
+    }))
+    .sort((layoutA, layoutB) => layoutB.score - layoutA.score);
+  const pool = buildRandomStagePool(scoredLayouts);
+  const chosenCandidate = pool.length > 0 ? chooseHardRandomPoolCandidate(pool) : null;
+  const layout = chosenCandidate?.layout ?? createFallbackRandomStageLayout();
+  const stageKey = buildStageLayoutKey(layout);
+
+  rememberRecentValue(
+    recentRandomStageKeys,
+    stageKey,
+    CONFIG.randomStageHistorySize
+  );
+  rememberRecentValue(
+    recentRandomFamilies,
+    layout.familyLabel ?? getStageFamilyLabel(layout.label),
+    CONFIG.randomFamilyHistorySize
+  );
+  rememberRecentValue(
+    recentRandomStyles,
+    layout.solutionStyle ?? "mixed",
+    CONFIG.randomStyleHistorySize
+  );
+
+  return buildRandomStageDefinition(layout);
+};
+
+const HARD_RANDOM_STAGE_CONFIG = {
+  preferredMinSteps: 3,
+  fallbackMinSteps: 2,
+  maxAnalyzedCandidates: 48,
+  preferredMaxWinningFirstMoves: 2,
+  preferredMinForcedSteps: 1,
+  topChoiceCount: 2,
+  maxOptimalSolutionEstimate: 999,
+};
+
+const HARD_RANDOM_STAGE_PATTERNS = [
+  {
+    label: "三段迂回",
+    playerStart: { x: 9, y: 4 },
+    keyPosition: { x: 7, y: 0 },
+    goalPosition: { x: 2, y: 7 },
+    bombs: [
+      { x: 0, y: 1 },
+      { x: 4, y: 4 },
+      { x: 7, y: 6 },
+    ],
+    disarmItems: [
+      { x: 7, y: 3 },
+      { x: 3, y: 7 },
+    ],
+    wallBlocks: [
+      { x: 4, y: 7 },
+      { x: 4, y: 8 },
+      { x: 4, y: 9 },
+      { x: 5, y: 9 },
+    ],
+    plannedLoops: 4,
+    solutionStyle: "gauntlet",
+    strategyNote: "鍵回収、爆弾処理、終盤の封鎖を三段階で揃えます。",
+    difficultySeedWeight: 1400,
+  },
+  {
+    label: "外縁分業",
+    playerStart: { x: 0, y: 1 },
+    keyPosition: { x: 6, y: 2 },
+    goalPosition: { x: 1, y: 8 },
+    bombs: [
+      { x: 1, y: 3 },
+      { x: 6, y: 6 },
+      { x: 5, y: 8 },
+    ],
+    disarmItems: [
+      { x: 7, y: 9 },
+      { x: 6, y: 3 },
+    ],
+    wallBlocks: [
+      { x: 5, y: 9 },
+      { x: 6, y: 9 },
+      { x: 6, y: 8 },
+      { x: 7, y: 8 },
+    ],
+    plannedLoops: 4,
+    solutionStyle: "relay",
+    strategyNote: "上側の鍵回収、下側の切り分け、最後の接続を順に通します。",
+    difficultySeedWeight: 1360,
+  },
+  {
+    label: "single-lane",
+    playerStart: { x: 9, y: 1 },
+    keyPosition: { x: 6, y: 2 },
+    goalPosition: { x: 8, y: 8 },
+    bombs: [
+      { x: 8, y: 3 },
+      { x: 0, y: 6 },
+      { x: 4, y: 8 },
+    ],
+    disarmItems: [
+      { x: 2, y: 9 },
+      { x: 3, y: 3 },
+    ],
+    wallBlocks: [
+      { x: 4, y: 9 },
+      { x: 3, y: 9 },
+      { x: 3, y: 8 },
+      { x: 2, y: 8 },
+      { x: 3, y: 5 },
+      { x: 2, y: 0 },
+    ],
+    plannedLoops: 4,
+    solutionStyle: "needle",
+    strategyNote: "One narrow route survives; side captures tend to collapse the key-goal order.",
+    difficultySeedWeight: 2800,
+  },
+  {
+    label: "pinpoint-relay",
+    playerStart: { x: 8, y: 9 },
+    keyPosition: { x: 7, y: 3 },
+    goalPosition: { x: 1, y: 8 },
+    bombs: [
+      { x: 6, y: 8 },
+      { x: 3, y: 3 },
+      { x: 5, y: 5 },
+    ],
+    disarmItems: [
+      { x: 0, y: 2 },
+      { x: 6, y: 3 },
+    ],
+    wallBlocks: [
+      { x: 0, y: 4 },
+      { x: 0, y: 3 },
+      { x: 1, y: 3 },
+      { x: 4, y: 3 },
+      { x: 2, y: 8 },
+    ],
+    plannedLoops: 4,
+    solutionStyle: "needle",
+    strategyNote: "The safe order is almost fixed, and the tool count pushes a tight relay.",
+    difficultySeedWeight: 2600,
+  },
+];
+
+function getRandomStageDifficultyState() {
+  if (!globalThis.__closedLoopRandomStageDifficultyState) {
+    globalThis.__closedLoopRandomStageDifficultyState = {
+      layouts: null,
+      analysisByStageKey: new Map(),
+    };
+  }
+
+  return globalThis.__closedLoopRandomStageDifficultyState;
+}
+
+function createHardRandomStageLayout(pattern, transform) {
+  const transformedLayout = createTransformedStageLayout(pattern, transform);
+
+  return {
+    ...transformedLayout,
+    familyLabel: pattern.label,
+    variantId: "hard",
+    variantLabel: "長手数型",
+    solutionStyle: pattern.solutionStyle,
+    strategyNote: pattern.strategyNote,
+    plannedLoops: pattern.plannedLoops,
+    difficultySeedWeight: pattern.difficultySeedWeight ?? 0,
+  };
+}
+
+function getEnhancedRandomStageLayouts() {
+  const difficultyState = getRandomStageDifficultyState();
+  if (difficultyState.layouts) {
+    return difficultyState.layouts;
+  }
+
+  const layoutsByKey = new Map(
+    STAGE_LIBRARY.map((layout) => [buildStageLayoutKey(layout), layout])
+  );
+
+  for (const pattern of HARD_RANDOM_STAGE_PATTERNS) {
+    for (const transform of STAGE_TRANSFORMS) {
+      const layout = createHardRandomStageLayout(pattern, transform);
+      if (!isStageLayoutValid(layout) || !isStageToolSpacingValid(layout)) {
+        continue;
+      }
+
+      layoutsByKey.set(buildStageLayoutKey(layout), layout);
+    }
+  }
+
+  difficultyState.layouts = [...layoutsByKey.values()];
+  return difficultyState.layouts;
+}
+
+function measureRandomStageFirstMovePressure(stage, minSteps) {
+  const candidates = buildAutoSolveCandidatesSync(stage);
+  const rootState = createAutoSolveSearchState(stage);
+  const reachMemo = new Map();
+
+  function canReachClearWithinDepth(state, remainingSteps) {
+    const memoKey = `${serializeAutoSolveSearchState(state)}::${remainingSteps}`;
+    if (reachMemo.has(memoKey)) {
+      return reachMemo.get(memoKey);
+    }
+
+    let reachable = false;
+
+    if (state.clear) {
+      reachable = true;
+    } else if (remainingSteps > 0) {
+      const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, state);
+      for (const loopCandidate of candidates) {
+        if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
+          continue;
+        }
+
+        const nextState = buildAutoSolveNextState(stage, state, loopCandidate);
+        if (!nextState) {
+          continue;
+        }
+
+        if (canReachClearWithinDepth(nextState, remainingSteps - 1)) {
+          reachable = true;
+          break;
+        }
+      }
+    }
+
+    reachMemo.set(memoKey, reachable);
+    return reachable;
+  }
+
+  const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, rootState);
+  let legalFirstMoves = 0;
+  let winningFirstMoves = 0;
+
+  for (const loopCandidate of candidates) {
+    if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
+      continue;
+    }
+
+    const nextState = buildAutoSolveNextState(stage, rootState, loopCandidate);
+    if (!nextState) {
+      continue;
+    }
+
+    legalFirstMoves += 1;
+    if (canReachClearWithinDepth(nextState, minSteps - 1)) {
+      winningFirstMoves += 1;
+    }
+  }
+
+  return {
+    legalFirstMoves,
+    winningFirstMoves,
+    decoyFirstMoves: Math.max(0, legalFirstMoves - winningFirstMoves),
+  };
+}
+
+// 難しさは手数の長さ、正答初手の少なさ、おとり手の多さ、配置圧力で測る
+// 最短解の分岐の少なさを測り、解法の絞られ具合を見積もる
+function measureRandomStageSolutionTightness(stage, minSteps) {
+  const candidates = buildAutoSolveCandidatesSync(stage);
+  const rootState = createAutoSolveSearchState(stage);
+  const tightnessMemo = new Map();
+
+  function analyzeState(state, remainingSteps) {
+    const memoKey = `${serializeAutoSolveSearchState(state)}::${remainingSteps}`;
+    if (tightnessMemo.has(memoKey)) {
+      return tightnessMemo.get(memoKey);
+    }
+
+    if (state.clear) {
+      const clearedMetrics = {
+        reachable: true,
+        optimalSolutionEstimate: 1,
+        forcedStepCount: 0,
+      };
+      tightnessMemo.set(memoKey, clearedMetrics);
+      return clearedMetrics;
+    }
+
+    if (remainingSteps <= 0) {
+      const deadMetrics = {
+        reachable: false,
+        optimalSolutionEstimate: 0,
+        forcedStepCount: 0,
+      };
+      tightnessMemo.set(memoKey, deadMetrics);
+      return deadMetrics;
+    }
+
+    const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, state);
+    const winningResults = [];
+
+    for (const loopCandidate of candidates) {
+      if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
+        continue;
+      }
+
+      const nextState = buildAutoSolveNextState(stage, state, loopCandidate);
+      if (!nextState) {
+        continue;
+      }
+
+      const nextMetrics = analyzeState(nextState, remainingSteps - 1);
+      if (nextMetrics.reachable) {
+        winningResults.push(nextMetrics);
+      }
+    }
+
+    if (winningResults.length === 0) {
+      const deadMetrics = {
+        reachable: false,
+        optimalSolutionEstimate: 0,
+        forcedStepCount: 0,
+      };
+      tightnessMemo.set(memoKey, deadMetrics);
+      return deadMetrics;
+    }
+
+    const optimalSolutionEstimate = Math.min(
+      HARD_RANDOM_STAGE_CONFIG.maxOptimalSolutionEstimate,
+      winningResults.reduce(
+        (total, metrics) => total + metrics.optimalSolutionEstimate,
+        0
+      )
+    );
+    const stepForceBonus = winningResults.length === 1 ? 1 : 0;
+    const forcedStepCount = winningResults.reduce(
+      (bestCount, metrics) => Math.max(bestCount, metrics.forcedStepCount + stepForceBonus),
+      0
+    );
+    const stateMetrics = {
+      reachable: true,
+      optimalSolutionEstimate,
+      forcedStepCount,
+    };
+
+    tightnessMemo.set(memoKey, stateMetrics);
+    return stateMetrics;
+  }
+
+  const tightness = analyzeState(rootState, minSteps);
+  return {
+    optimalSolutionEstimate: tightness.optimalSolutionEstimate,
+    forcedStepCount: tightness.forcedStepCount,
+  };
+}
+
+function analyzeRandomStageLayout(layout) {
+  const difficultyState = getRandomStageDifficultyState();
+  const stageKey = buildStageLayoutKey(layout);
+
+  if (difficultyState.analysisByStageKey.has(stageKey)) {
+    return difficultyState.analysisByStageKey.get(stageKey);
+  }
+
+  const stage = buildRandomStageDefinition(layout);
+  const solution = findStageAutoSolveSolutionSync(stage);
+
+  if (!solution || solution.length === 0) {
+    const unsolvedAnalysis = {
+      solvable: false,
+      minSteps: 0,
+      legalFirstMoves: 0,
+      winningFirstMoves: 0,
+      decoyFirstMoves: 0,
+      difficultyScore: Number.NEGATIVE_INFINITY,
+    };
+
+    difficultyState.analysisByStageKey.set(stageKey, unsolvedAnalysis);
+    return unsolvedAnalysis;
+  }
+
+  const routeDistance =
+    getManhattanDistance(layout.playerStart, layout.keyPosition) +
+    getManhattanDistance(layout.keyPosition, layout.goalPosition);
+  const firstMovePressure = measureRandomStageFirstMovePressure(stage, solution.length);
+  const solutionTightness = measureRandomStageSolutionTightness(stage, solution.length);
+  const structuralPressure =
+    layout.bombs.length * 22 +
+    layout.disarmItems.length * 14 +
+    (layout.wallBlocks?.length ?? 0) * 18 +
+    layout.plannedLoops * 46 +
+    routeDistance * 3 +
+    (layout.difficultySeedWeight ?? 0);
+  const difficultyScore =
+    solution.length * 320 -
+    firstMovePressure.winningFirstMoves * 24 +
+    firstMovePressure.decoyFirstMoves * 10 -
+    firstMovePressure.legalFirstMoves * 2 +
+    solutionTightness.forcedStepCount * 55 -
+    solutionTightness.optimalSolutionEstimate * 9 +
+    structuralPressure;
+  const analysis = {
+    solvable: true,
+    minSteps: solution.length,
+    legalFirstMoves: firstMovePressure.legalFirstMoves,
+    winningFirstMoves: firstMovePressure.winningFirstMoves,
+    decoyFirstMoves: firstMovePressure.decoyFirstMoves,
+    forcedStepCount: solutionTightness.forcedStepCount,
+    optimalSolutionEstimate: solutionTightness.optimalSolutionEstimate,
+    difficultyScore,
+  };
+
+  difficultyState.analysisByStageKey.set(stageKey, analysis);
+  return analysis;
+}
+
+scoreRandomStageCandidate = function scoreHardRandomStageCandidate(layout) {
+  const stageKey = buildStageLayoutKey(layout);
+  const familyLabel = layout.familyLabel ?? getStageFamilyLabel(layout.label);
+  const solutionStyle = layout.solutionStyle ?? "mixed";
+  const routeDistance =
+    getManhattanDistance(layout.playerStart, layout.keyPosition) +
+    getManhattanDistance(layout.keyPosition, layout.goalPosition);
+  const objectPressure =
+    layout.bombs.length * 24 +
+    layout.disarmItems.length * 12 +
+    (layout.wallBlocks?.length ?? 0) * 18 +
+    layout.plannedLoops * 40 +
+    routeDistance * 2 +
+    (layout.difficultySeedWeight ?? 0);
+
+  return (
+    scoreStageLayout(layout) * 0.03 +
+    objectPressure +
+    getHistoryScore(
+      stageKey,
+      recentRandomStageKeys,
+      220,
+      320,
+      36
+    ) +
+    getHistoryScore(
+      familyLabel,
+      recentRandomFamilies,
+      90,
+      180,
+      48
+    ) +
+    getHistoryScore(
+      solutionStyle,
+      recentRandomStyles,
+      70,
+      140,
+      44
+    )
+  );
+};
+
+buildRandomStagePool = function buildHardRandomStagePool(scoredLayouts) {
+  const analyzedCandidates = [];
+  const preferredCandidates = [];
+  const fallbackCandidates = [];
+  let narrowPreferredCount = 0;
+
+  for (const candidate of scoredLayouts) {
+    const analysis = analyzeRandomStageLayout(candidate.layout);
+    if (!analysis.solvable) {
+      continue;
+    }
+
+    const analyzedCandidate = {
+      ...candidate,
+      analysis,
+      finalScore: candidate.score + analysis.difficultyScore,
+    };
+
+    analyzedCandidates.push(analyzedCandidate);
+
+    if (analysis.minSteps >= HARD_RANDOM_STAGE_CONFIG.preferredMinSteps) {
+      preferredCandidates.push(analyzedCandidate);
+
+      if (
+        analysis.winningFirstMoves <=
+          HARD_RANDOM_STAGE_CONFIG.preferredMaxWinningFirstMoves &&
+        analysis.forcedStepCount >=
+          HARD_RANDOM_STAGE_CONFIG.preferredMinForcedSteps
+      ) {
+        narrowPreferredCount += 1;
+      }
+    }
+
+    if (analysis.minSteps >= HARD_RANDOM_STAGE_CONFIG.fallbackMinSteps) {
+      fallbackCandidates.push(analyzedCandidate);
+    }
+
+    if (
+      analyzedCandidates.length >= HARD_RANDOM_STAGE_CONFIG.maxAnalyzedCandidates &&
+      preferredCandidates.length >= CONFIG.randomStageChoiceCount
+    ) {
+      break;
+    }
+  }
+
+  const narrowPreferredCandidates = preferredCandidates.filter(
+    (candidate) =>
+      candidate.analysis.winningFirstMoves <=
+        HARD_RANDOM_STAGE_CONFIG.preferredMaxWinningFirstMoves &&
+      candidate.analysis.forcedStepCount >=
+        HARD_RANDOM_STAGE_CONFIG.preferredMinForcedSteps
+  );
+  const candidateSource = narrowPreferredCandidates.length > 0
+    ? narrowPreferredCandidates
+    : preferredCandidates.length >= CONFIG.randomStageChoiceCount
+      ? preferredCandidates
+      : fallbackCandidates.length >= CONFIG.randomStageChoiceCount
+        ? fallbackCandidates
+        : analyzedCandidates;
+  const sortedCandidates = [...candidateSource].sort((left, right) => {
+    if (left.analysis.minSteps !== right.analysis.minSteps) {
+      return right.analysis.minSteps - left.analysis.minSteps;
+    }
+
+    if (left.analysis.forcedStepCount !== right.analysis.forcedStepCount) {
+      return right.analysis.forcedStepCount - left.analysis.forcedStepCount;
+    }
+
+    if (left.analysis.winningFirstMoves !== right.analysis.winningFirstMoves) {
+      return left.analysis.winningFirstMoves - right.analysis.winningFirstMoves;
+    }
+
+    if (left.analysis.decoyFirstMoves !== right.analysis.decoyFirstMoves) {
+      return right.analysis.decoyFirstMoves - left.analysis.decoyFirstMoves;
+    }
+
+    return right.finalScore - left.finalScore;
+  });
+  const pool = [];
+  const poolStageKeys = new Set();
+  const coveredStyles = new Set();
+  const coveredFamilies = new Set();
+
+  function tryAddCandidate(candidate) {
+    const stageKey = buildStageLayoutKey(candidate.layout);
+
+    if (poolStageKeys.has(stageKey)) {
+      return false;
+    }
+
+    pool.push(candidate);
+    poolStageKeys.add(stageKey);
+    coveredStyles.add(candidate.layout.solutionStyle ?? "mixed");
+    coveredFamilies.add(
+      candidate.layout.familyLabel ?? getStageFamilyLabel(candidate.layout.label)
+    );
+    return true;
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    const style = candidate.layout.solutionStyle ?? "mixed";
+    if (!coveredStyles.has(style)) {
+      tryAddCandidate(candidate);
+    }
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    const family = candidate.layout.familyLabel ?? getStageFamilyLabel(candidate.layout.label);
+    if (!coveredFamilies.has(family)) {
+      tryAddCandidate(candidate);
+    }
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    tryAddCandidate(candidate);
+  }
+
+  return pool;
+};
+
+createRandomDesignedStage = function createHardRandomDesignedStage() {
+  const layouts = getEnhancedRandomStageLayouts();
+  const scoredLayouts = shuffleArray(layouts)
+    .map((layout) => ({
+      layout,
+      score: scoreRandomStageCandidate(layout),
+    }))
+    .sort((layoutA, layoutB) => layoutB.score - layoutA.score);
+  const pool = buildRandomStagePool(scoredLayouts);
+  const chosenCandidate = pool.length > 0 ? chooseHardRandomPoolCandidate(pool) : null;
+  const layout = chosenCandidate?.layout ?? createFallbackRandomStageLayout();
+  const stageKey = buildStageLayoutKey(layout);
+
+  rememberRecentValue(
+    recentRandomStageKeys,
+    stageKey,
+    CONFIG.randomStageHistorySize
+  );
+  rememberRecentValue(
+    recentRandomFamilies,
+    layout.familyLabel ?? getStageFamilyLabel(layout.label),
+    CONFIG.randomFamilyHistorySize
+  );
+  rememberRecentValue(
+    recentRandomStyles,
+    layout.solutionStyle ?? "mixed",
+    CONFIG.randomStyleHistorySize
+  );
+
+  return buildRandomStageDefinition(layout);
+};
+
+globalThis.closedLoopDebug.analyzeRandomStageLayout = analyzeRandomStageLayout;
+globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
+
+const rememberedRandomAnalysis = analyzeRandomStageLayout(rememberedRandomStage);
+if (
+  !rememberedRandomAnalysis.solvable ||
+  rememberedRandomAnalysis.minSteps < HARD_RANDOM_STAGE_CONFIG.preferredMinSteps
+) {
+  const harderRandomStage = createRandomDesignedStage();
+  rememberedRandomStage = harderRandomStage;
+
+  if (gameState.mode === GAME_MODE.random) {
+    applyStage(harderRandomStage);
+  }
+}
+
 function buildRandomStageDefinition(layout) {
   return {
     boardSize: cloneBoardSize(getStageBoardSize(layout)),
@@ -4667,8 +5697,13 @@ function buildRandomStageDefinition(layout) {
     disarmItems: clonePositions(layout.disarmItems ?? []),
     wallBlocks: clonePositions(layout.wallBlocks ?? []),
     shields: clonePositions(layout.shields ?? []),
-    designLabel: layout.label ?? "ランダムステージ",
-    designNote: buildStageNote(layout),
+    designLabel: layout.label ?? layout.designLabel ?? "ランダムステージ",
+    designNote:
+      layout.designNote ??
+      buildStageNote({
+        ...layout,
+        label: layout.label ?? layout.designLabel ?? "ランダムステージ",
+      }),
     instructionText: RANDOM_STAGE_INSTRUCTION_TEXT,
     keyInitiallyCollected: false,
     mode: GAME_MODE.random,
@@ -5055,15 +6090,245 @@ if (!isRandomStageDefinitionSolvable(rememberedRandomStage)) {
   }
 }
 
-function handleCanvasClickAfterClear() {
-  if (!gameState.clear || gameState.mode !== GAME_MODE.random) {
+buildRandomStagePool = function buildHardRandomStagePoolFinal(scoredLayouts) {
+  const analyzedCandidates = [];
+  const preferredCandidates = [];
+  const fallbackCandidates = [];
+  let narrowPreferredCount = 0;
+
+  for (const candidate of scoredLayouts) {
+    const analysis = analyzeRandomStageLayout(candidate.layout);
+    if (!analysis.solvable) {
+      continue;
+    }
+
+    const analyzedCandidate = {
+      ...candidate,
+      analysis,
+      finalScore: candidate.score + analysis.difficultyScore,
+    };
+
+    analyzedCandidates.push(analyzedCandidate);
+
+    if (analysis.minSteps >= HARD_RANDOM_STAGE_CONFIG.preferredMinSteps) {
+      preferredCandidates.push(analyzedCandidate);
+
+      if (
+        analysis.winningFirstMoves <=
+          HARD_RANDOM_STAGE_CONFIG.preferredMaxWinningFirstMoves &&
+        analysis.forcedStepCount >=
+          HARD_RANDOM_STAGE_CONFIG.preferredMinForcedSteps
+      ) {
+        narrowPreferredCount += 1;
+      }
+    }
+
+    if (analysis.minSteps >= HARD_RANDOM_STAGE_CONFIG.fallbackMinSteps) {
+      fallbackCandidates.push(analyzedCandidate);
+    }
+
+    if (
+      analyzedCandidates.length >= HARD_RANDOM_STAGE_CONFIG.maxAnalyzedCandidates &&
+      preferredCandidates.length >= CONFIG.randomStageChoiceCount &&
+      narrowPreferredCount > 0
+    ) {
+      break;
+    }
+  }
+
+  const narrowPreferredCandidates = preferredCandidates.filter(
+    (candidate) =>
+      candidate.analysis.winningFirstMoves <=
+        HARD_RANDOM_STAGE_CONFIG.preferredMaxWinningFirstMoves &&
+      candidate.analysis.forcedStepCount >=
+        HARD_RANDOM_STAGE_CONFIG.preferredMinForcedSteps
+  );
+  const candidateSource = narrowPreferredCandidates.length > 0
+    ? narrowPreferredCandidates
+    : preferredCandidates.length >= CONFIG.randomStageChoiceCount
+      ? preferredCandidates
+      : fallbackCandidates.length >= CONFIG.randomStageChoiceCount
+        ? fallbackCandidates
+        : analyzedCandidates;
+  const sortedCandidates = [...candidateSource].sort((left, right) => {
+    if (left.analysis.minSteps !== right.analysis.minSteps) {
+      return right.analysis.minSteps - left.analysis.minSteps;
+    }
+
+    if (left.analysis.forcedStepCount !== right.analysis.forcedStepCount) {
+      return right.analysis.forcedStepCount - left.analysis.forcedStepCount;
+    }
+
+    if (left.analysis.winningFirstMoves !== right.analysis.winningFirstMoves) {
+      return left.analysis.winningFirstMoves - right.analysis.winningFirstMoves;
+    }
+
+    if (left.analysis.decoyFirstMoves !== right.analysis.decoyFirstMoves) {
+      return right.analysis.decoyFirstMoves - left.analysis.decoyFirstMoves;
+    }
+
+    return right.finalScore - left.finalScore;
+  });
+  const pool = [];
+  const poolStageKeys = new Set();
+  const coveredStyles = new Set();
+  const coveredFamilies = new Set();
+
+  function tryAddCandidate(candidate) {
+    const stageKey = buildStageLayoutKey(candidate.layout);
+
+    if (poolStageKeys.has(stageKey)) {
+      return false;
+    }
+
+    pool.push(candidate);
+    poolStageKeys.add(stageKey);
+    coveredStyles.add(candidate.layout.solutionStyle ?? "mixed");
+    coveredFamilies.add(
+      candidate.layout.familyLabel ?? getStageFamilyLabel(candidate.layout.label)
+    );
+    return true;
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    const style = candidate.layout.solutionStyle ?? "mixed";
+    if (!coveredStyles.has(style)) {
+      tryAddCandidate(candidate);
+    }
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    const family = candidate.layout.familyLabel ?? getStageFamilyLabel(candidate.layout.label);
+    if (!coveredFamilies.has(family)) {
+      tryAddCandidate(candidate);
+    }
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (pool.length >= CONFIG.randomStageChoiceCount) {
+      break;
+    }
+
+    tryAddCandidate(candidate);
+  }
+
+  return pool;
+};
+
+createRandomDesignedStage = function createHardRandomDesignedStageFinal() {
+  const layouts = getEnhancedRandomStageLayouts();
+  const scoredLayouts = shuffleArray(layouts)
+    .map((layout) => ({
+      layout,
+      score: scoreRandomStageCandidate(layout),
+    }))
+    .sort((layoutA, layoutB) => layoutB.score - layoutA.score);
+  const pool = buildRandomStagePool(scoredLayouts);
+  const chosenCandidate = pool.length > 0 ? chooseHardRandomPoolCandidate(pool) : null;
+  const layout = chosenCandidate?.layout ?? createFallbackRandomStageLayout();
+  const stageKey = buildStageLayoutKey(layout);
+
+  rememberRecentValue(
+    recentRandomStageKeys,
+    stageKey,
+    CONFIG.randomStageHistorySize
+  );
+  rememberRecentValue(
+    recentRandomFamilies,
+    layout.familyLabel ?? getStageFamilyLabel(layout.label),
+    CONFIG.randomFamilyHistorySize
+  );
+  rememberRecentValue(
+    recentRandomStyles,
+    layout.solutionStyle ?? "mixed",
+    CONFIG.randomStyleHistorySize
+  );
+
+  return buildRandomStageDefinition(layout);
+};
+
+globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
+
+const hardRandomAnalysis = analyzeRandomStageLayout(rememberedRandomStage);
+if (
+  !hardRandomAnalysis.solvable ||
+  hardRandomAnalysis.minSteps < HARD_RANDOM_STAGE_CONFIG.preferredMinSteps
+) {
+  const harderRandomStage = createRandomDesignedStage();
+  rememberedRandomStage = harderRandomStage;
+
+  if (gameState.mode === GAME_MODE.random) {
+    applyStage(harderRandomStage);
+  }
+}
+
+function getNextKnownStageNumber(currentStageNumber, stageDifficulty) {
+  const stageNumbers = getKnownStageNumbers(stageDifficulty);
+  if (stageNumbers.length === 0) {
+    return 1;
+  }
+
+  const currentIndex = stageNumbers.indexOf(currentStageNumber);
+  if (currentIndex < 0 || currentIndex >= stageNumbers.length - 1) {
+    return stageNumbers[0];
+  }
+
+  return stageNumbers[currentIndex + 1];
+}
+
+let lastCanvasClearTouchTime = 0;
+
+// ?????????????????????????
+async function handleCanvasClickAfterClear() {
+  if (!gameState.clear) {
     return;
   }
 
-  resetGame(true);
+  if (gameState.mode === GAME_MODE.random) {
+    resetGame(true);
+    return;
+  }
+
+  if (gameState.mode !== getStageModeKey()) {
+    return;
+  }
+
+  const stageDifficulty = normalizeStageDifficulty(
+    gameState.stage.stageDifficulty ?? getStageJsonState().selectedDifficulty
+  );
+  const currentStageNumber = Number.isInteger(gameState.stage.stageNumber)
+    ? gameState.stage.stageNumber
+    : 1;
+  const nextStageNumber = getNextKnownStageNumber(currentStageNumber, stageDifficulty);
+  await playStageByNumber(nextStageNumber, stageDifficulty);
 }
 
-canvas.addEventListener("click", handleCanvasClickAfterClear);
+function handleCanvasTouchEndAfterClear(event) {
+  if (!gameState.clear || gameState.drawing.active) {
+    return;
+  }
+
+  lastCanvasClearTouchTime = Date.now();
+  preventTouchBrowserAction(event);
+  void handleCanvasClickAfterClear();
+}
+
+canvas.addEventListener("click", (event) => {
+  if (Date.now() - lastCanvasClearTouchTime < 700) {
+    return;
+  }
+
+  void handleCanvasClickAfterClear(event);
+});
+canvas.addEventListener("touchend", handleCanvasTouchEndAfterClear, { passive: false });
 
 const ICON_SPRITE_SHEET_PATH = "sozai/icons.png";
 const ICON_SPRITE_DEFINITIONS = {
@@ -5387,6 +6652,13 @@ function registerMakerAutoSolveCancelHandlers() {
       cancelMakerAutoSolve(cancelMessage);
     },
     true
+  );
+  canvas.addEventListener(
+    "touchstart",
+    () => {
+      cancelMakerAutoSolve(cancelMessage);
+    },
+    { capture: true, passive: true }
   );
 
   document.addEventListener(

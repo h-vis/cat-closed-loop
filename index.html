@@ -13,7 +13,7 @@
         <p class="eyebrow">Canvas Puzzle Prototype</p>
         <h1>Closed Loop</h1>
         <p class="subtitle">
-          マスを塗って閉ループを作り、空間の分断を利用して鍵とゴールを安全に確保するパズルです。
+          ループで空間を切り分け、鍵とゴールを安全に回収するパズルです。
         </p>
       </header>
 
@@ -26,19 +26,27 @@
 
       <section class="hud" aria-label="ゲーム情報">
         <div class="button-row mode-row" aria-label="ゲームモード">
-          <button id="randomModeButton" class="is-active" type="button">ランダムモード</button>
+          <button id="randomModeButton" class="is-active" type="button" hidden>ランダムモード</button>
           <button id="tutorialModeButton" type="button">チュートリアル</button>
           <button id="makerModeButton" type="button">ステージメーカー</button>
         </div>
 
-        <section class="stage-loader" aria-label="ステージJSON読み込み">
+        <section class="stage-loader" aria-label="ステージ選択">
           <div class="stage-loader-row">
+            <label class="stage-field" for="stageDifficultySelect">
+              難易度
+              <select id="stageDifficultySelect">
+                <option value="low">低</option>
+                <option value="medium">中</option>
+                <option value="high">高</option>
+              </select>
+            </label>
             <label class="stage-field" for="stageNumberInput">
               ステージ番号
               <input id="stageNumberInput" type="number" min="1" step="1" value="1">
             </label>
             <button id="loadStageButton" type="button">番号でプレイ</button>
-            <button id="chooseStageFolderButton" type="button">JSONファイルを選ぶ</button>
+            <button id="chooseStageFolderButton" type="button">JSONを選ぶ</button>
             <input
               id="stageFolderInput"
               type="file"
@@ -48,12 +56,12 @@
             >
           </div>
           <p id="stageLoaderStatus" class="status-text">
-            `001.json` のような番号付きJSONファイルを選ぶと、番号指定でプレイできます。
+            難易度と番号を選んでステージを読み込めます。ローカルで直接開いた場合は JSON を選んでください。
           </p>
         </section>
 
         <p id="instructionText" class="instructions">
-          マウスドラッグでマスを塗って閉ループを作ります。矢印キーまたはWASDで移動できます。
+          マウスドラッグでマスを塗ってループを作ります。ループや分断された外側の空間にあるオブジェクトが相互作用します。
         </p>
 
         <div class="status-grid">
@@ -116,7 +124,7 @@
             id="makerJsonOutput"
             class="maker-json-output"
             readonly
-            placeholder="ここにステージJSONが表示されます。"
+            placeholder="ここにステージ JSON が表示されます。"
           ></textarea>
 
           <p id="makerHint" class="maker-hint"></p>

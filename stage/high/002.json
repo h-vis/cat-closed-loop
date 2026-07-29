@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "boardSize": {
+    "width": 10,
+    "height": 10
+  },
+  "playerStart": {
+    "x": 4,
+    "y": 0
+  },
+  "keyPosition": {
+    "x": 0,
+    "y": 2
+  },
+  "goalPosition": {
+    "x": 7,
+    "y": 7
+  },
+  "bombs": [
+    {
+      "x": 1,
+      "y": 9
+    },
+    {
+      "x": 4,
+      "y": 5
+    },
+    {
+      "x": 6,
+      "y": 2
+    }
+  ],
+  "disarmItems": [
+    {
+      "x": 3,
+      "y": 2
+    },
+    {
+      "x": 7,
+      "y": 6
+    }
+  ],
+  "wallBlocks": [
+    {
+      "x": 7,
+      "y": 5
+    },
+    {
+      "x": 8,
+      "y": 5
+    },
+    {
+      "x": 9,
+      "y": 5
+    },
+    {
+      "x": 9,
+      "y": 4
+    }
+  ],
+  "designLabel": "High 002 - 三段迂回 / 270度回転",
+  "designNote": "fixed pack / family=三段迂回 / style=gauntlet / minSteps=3 / winningFirstMoves=20",
+  "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
+  "keyInitiallyCollected": false
+}

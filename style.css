@@ -79,6 +79,9 @@ body {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M14 2v24M2 14h24' stroke='%23ffffff' stroke-width='4'/%3E%3Cpath d='M14 2v24M2 14h24' stroke='%230f2740' stroke-width='2'/%3E%3Ccircle cx='14' cy='14' r='3.5' stroke='%23ffffff' stroke-width='4'/%3E%3Ccircle cx='14' cy='14' r='3.5' stroke='%230f2740' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E")
       14 14,
     crosshair;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .hud {
@@ -200,7 +203,8 @@ button:disabled {
   color: var(--text);
 }
 
-.stage-field input {
+.stage-field input,
+.stage-field select {
   width: 96px;
   padding: 10px 12px;
   border: 1px solid rgba(29, 49, 77, 0.2);
@@ -324,7 +328,8 @@ button:disabled {
   }
 
   .maker-field input,
-  .stage-field input {
+  .stage-field input,
+  .stage-field select {
     width: 112px;
   }
 }
