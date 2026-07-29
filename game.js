@@ -62,6 +62,46 @@ const BASE_STAGE = {
   goalPosition: { x: 8, y: 8 },
 };
 
+const DEFAULT_START_STAGE = {
+  boardSize: { width: 10, height: 10 },
+  playerStart: { x: 8, y: 8 },
+  keyPosition: { x: 4, y: 8 },
+  goalPosition: { x: 1, y: 3 },
+  bombs: [{ x: 1, y: 1 }],
+  disarmItems: [{ x: 8, y: 1 }],
+  wallBlocks: [
+    { x: 6, y: 7 },
+    { x: 6, y: 6 },
+    { x: 5, y: 6 },
+  ],
+  designLabel: "Low 001",
+  designNote: "Startup stage placeholder for Low 001.",
+  instructionText:
+    "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
+  keyInitiallyCollected: false,
+  mode: GAME_MODE.stage,
+  tutorialIndex: null,
+  stageNumber: 1,
+  stageDifficulty: DEFAULT_STAGE_DIFFICULTY,
+};
+
+const DEFAULT_RANDOM_STAGE = {
+  boardSize: { width: 10, height: 10 },
+  playerStart: { x: 1, y: 1 },
+  keyPosition: { x: 3, y: 1 },
+  goalPosition: { x: 4, y: 3 },
+  bombs: [],
+  disarmItems: [],
+  wallBlocks: [],
+  designLabel: "Random Placeholder",
+  designNote: "A lightweight placeholder until random generation is requested.",
+  instructionText:
+    "Random mode placeholder. A full random stage will be prepared only when random mode is requested.",
+  keyInitiallyCollected: false,
+  mode: GAME_MODE.random,
+  tutorialIndex: null,
+};
+
 const MAKER_LIMITS = {
   minSize: 6,
   maxSize: 14,
@@ -1310,7 +1350,7 @@ function updateCanvasMetrics(stage) {
   canvas.height = getBoardPixelHeight(activeBoardSize);
 }
 
-function createInitialState(stage = createRandomDesignedStage()) {
+function createInitialState(stage = DEFAULT_START_STAGE) {
   const boardSize = getStageBoardSize(stage);
 
   return {
@@ -1350,12 +1390,12 @@ function createInitialState(stage = createRandomDesignedStage()) {
   };
 }
 
-const initialRandomStage = createRandomDesignedStage();
+const initialRandomStage = cloneStageDefinition(DEFAULT_RANDOM_STAGE);
 let rememberedRandomStage = initialRandomStage;
 let rememberedTutorialIndex = 0;
 let rememberedMakerStage = createMakerStage();
 
-const gameState = createInitialState(initialRandomStage);
+const gameState = createInitialState(cloneStageDefinition(DEFAULT_START_STAGE));
 
 function applyStage(stage) {
   const stageJsonState = getStageJsonState();
@@ -3852,7 +3892,7 @@ function setGameMode(mode) {
     return;
   }
 
-  applyStage(cloneStageDefinition(rememberedRandomStage));
+  applyStage(cloneStageDefinition(ensureRememberedRandomStageReady()));
 }
 
 function resetGame(regenerateStage = false) {
@@ -3872,7 +3912,7 @@ function resetGame(regenerateStage = false) {
     return;
   }
 
-  const nextRandomStage = regenerateStage ? createRandomDesignedStage() : rememberedRandomStage;
+  const nextRandomStage = ensureRememberedRandomStageReady(regenerateStage);
   applyStage(cloneStageDefinition(nextRandomStage));
 }
 
@@ -5674,19 +5714,6 @@ createRandomDesignedStage = function createHardRandomDesignedStage() {
 globalThis.closedLoopDebug.analyzeRandomStageLayout = analyzeRandomStageLayout;
 globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
 
-const rememberedRandomAnalysis = analyzeRandomStageLayout(rememberedRandomStage);
-if (
-  !rememberedRandomAnalysis.solvable ||
-  rememberedRandomAnalysis.minSteps < HARD_RANDOM_STAGE_CONFIG.preferredMinSteps
-) {
-  const harderRandomStage = createRandomDesignedStage();
-  rememberedRandomStage = harderRandomStage;
-
-  if (gameState.mode === GAME_MODE.random) {
-    applyStage(harderRandomStage);
-  }
-}
-
 function buildRandomStageDefinition(layout) {
   return {
     boardSize: cloneBoardSize(getStageBoardSize(layout)),
@@ -6081,15 +6108,6 @@ createRandomDesignedStage = function createVerifiedRandomDesignedStage() {
 globalThis.closedLoopDebug.findStageAutoSolveSolutionSync = findStageAutoSolveSolutionSync;
 globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
 
-if (!isRandomStageDefinitionSolvable(rememberedRandomStage)) {
-  const verifiedRandomStage = createRandomDesignedStage();
-  rememberedRandomStage = verifiedRandomStage;
-
-  if (gameState.mode === GAME_MODE.random) {
-    applyStage(verifiedRandomStage);
-  }
-}
-
 buildRandomStagePool = function buildHardRandomStagePoolFinal(scoredLayouts) {
   const analyzedCandidates = [];
   const preferredCandidates = [];
@@ -6257,17 +6275,21 @@ createRandomDesignedStage = function createHardRandomDesignedStageFinal() {
 
 globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
 
-const hardRandomAnalysis = analyzeRandomStageLayout(rememberedRandomStage);
-if (
-  !hardRandomAnalysis.solvable ||
-  hardRandomAnalysis.minSteps < HARD_RANDOM_STAGE_CONFIG.preferredMinSteps
-) {
-  const harderRandomStage = createRandomDesignedStage();
-  rememberedRandomStage = harderRandomStage;
-
-  if (gameState.mode === GAME_MODE.random) {
-    applyStage(harderRandomStage);
+function ensureRememberedRandomStageReady(forceRegenerate = false) {
+  if (forceRegenerate) {
+    rememberedRandomStage = createRandomDesignedStage();
+    return rememberedRandomStage;
   }
+
+  if (
+    rememberedRandomStage &&
+    rememberedRandomStage.designLabel !== DEFAULT_RANDOM_STAGE.designLabel
+  ) {
+    return rememberedRandomStage;
+  }
+
+  rememberedRandomStage = createRandomDesignedStage();
+  return rememberedRandomStage;
 }
 
 function getNextKnownStageNumber(currentStageNumber, stageDifficulty) {
