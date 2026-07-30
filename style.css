@@ -152,12 +152,14 @@ button {
   transition: background-color 0.16s ease, transform 0.16s ease;
 }
 
-button:hover {
+button:hover,
+.button-link:hover {
   background: var(--button-hover);
   transform: translateY(-1px);
 }
 
-button:active {
+button:active,
+.button-link:active {
   transform: translateY(0);
 }
 
@@ -179,6 +181,70 @@ button:disabled {
 
 .secondary-button:hover {
   background: #d2e2f3;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 999px;
+  padding: 12px 20px;
+  background: var(--button);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.16s ease, transform 0.16s ease;
+}
+
+.button-link.secondary-button {
+  background: #e2ecf8;
+  color: var(--text);
+}
+
+.button-link.secondary-button:hover {
+  background: #d2e2f3;
+}
+
+.howto-panel {
+  max-width: 760px;
+}
+
+.howto-header {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+
+.howto-steps {
+  display: grid;
+  gap: 28px;
+}
+
+.howto-step {
+  margin: 0;
+}
+
+.howto-step img {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  margin: 0 auto;
+  border: 2px solid #1d314d;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.howto-step p {
+  max-width: 560px;
+  min-height: 1.8em;
+  margin: 10px auto 0;
+  color: var(--text);
+  line-height: 1.7;
+  white-space: pre-line;
 }
 
 .tutorial-row {

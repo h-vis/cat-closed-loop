@@ -15,8 +15,8 @@ const CONFIG = {
     "rgba(8, 145, 178, 0.17)",
     "rgba(124, 58, 237, 0.16)",
   ],
-  wallBlockFillStyle: "#586274",
-  wallBlockStrokeStyle: "#2a3140",
+  wallBlockFillStyle: "#174a8b",
+  wallBlockStrokeStyle: "#082f63",
   loopCellFillStyle: "rgba(22, 94, 171, 0.92)",
   loopCellStrokeStyle: "#0f447e",
   drawingCellFillStyle: "rgba(22, 94, 171, 0.56)",
@@ -3166,6 +3166,24 @@ window.addEventListener("touchmove", updateDrawing, { passive: false });
 window.addEventListener("touchend", finishDrawing, { passive: false });
 window.addEventListener("touchcancel", finishDrawing, { passive: false });
 document.addEventListener("keydown", handleKeyDown);
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (
+      event.key.toLowerCase() !== "s" ||
+      gameState.mode !== GAME_MODE.maker ||
+      event.altKey ||
+      isEditableElement(event.target)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    void saveMakerCanvasPng();
+  },
+  true
+);
 resetButton.addEventListener("click", () => resetGame(false));
 clearLoopButton.addEventListener("click", clearLoop);
 randomModeButton.addEventListener("click", () => setGameMode(GAME_MODE.random));
@@ -3238,6 +3256,7 @@ function getStageJsonUi() {
     stageLoaderStatus: document.getElementById("stageLoaderStatus"),
     makerExportNumberInput: document.getElementById("makerExportNumberInput"),
     makerExportJsonButton: document.getElementById("makerExportJsonButton"),
+    makerCapturePngButton: document.getElementById("makerCapturePngButton"),
     makerExportStatus: document.getElementById("makerExportStatus"),
     makerJsonOutput: document.getElementById("makerJsonOutput"),
   };
@@ -3500,6 +3519,17 @@ function isElementFocused(element) {
   }
 
   return document.activeElement === element;
+}
+
+function isEditableElement(element) {
+  if (!(element instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    element.isContentEditable ||
+    ["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)
+  );
 }
 
 function getKnownStageNumbers(stageDifficulty = getSelectedStageDifficulty()) {
@@ -3884,6 +3914,86 @@ async function exportMakerStageJson() {
   }
 }
 
+async function saveMakerCanvasPng() {
+  if (gameState.mode !== GAME_MODE.maker) {
+    return;
+  }
+
+  const { makerExportNumberInput, makerCapturePngButton } = getStageJsonUi();
+  const previousButtonText = makerCapturePngButton?.textContent ?? "";
+
+  try {
+    if (makerCapturePngButton) {
+      makerCapturePngButton.disabled = true;
+      makerCapturePngButton.textContent = "保存中...";
+    }
+
+    render();
+    const stageNumber = formatStageNumber(
+      parseStageNumber(makerExportNumberInput?.value ?? "1")
+    );
+    const response = await fetch("/save-screenshot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stageNumber,
+        imageData: createMakerCaptureDataUrl(),
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || "ローカル保存APIが使えません");
+    }
+
+    setMakerExportStatus(`画像を保存しました: ${result.path}`);
+  } catch (error) {
+    setMakerExportStatus(
+      `画像保存に失敗しました: ${error.message}。start-maker-server.ps1 で起動してください。`,
+      true
+    );
+  } finally {
+    if (makerCapturePngButton) {
+      makerCapturePngButton.disabled = false;
+      makerCapturePngButton.textContent = previousButtonText || "画像保存";
+    }
+  }
+}
+
+function getCanvasCssColor(propertyName, fallback) {
+  const value = getComputedStyle(canvas).getPropertyValue(propertyName).trim();
+  return value || fallback;
+}
+
+function createMakerCaptureDataUrl() {
+  const borderWidth = 8;
+  const padding = 18;
+  const captureCanvas = document.createElement("canvas");
+  const captureContext = captureCanvas.getContext("2d");
+  const width = canvas.width + padding * 2;
+  const height = canvas.height + padding * 2;
+
+  captureCanvas.width = width;
+  captureCanvas.height = height;
+
+  captureContext.fillStyle = getCanvasCssColor("background-color", "#f8fbff");
+  captureContext.fillRect(0, 0, width, height);
+
+  captureContext.strokeStyle = getCanvasCssColor("border-top-color", "rgba(29, 49, 77, 0.16)");
+  captureContext.lineWidth = borderWidth;
+  captureContext.strokeRect(
+    borderWidth / 2,
+    borderWidth / 2,
+    width - borderWidth,
+    height - borderWidth
+  );
+
+  captureContext.fillStyle = "#ffffff";
+  captureContext.fillRect(padding, padding, canvas.width, canvas.height);
+  captureContext.drawImage(canvas, padding, padding);
+  return captureCanvas.toDataURL("image/png");
+}
+
 function applyStage(stage) {
   const stageJsonState = getStageJsonState();
   const nextStage = cloneStageDefinition(stage);
@@ -4052,7 +4162,12 @@ function getHudStatusLabel() {
 function syncHud() {
   const isTutorialMode = gameState.mode === GAME_MODE.tutorial;
   const isMakerMode = gameState.mode === GAME_MODE.maker;
-  const { makerExportNumberInput, makerExportJsonButton, makerJsonOutput } = getStageJsonUi();
+  const {
+    makerExportNumberInput,
+    makerExportJsonButton,
+    makerCapturePngButton,
+    makerJsonOutput,
+  } = getStageJsonUi();
 
   instructionTextElement.textContent = getHudInstructionText();
   keyStatusElement.textContent = gameState.key.collected ? "取得済み" : "未取得";
@@ -4088,6 +4203,10 @@ function syncHud() {
 
     if (makerExportJsonButton) {
       makerExportJsonButton.disabled = false;
+    }
+
+    if (makerCapturePngButton) {
+      makerCapturePngButton.disabled = false;
     }
 
     if (makerJsonOutput) {
@@ -4161,6 +4280,9 @@ getStageJsonUi().stageNumberInput?.addEventListener("change", () => {
 });
 getStageJsonUi().makerExportJsonButton?.addEventListener("click", () => {
   void exportMakerStageJson();
+});
+getStageJsonUi().makerCapturePngButton?.addEventListener("click", () => {
+  void saveMakerCanvasPng();
 });
 render();
 if (isMakerOnlyPage) {

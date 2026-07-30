@@ -9,7 +9,7 @@ $err = Join-Path $root "maker-server.err.log"
 
 $process = Start-Process `
   -FilePath python `
-  -ArgumentList @("-m", "http.server", "$port", "--bind", "127.0.0.1") `
+  -ArgumentList @("maker-server.py", "$port") `
   -WorkingDirectory $root `
   -WindowStyle Hidden `
   -RedirectStandardOutput $log `

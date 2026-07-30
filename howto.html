@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>遊び方 - Closed Loop Dungeon</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page howto-page">
+    <h1 class="page-title">遊び方</h1>
+
+    <section class="game-panel howto-panel">
+      <header class="howto-header">
+        <a class="button-link secondary-button" href="index.html">ゲームに戻る</a>
+      </header>
+
+      <div id="howtoSteps" class="howto-steps" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    function getStepText(step) {
+      if (Array.isArray(step.text)) {
+        return step.text.join("\n");
+      }
+
+      return step.text || "";
+    }
+
+    async function loadHowToSteps() {
+      const stepsContainer = document.getElementById("howtoSteps");
+
+      try {
+        const response = await fetch("tutorial/howto.json");
+        if (!response.ok) {
+          throw new Error("tutorial/howto.json を読み込めませんでした");
+        }
+
+        const data = await response.json();
+        const steps = Array.isArray(data.steps) ? data.steps : [];
+        stepsContainer.replaceChildren(
+          ...steps.map((step, index) => {
+            const text = getStepText(step);
+            const article = document.createElement("article");
+            article.className = "howto-step";
+
+            const image = document.createElement("img");
+            image.src = `tutorial/${step.image}`;
+            image.alt = text || `遊び方 ${index + 1}`;
+            image.loading = "lazy";
+
+            const caption = document.createElement("p");
+            caption.textContent = text || "ここに説明文を書いてください。";
+
+            article.append(image, caption);
+            return article;
+          })
+        );
+      } catch (error) {
+        stepsContainer.textContent = error.message;
+      }
+    }
+
+    void loadHowToSteps();
+  </script>
+</body>
+</html>
