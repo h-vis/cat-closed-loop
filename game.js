@@ -17,6 +17,10 @@ const CONFIG = {
   ],
   wallBlockFillStyle: "#174a8b",
   wallBlockStrokeStyle: "#082f63",
+  warpFillStyle: "#7c3aed",
+  warpStrokeStyle: "#3b1a75",
+  lateWarpFillStyle: "#22d3ee",
+  lateWarpStrokeStyle: "#0e7490",
   loopCellFillStyle: "rgba(22, 94, 171, 0.92)",
   loopCellStrokeStyle: "#0f447e",
   drawingCellFillStyle: "rgba(22, 94, 171, 0.56)",
@@ -70,6 +74,8 @@ const DEFAULT_START_STAGE = {
   goalPosition: { x: 1, y: 3 },
   bombs: [{ x: 1, y: 1 }],
   disarmItems: [{ x: 8, y: 1 }],
+  warps: [],
+  lateWarps: [],
   wallBlocks: [
     { x: 6, y: 7 },
     { x: 6, y: 6 },
@@ -93,6 +99,8 @@ const DEFAULT_RANDOM_STAGE = {
   goalPosition: { x: 4, y: 3 },
   bombs: [],
   disarmItems: [],
+  warps: [],
+  lateWarps: [],
   wallBlocks: [],
   designLabel: "Random Placeholder",
   designNote: "A lightweight placeholder until random generation is requested.",
@@ -114,6 +122,8 @@ const MAKER_TOOL = {
   goal: "goal",
   bomb: "bomb",
   disarm: "disarm",
+  warp: "warp",
+  lateWarp: "lateWarp",
   wall: "wall",
   erase: "erase",
 };
@@ -1074,6 +1084,8 @@ function createRandomDesignedStage() {
     goalPosition: clonePosition(layout.goalPosition ?? BASE_STAGE.goalPosition),
     bombs: clonePositions(layout.bombs),
     disarmItems: clonePositions(layout.disarmItems),
+    warps: clonePositions(layout.warps ?? []),
+    lateWarps: clonePositions(layout.lateWarps ?? []),
     wallBlocks: clonePositions(layout.wallBlocks ?? []),
     shields: clonePositions(layout.shields ?? []),
     designLabel: layout.label,
@@ -1096,6 +1108,8 @@ function createTutorialStage(index) {
     goalPosition: clonePosition(definition.goalPosition),
     bombs: clonePositions(definition.bombs),
     disarmItems: clonePositions(definition.disarmItems),
+    warps: clonePositions(definition.warps ?? []),
+    lateWarps: clonePositions(definition.lateWarps ?? []),
     wallBlocks: clonePositions(definition.wallBlocks ?? []),
     shields: clonePositions(definition.shields ?? []),
     designLabel: definition.title,
@@ -1116,6 +1130,8 @@ function cloneStageDefinition(stage) {
     goalPosition: clonePosition(stage.goalPosition),
     bombs: clonePositions(stage.bombs),
     disarmItems: clonePositions(stage.disarmItems),
+    warps: clonePositions(stage.warps ?? []),
+    lateWarps: clonePositions(stage.lateWarps ?? []),
     wallBlocks: clonePositions(stage.wallBlocks ?? []),
     shields: clonePositions(stage.shields ?? []),
   };
@@ -1137,6 +1153,8 @@ function createMakerStage(boardSize = createBoardSize()) {
     },
     bombs: [],
     disarmItems: [],
+    warps: [],
+    lateWarps: [],
     wallBlocks: [],
     shields: [],
     designLabel: "ステージメーカー",
@@ -1248,6 +1266,16 @@ function resizeMakerStage(stage, boardSize) {
     normalizedBoardSize,
     usedKeys
   );
+  resizedStage.warps = fitPositionsToBoard(
+    resizedStage.warps ?? [],
+    normalizedBoardSize,
+    usedKeys
+  ).slice(0, 2);
+  resizedStage.lateWarps = fitPositionsToBoard(
+    resizedStage.lateWarps ?? [],
+    normalizedBoardSize,
+    usedKeys
+  ).slice(0, 2);
   resizedStage.wallBlocks = fitPositionsToBoard(
     resizedStage.wallBlocks ?? [],
     normalizedBoardSize,
@@ -1332,6 +1360,8 @@ const makerToolKeyButton = document.getElementById("makerToolKey");
 const makerToolGoalButton = document.getElementById("makerToolGoal");
 const makerToolBombButton = document.getElementById("makerToolBomb");
 const makerToolDisarmButton = document.getElementById("makerToolDisarm");
+const makerToolWarpButton = document.getElementById("makerToolWarp");
+const makerToolLateWarpButton = document.getElementById("makerToolLateWarp");
 const makerToolWallButton = document.getElementById("makerToolWall");
 const makerToolEraseButton = document.getElementById("makerToolErase");
 
@@ -1341,6 +1371,8 @@ const makerToolButtons = {
   [MAKER_TOOL.goal]: makerToolGoalButton,
   [MAKER_TOOL.bomb]: makerToolBombButton,
   [MAKER_TOOL.disarm]: makerToolDisarmButton,
+  [MAKER_TOOL.warp]: makerToolWarpButton,
+  [MAKER_TOOL.lateWarp]: makerToolLateWarpButton,
   [MAKER_TOOL.wall]: makerToolWallButton,
   [MAKER_TOOL.erase]: makerToolEraseButton,
 };
@@ -1365,6 +1397,8 @@ function createInitialState(stage = DEFAULT_START_STAGE) {
     },
     bombs: clonePositions(stage.bombs),
     disarmItems: clonePositions(stage.disarmItems),
+    warps: clonePositions(stage.warps ?? []),
+    lateWarps: clonePositions(stage.lateWarps ?? []),
     wallBlocks: clonePositions(stage.wallBlocks ?? []),
     goal: {
       position: clonePosition(stage.goalPosition),
@@ -1500,6 +1534,14 @@ function getMakerCollectionKey(tool) {
     return "disarmItems";
   }
 
+  if (tool === MAKER_TOOL.warp) {
+    return "warps";
+  }
+
+  if (tool === MAKER_TOOL.lateWarp) {
+    return "lateWarps";
+  }
+
   if (tool === MAKER_TOOL.wall) {
     return "wallBlocks";
   }
@@ -1535,6 +1577,8 @@ function handleMakerCanvasPlacement(cell) {
     selectedTool === MAKER_TOOL.erase ||
     selectedTool === MAKER_TOOL.bomb ||
     selectedTool === MAKER_TOOL.disarm ||
+    selectedTool === MAKER_TOOL.warp ||
+    selectedTool === MAKER_TOOL.lateWarp ||
     selectedTool === MAKER_TOOL.wall
   ) {
     if (uniqueObjectAtCell) {
@@ -1543,6 +1587,8 @@ function handleMakerCanvasPlacement(cell) {
 
     stage.bombs = removePositionFromCollection(stage.bombs, cell);
     stage.disarmItems = removePositionFromCollection(stage.disarmItems, cell);
+    stage.warps = removePositionFromCollection(stage.warps ?? [], cell);
+    stage.lateWarps = removePositionFromCollection(stage.lateWarps ?? [], cell);
     stage.wallBlocks = removePositionFromCollection(stage.wallBlocks ?? [], cell);
 
     if (
@@ -1550,6 +1596,13 @@ function handleMakerCanvasPlacement(cell) {
       collectionKey &&
       !hadSameCollectionObject
     ) {
+      if (
+        (selectedTool === MAKER_TOOL.warp || selectedTool === MAKER_TOOL.lateWarp) &&
+        stage[collectionKey].length >= 2
+      ) {
+        stage[collectionKey] = stage[collectionKey].slice(1);
+      }
+
       stage[collectionKey].push(clonePosition(cell));
     }
 
@@ -1563,6 +1616,8 @@ function handleMakerCanvasPlacement(cell) {
 
   stage.bombs = removePositionFromCollection(stage.bombs, cell);
   stage.disarmItems = removePositionFromCollection(stage.disarmItems, cell);
+  stage.warps = removePositionFromCollection(stage.warps ?? [], cell);
+  stage.lateWarps = removePositionFromCollection(stage.lateWarps ?? [], cell);
   stage.wallBlocks = removePositionFromCollection(stage.wallBlocks ?? [], cell);
 
   if (selectedTool === MAKER_TOOL.player) {
@@ -1610,6 +1665,13 @@ function startMakerTestPlay() {
   }
 
   const stage = cloneStageDefinition(gameState.stage);
+  try {
+    validateStageDefinitionForJson(stage);
+  } catch (error) {
+    setMakerExportStatus(`ステージ設定エラー: ${error.message}`, true);
+    return;
+  }
+
   stage.makerEditing = false;
   stage.selectedMakerTool = gameState.maker.selectedTool;
   applyMakerStage(stage);
@@ -1720,6 +1782,8 @@ function getBlockedDrawingCellKeys() {
     getCellKey(gameState.goal.position),
     ...gameState.bombs.map(getCellKey),
     ...gameState.disarmItems.map(getCellKey),
+    ...gameState.warps.map(getCellKey),
+    ...gameState.lateWarps.map(getCellKey),
     ...gameState.wallBlocks.map(getCellKey),
   ]);
 
@@ -2196,6 +2260,41 @@ function groupPositionsBySpace(positions) {
   return grouped;
 }
 
+function refreshPlayerSpaceFlags() {
+  gameState.playerSpaceId = getGridSpaceId(gameState.player);
+  gameState.playerInsideLoop = isGridPositionInsideLoop(gameState.player);
+  gameState.goalInsideLoop = isGridPositionInsideLoop(gameState.goal.position);
+  gameState.goalSharesPlayerSpace = isGridPositionInPlayerSpace(
+    gameState.goal.position
+  );
+}
+
+function applyWarpEffectInPlayerSpace(collectionKey) {
+  const warps = gameState[collectionKey] ?? [];
+  if (!gameState.loop || warps.length !== 2 || gameState.playerSpaceId === null) {
+    return false;
+  }
+
+  const warpsInPlayerSpace = warps.filter(isGridPositionInPlayerSpace);
+  if (warpsInPlayerSpace.length !== 1) {
+    return false;
+  }
+
+  const sourceWarpKey = getCellKey(warpsInPlayerSpace[0]);
+  const destinationWarp = warps.find(
+    (warp) => getCellKey(warp) !== sourceWarpKey
+  );
+
+  if (!destinationWarp) {
+    return false;
+  }
+
+  gameState.player = clonePosition(destinationWarp);
+  gameState[collectionKey] = [];
+  refreshPlayerSpaceFlags();
+  return true;
+}
+
 function canPlayerMoveInCurrentSpace() {
   if (gameState.playerSpaceId === null) {
     return false;
@@ -2246,17 +2345,14 @@ function updateStatus() {
 // それ以外の空間では同数の爆弾と水入りバケツを相殺する。
 function applyLoopEffects() {
   gameState.explodedBombs = [];
-  gameState.playerSpaceId = getGridSpaceId(gameState.player);
-  gameState.playerInsideLoop = isGridPositionInsideLoop(gameState.player);
-  gameState.goalInsideLoop = isGridPositionInsideLoop(gameState.goal.position);
-  gameState.goalSharesPlayerSpace = isGridPositionInPlayerSpace(
-    gameState.goal.position
-  );
+  refreshPlayerSpaceFlags();
 
   if (gameState.playerSpaceId === null) {
     updateStatus();
     return;
   }
+
+  applyWarpEffectInPlayerSpace("warps");
 
   let bombsBySpace = groupPositionsBySpace(gameState.bombs);
   let disarmBySpace = groupPositionsBySpace(gameState.disarmItems);
@@ -2319,6 +2415,7 @@ function applyLoopEffects() {
     gameState.clear = true;
   }
 
+  applyWarpEffectInPlayerSpace("lateWarps");
   updateStatus();
 }
 
@@ -2894,6 +2991,47 @@ function drawDisarmItems() {
   }
 }
 
+function drawWarpMarkers(warps, fillStyle, strokeStyle) {
+  for (const warp of warps) {
+    const center = getCellCenter(warp);
+    const radius = CONFIG.cellSize * 0.28;
+
+    context.save();
+    context.translate(center.x, center.y);
+    context.lineCap = "round";
+    context.lineJoin = "round";
+
+    context.fillStyle = fillStyle;
+    context.strokeStyle = strokeStyle;
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(0, 0, radius, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+
+    context.strokeStyle = "#f5f3ff";
+    context.lineWidth = 4;
+    context.beginPath();
+    context.arc(0, 0, radius * 0.55, Math.PI * 0.2, Math.PI * 1.55);
+    context.stroke();
+
+    context.fillStyle = "#ddd6fe";
+    context.beginPath();
+    context.arc(radius * 0.28, -radius * 0.18, radius * 0.13, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+}
+
+function drawWarps() {
+  drawWarpMarkers(gameState.warps, CONFIG.warpFillStyle, CONFIG.warpStrokeStyle);
+  drawWarpMarkers(
+    gameState.lateWarps,
+    CONFIG.lateWarpFillStyle,
+    CONFIG.lateWarpStrokeStyle
+  );
+}
+
 function drawOverlay() {
   if (!gameState.gameOver && !gameState.clear) {
     return;
@@ -3013,6 +3151,7 @@ function render() {
   drawBombs();
   drawExplodedBombs();
   drawDisarmItems();
+  drawWarps();
   drawKey();
   drawPlayer();
   drawOverlay();
@@ -3479,6 +3618,8 @@ function validateStageDefinitionForJson(stage) {
     ["goalPosition", stage.goalPosition],
     ...stage.bombs.map((point, index) => [`bombs[${index}]`, point]),
     ...stage.disarmItems.map((point, index) => [`disarmItems[${index}]`, point]),
+    ...(stage.warps ?? []).map((point, index) => [`warps[${index}]`, point]),
+    ...(stage.lateWarps ?? []).map((point, index) => [`lateWarps[${index}]`, point]),
     ...stage.wallBlocks.map((point, index) => [`wallBlocks[${index}]`, point]),
   ];
   const occupiedByKey = new Map();
@@ -3495,6 +3636,14 @@ function validateStageDefinitionForJson(stage) {
 
     occupiedByKey.set(pointKey, label);
   }
+
+  if ((stage.warps ?? []).length !== 0 && (stage.warps ?? []).length !== 2) {
+    throw new Error("warps must be empty or contain exactly 2 points.");
+  }
+
+  if ((stage.lateWarps ?? []).length !== 0 && (stage.lateWarps ?? []).length !== 2) {
+    throw new Error("lateWarps must be empty or contain exactly 2 points.");
+  }
 }
 
 function normalizeStageJsonDefinition(stageJson, stageNumber = null) {
@@ -3506,6 +3655,8 @@ function normalizeStageJsonDefinition(stageJson, stageNumber = null) {
     goalPosition: normalizeStagePoint(stageJson?.goalPosition, "goalPosition"),
     bombs: normalizeStagePointList(stageJson?.bombs, "bombs"),
     disarmItems: normalizeStagePointList(stageJson?.disarmItems, "disarmItems"),
+    warps: normalizeStagePointList(stageJson?.warps, "warps"),
+    lateWarps: normalizeStagePointList(stageJson?.lateWarps, "lateWarps"),
     wallBlocks: normalizeStagePointList(stageJson?.wallBlocks, "wallBlocks"),
     designLabel:
       typeof stageJson?.designLabel === "string" && stageJson.designLabel.trim()
@@ -3528,6 +3679,7 @@ function normalizeStageJsonDefinition(stageJson, stageNumber = null) {
 
 function buildStageJsonDefinition(stage, stageNumber = null) {
   const boardSize = getStageBoardSize(stage);
+  validateStageDefinitionForJson(stage);
 
   return {
     version: 1,
@@ -3540,6 +3692,8 @@ function buildStageJsonDefinition(stage, stageNumber = null) {
     goalPosition: clonePosition(stage.goalPosition),
     bombs: clonePositions(stage.bombs ?? []),
     disarmItems: clonePositions(stage.disarmItems ?? []),
+    warps: clonePositions(stage.warps ?? []),
+    lateWarps: clonePositions(stage.lateWarps ?? []),
     wallBlocks: clonePositions(stage.wallBlocks ?? []),
     designLabel:
       typeof stage.designLabel === "string" && stage.designLabel.trim()
@@ -4283,6 +4437,7 @@ function render() {
   drawBombs();
   drawExplodedBombs();
   drawDisarmItems();
+  drawWarps();
   drawKey();
   drawPlayer();
   drawOverlay();
@@ -6236,6 +6391,8 @@ function buildRandomStageDefinition(layout) {
     goalPosition: clonePosition(layout.goalPosition ?? BASE_STAGE.goalPosition),
     bombs: clonePositions(layout.bombs ?? []),
     disarmItems: clonePositions(layout.disarmItems ?? []),
+    warps: clonePositions(layout.warps ?? []),
+    lateWarps: clonePositions(layout.lateWarps ?? []),
     wallBlocks: clonePositions(layout.wallBlocks ?? []),
     shields: clonePositions(layout.shields ?? []),
     designLabel: layout.label ?? layout.designLabel ?? "ランダムステージ",
@@ -6874,6 +7031,8 @@ canvas.addEventListener("click", (event) => {
 canvas.addEventListener("touchend", handleCanvasTouchEndAfterClear, { passive: false });
 
 const ICON_SPRITE_SHEET_PATH = "sozai/icons.png";
+const WARP_ICON_PATH = "sozai/warp.png";
+const BLUE_WARP_ICON_PATH = "sozai/blue_warp.png";
 const ICON_SPRITE_DEFINITIONS = {
   player: { x: 107, y: 339, width: 216, height: 222, padding: 3 },
   goalOpen: { x: 383, y: 339, width: 220, height: 222, padding: 3 },
@@ -6891,6 +7050,7 @@ const drawKeyFallback = drawKey;
 const drawGoalFallback = drawGoal;
 const drawBombsFallback = drawBombs;
 const drawDisarmItemsFallback = drawDisarmItems;
+const drawWarpsFallback = drawWarps;
 
 function getIconSpriteState() {
   if (!globalThis.__closedLoopIconSpriteState) {
@@ -6933,6 +7093,64 @@ function ensureIconSpriteSheet() {
   image.src = ICON_SPRITE_SHEET_PATH;
 
   return spriteState;
+}
+
+function getImageIconState(stateKey) {
+  if (!globalThis[stateKey]) {
+    globalThis[stateKey] = {
+      image: null,
+      loaded: false,
+      loading: false,
+      failed: false,
+    };
+  }
+
+  return globalThis[stateKey];
+}
+
+function ensureImageIcon(stateKey, imagePath) {
+  const iconState = getImageIconState(stateKey);
+  if (iconState.loaded || iconState.loading || iconState.failed) {
+    return iconState;
+  }
+
+  if (typeof Image !== "function") {
+    iconState.failed = true;
+    return iconState;
+  }
+
+  const image = new Image();
+  iconState.image = image;
+  iconState.loading = true;
+  image.onload = () => {
+    iconState.loading = false;
+    iconState.loaded = true;
+    render();
+  };
+  image.onerror = () => {
+    iconState.loading = false;
+    iconState.failed = true;
+    render();
+  };
+  image.src = imagePath;
+
+  return iconState;
+}
+
+function getWarpIconState() {
+  return getImageIconState("__closedLoopWarpIconState");
+}
+
+function getBlueWarpIconState() {
+  return getImageIconState("__closedLoopBlueWarpIconState");
+}
+
+function ensureWarpIcon() {
+  return ensureImageIcon("__closedLoopWarpIconState", WARP_ICON_PATH);
+}
+
+function ensureBlueWarpIcon() {
+  return ensureImageIcon("__closedLoopBlueWarpIconState", BLUE_WARP_ICON_PATH);
 }
 
 function renderRuleSpriteIcons() {
@@ -7087,6 +7305,38 @@ drawDisarmItems = function drawDisarmItemsWithIcons() {
   }
 };
 
+function drawWarpIconCollection(warps, iconState) {
+  const padding = 4;
+  const size = CONFIG.cellSize - padding * 2;
+
+  for (const warp of warps) {
+    const pixelX = warp.x * CONFIG.cellSize + padding;
+    const pixelY = warp.y * CONFIG.cellSize + padding;
+
+    context.save();
+    context.imageSmoothingEnabled = false;
+    context.drawImage(iconState.image, pixelX, pixelY, size, size);
+    context.restore();
+  }
+}
+
+drawWarps = function drawWarpsWithIcon() {
+  const warpIconState = ensureWarpIcon();
+  const blueWarpIconState = ensureBlueWarpIcon();
+  if (
+    !warpIconState.loaded ||
+    !warpIconState.image ||
+    !blueWarpIconState.loaded ||
+    !blueWarpIconState.image
+  ) {
+    drawWarpsFallback();
+    return;
+  }
+
+  drawWarpIconCollection(gameState.warps, warpIconState);
+  drawWarpIconCollection(gameState.lateWarps, blueWarpIconState);
+};
+
 getMakerToolHint = function getMakerToolHintWithBuckets(tool) {
   const hints = {
     [MAKER_TOOL.player]:
@@ -7099,6 +7349,10 @@ getMakerToolHint = function getMakerToolHintWithBuckets(tool) {
       "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
     [MAKER_TOOL.disarm]:
       "水入りバケツを置きます。プレイヤーのいない空間で爆弾と同数なら対消滅します。",
+    [MAKER_TOOL.warp]:
+      "ワープを置きます。2つで1組です。片方だけプレイヤーと同じ空間に入ると、もう片方へ移動します。",
+    [MAKER_TOOL.lateWarp]:
+      "水色ワープを置きます。2つで1組です。爆弾・鍵・ゴールの判定後、最後に発動します。",
     [MAKER_TOOL.wall]:
       "壁ブロックを置きます。線は通れず、外壁と組み合わせたループ形状にも影響します。",
     [MAKER_TOOL.erase]:
@@ -7108,10 +7362,33 @@ getMakerToolHint = function getMakerToolHintWithBuckets(tool) {
   return hints[tool] ?? "";
 };
 
+const getMakerToolHintWithWarpTiming = getMakerToolHint;
+getMakerToolHint = function getMakerToolHintWithWarpTimingLabels(tool) {
+  if (tool === MAKER_TOOL.warp) {
+    return "紫ワープを置きます。2つで1組です。爆弾・鍵・ゴールより先に発動します。";
+  }
+
+  if (tool === MAKER_TOOL.lateWarp) {
+    return "水色ワープを置きます。2つで1組です。爆弾・鍵・ゴールの判定後、最後に発動します。";
+  }
+
+  return getMakerToolHintWithWarpTiming(tool);
+};
+
 buildMakerObjectSummary = function buildMakerObjectSummaryWithBuckets() {
   return [
     `爆弾${gameState.bombs.length}個`,
     `水入りバケツ${gameState.disarmItems.length}個`,
+    `壁${gameState.wallBlocks.length}個`,
+  ].join(" / ");
+};
+
+buildMakerObjectSummary = function buildMakerObjectSummaryWithWarps() {
+  return [
+    `爆弾${gameState.bombs.length}個`,
+    `バケツ${gameState.disarmItems.length}個`,
+    `紫ワープ${gameState.warps.length}/2`,
+    `水色ワープ${gameState.lateWarps.length}/2`,
     `壁${gameState.wallBlocks.length}個`,
   ].join(" / ");
 };
@@ -7383,9 +7660,12 @@ function getHudStatusLabel() {
 
 function createAutoSolveSearchState(stage) {
   return {
+    playerPosition: clonePosition(stage.playerStart),
     keyCollected: Boolean(stage.keyInitiallyCollected),
     bombs: clonePositions(stage.bombs),
     disarmItems: clonePositions(stage.disarmItems),
+    warps: clonePositions(stage.warps ?? []),
+    lateWarps: clonePositions(stage.lateWarps ?? []),
     clear: false,
     history: [],
   };
@@ -7400,18 +7680,23 @@ function getAutoSolvePositionSignature(positions) {
 
 function serializeAutoSolveSearchState(state) {
   return [
+    getCellKey(state.playerPosition ?? { x: 0, y: 0 }),
     state.keyCollected ? "1" : "0",
     getAutoSolvePositionSignature(state.bombs),
     getAutoSolvePositionSignature(state.disarmItems),
+    getAutoSolvePositionSignature(state.warps ?? []),
+    getAutoSolvePositionSignature(state.lateWarps ?? []),
   ].join("||");
 }
 
 function buildAutoSolveForbiddenKeys(stage, searchState) {
   const forbiddenKeys = new Set([
-    getCellKey(stage.playerStart),
+    getCellKey(searchState.playerPosition ?? stage.playerStart),
     getCellKey(stage.goalPosition),
     ...searchState.bombs.map(getCellKey),
     ...searchState.disarmItems.map(getCellKey),
+    ...(searchState.warps ?? []).map(getCellKey),
+    ...(searchState.lateWarps ?? []).map(getCellKey),
   ]);
 
   if (!searchState.keyCollected) {
@@ -7421,11 +7706,60 @@ function buildAutoSolveForbiddenKeys(stage, searchState) {
   return forbiddenKeys;
 }
 
+function applyAutoSolveWarpEffect(loopCandidate, playerPosition, warps) {
+  let nextPlayerPosition = playerPosition;
+  let playerSpaceId = getLoopSpaceIdFromPosition(loopCandidate, nextPlayerPosition);
+  let nextWarps = clonePositions(warps ?? []);
+
+  if (playerSpaceId === null || nextWarps.length !== 2) {
+    return { playerPosition: nextPlayerPosition, playerSpaceId, warps: nextWarps };
+  }
+
+  const warpsInPlayerSpace = nextWarps.filter(
+    (warp) => getLoopSpaceIdFromPosition(loopCandidate, warp) === playerSpaceId
+  );
+
+  if (warpsInPlayerSpace.length !== 1) {
+    return { playerPosition: nextPlayerPosition, playerSpaceId, warps: nextWarps };
+  }
+
+  const sourceWarpKey = getCellKey(warpsInPlayerSpace[0]);
+  const destinationWarp = nextWarps.find(
+    (warp) => getCellKey(warp) !== sourceWarpKey
+  );
+
+  if (!destinationWarp) {
+    return { playerPosition: nextPlayerPosition, playerSpaceId, warps: nextWarps };
+  }
+
+  nextPlayerPosition = clonePosition(destinationWarp);
+  nextWarps = [];
+  playerSpaceId = getLoopSpaceIdFromPosition(loopCandidate, nextPlayerPosition);
+
+  return { playerPosition: nextPlayerPosition, playerSpaceId, warps: nextWarps };
+}
+
 function buildAutoSolveNextState(stage, currentState, loopCandidate) {
-  const playerSpaceId = getLoopSpaceIdFromPosition(loopCandidate, stage.playerStart);
+  let playerPosition = currentState.playerPosition ?? stage.playerStart;
+  let playerSpaceId = getLoopSpaceIdFromPosition(loopCandidate, playerPosition);
   if (playerSpaceId === null) {
     return null;
   }
+
+  const earlyWarpResult = applyAutoSolveWarpEffect(
+    loopCandidate,
+    playerPosition,
+    currentState.warps
+  );
+  playerPosition = earlyWarpResult.playerPosition;
+  playerSpaceId = earlyWarpResult.playerSpaceId;
+
+  if (playerSpaceId === null) {
+    return null;
+  }
+
+  const nextWarps = earlyWarpResult.warps;
+  let nextLateWarps = clonePositions(currentState.lateWarps ?? []);
 
   const bombsBySpace = groupPositionsByLoopSpaceForAutoSolve(
     currentState.bombs,
@@ -7481,24 +7815,47 @@ function buildAutoSolveNextState(stage, currentState, loopCandidate) {
     getLoopSpaceIdFromPosition(loopCandidate, stage.keyPosition) === playerSpaceId;
   const goalSharesPlayerSpace =
     getLoopSpaceIdFromPosition(loopCandidate, stage.goalPosition) === playerSpaceId;
+
+  const lateWarpResult = applyAutoSolveWarpEffect(
+    loopCandidate,
+    playerPosition,
+    nextLateWarps
+  );
+  playerPosition = lateWarpResult.playerPosition;
+  nextLateWarps = lateWarpResult.warps;
+
   const currentBombSignature = getAutoSolvePositionSignature(currentState.bombs);
   const currentDisarmSignature = getAutoSolvePositionSignature(currentState.disarmItems);
   const nextBombSignature = getAutoSolvePositionSignature(nextBombs);
   const nextDisarmSignature = getAutoSolvePositionSignature(nextDisarmItems);
+  const currentWarpSignature = getAutoSolvePositionSignature(currentState.warps ?? []);
+  const nextWarpSignature = getAutoSolvePositionSignature(nextWarps);
+  const currentLateWarpSignature = getAutoSolvePositionSignature(currentState.lateWarps ?? []);
+  const nextLateWarpSignature = getAutoSolvePositionSignature(nextLateWarps);
+  const playerMoved = !positionsMatch(
+    playerPosition,
+    currentState.playerPosition ?? stage.playerStart
+  );
 
   if (
     nextKeyCollected === currentState.keyCollected &&
     currentBombSignature === nextBombSignature &&
     currentDisarmSignature === nextDisarmSignature &&
+    currentWarpSignature === nextWarpSignature &&
+    currentLateWarpSignature === nextLateWarpSignature &&
+    !playerMoved &&
     !(nextKeyCollected && goalSharesPlayerSpace)
   ) {
     return null;
   }
 
   return {
+    playerPosition,
     keyCollected: nextKeyCollected,
     bombs: nextBombs,
     disarmItems: nextDisarmItems,
+    warps: nextWarps,
+    lateWarps: nextLateWarps,
     clear: nextKeyCollected && goalSharesPlayerSpace,
     history: [
       ...currentState.history,
