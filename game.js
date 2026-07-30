@@ -54,9 +54,9 @@ const STAGE_DIFFICULTY = {
 };
 
 const STAGE_PACKS = {
-  [STAGE_DIFFICULTY.low]: { label: "Easy", directory: "low", count: 10 },
-  [STAGE_DIFFICULTY.medium]: { label: "Normal", directory: "medium", count: 44 },
-  [STAGE_DIFFICULTY.high]: { label: "Hard", directory: "high", count: 10 },
+  [STAGE_DIFFICULTY.low]: { label: "Easy", directory: "low" },
+  [STAGE_DIFFICULTY.medium]: { label: "Normal", directory: "medium" },
+  [STAGE_DIFFICULTY.high]: { label: "Hard", directory: "high" },
 };
 
 const DEFAULT_STAGE_DIFFICULTY = STAGE_DIFFICULTY.medium;
@@ -3427,6 +3427,11 @@ function getStageJsonState() {
         [STAGE_DIFFICULTY.medium]: [],
         [STAGE_DIFFICULTY.high]: [],
       },
+      builtInStageNumbersByDifficulty: {
+        [STAGE_DIFFICULTY.low]: [],
+        [STAGE_DIFFICULTY.medium]: [],
+        [STAGE_DIFFICULTY.high]: [],
+      },
     };
   }
 
@@ -3519,8 +3524,48 @@ function getStageDifficultyLabel(stageDifficulty) {
 }
 
 function getBuiltInStageNumbers(stageDifficulty) {
-  const pack = STAGE_PACKS[normalizeStageDifficulty(stageDifficulty)];
-  return Array.from({ length: pack.count }, (_unused, index) => index + 1);
+  const stageJsonState = getStageJsonState();
+  const normalizedDifficulty = normalizeStageDifficulty(stageDifficulty);
+  return [...stageJsonState.builtInStageNumbersByDifficulty[normalizedDifficulty]];
+}
+
+function normalizeStageManifestNumbers(values) {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return [...new Set(
+    values
+      .map((value) => Number.parseInt(String(value), 10))
+      .filter((value) => Number.isInteger(value) && value > 0)
+  )].sort((left, right) => left - right);
+}
+
+async function loadBuiltInStageManifest() {
+  const stageJsonState = getStageJsonState();
+
+  if (globalThis.location?.protocol === "file:") {
+    return false;
+  }
+
+  const response = await fetch("stage/manifest.json", { cache: "no-store" }).catch(
+    () => null
+  );
+
+  if (!response || !response.ok) {
+    return false;
+  }
+
+  const manifest = await response.json();
+  for (const stageDifficulty of Object.values(STAGE_DIFFICULTY)) {
+    const pack = STAGE_PACKS[stageDifficulty];
+    stageJsonState.builtInStageNumbersByDifficulty[stageDifficulty] =
+      normalizeStageManifestNumbers(
+        manifest?.[stageDifficulty] ?? manifest?.[pack.directory]
+      );
+  }
+
+  return true;
 }
 
 function getSelectedStageDifficulty() {
@@ -4455,7 +4500,12 @@ async function handleStageNumberEnter(event) {
 
 getStageModeKey();
 setStageLoaderStatus(getDefaultStageLoaderMessage());
-refreshStageNumberInputs();
+void loadBuiltInStageManifest().then((loaded) => {
+  refreshStageNumberInputs();
+  if (loaded) {
+    setStageLoaderStatus(`Built-in stages loaded: ${buildStageImportSummary(getStageJsonState())}`);
+  }
+});
 registerClosedLoopDebug({
   loadStageByNumber: playStageByNumber,
   exportMakerStageJson,
