@@ -5,69 +5,100 @@
     "height": 10
   },
   "playerStart": {
-    "x": 9,
+    "x": 1,
     "y": 1
   },
   "keyPosition": {
-    "x": 6,
-    "y": 2
+    "x": 1,
+    "y": 5
   },
   "goalPosition": {
-    "x": 8,
-    "y": 8
+    "x": 6,
+    "y": 5
   },
   "bombs": [
     {
-      "x": 8,
-      "y": 3
+      "x": 6,
+      "y": 4
     },
     {
-      "x": 0,
+      "x": 7,
+      "y": 4
+    },
+    {
+      "x": 7,
+      "y": 5
+    },
+    {
+      "x": 7,
       "y": 6
     },
     {
-      "x": 4,
-      "y": 8
+      "x": 6,
+      "y": 6
+    },
+    {
+      "x": 5,
+      "y": 6
+    },
+    {
+      "x": 5,
+      "y": 5
+    },
+    {
+      "x": 5,
+      "y": 4
     }
   ],
   "disarmItems": [
     {
-      "x": 2,
-      "y": 9
+      "x": 3,
+      "y": 2
+    },
+    {
+      "x": 6,
+      "y": 2
+    },
+    {
+      "x": 9,
+      "y": 2
     },
     {
       "x": 3,
-      "y": 3
-    }
-  ],
-  "wallBlocks": [
-    {
-      "x": 4,
-      "y": 9
+      "y": 4
     },
     {
       "x": 3,
-      "y": 9
+      "y": 6
+    },
+    {
+      "x": 9,
+      "y": 4
+    },
+    {
+      "x": 9,
+      "y": 6
     },
     {
       "x": 3,
       "y": 8
     },
     {
-      "x": 2,
+      "x": 5,
       "y": 8
     },
     {
-      "x": 3,
-      "y": 5
+      "x": 7,
+      "y": 8
     },
     {
-      "x": 2,
-      "y": 0
+      "x": 9,
+      "y": 8
     }
   ],
-  "designLabel": "Normal 006 - single-lane",
-  "designNote": "Normal pack / migrated from high / fixed pack / family=single-lane / style=needle / minSteps=3 / winningFirstMoves=1",
-  "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
+  "wallBlocks": [],
+  "designLabel": "ステージメーカー",
+  "designNote": "自由配置のステージを編集できます。",
+  "instructionText": "ステージメーカーのテストプレイ中です。プレイヤーは移動せず、ループで空間の分かれ方だけを調整します。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。",
   "keyInitiallyCollected": false
 }

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Closed Loop Stage Maker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-app-mode="maker">
+  <main class="page maker-only-page">
+    <h1 class="page-title">Closed Loop Stage Maker</h1>
+
+    <section id="gameScreen" class="game-panel">
+      <header class="panel-header maker-only-hidden">
+        <div class="panel-action-row">
+          <button id="openRulesButton" class="secondary-button" type="button" hidden>ルール</button>
+        </div>
+        <section class="stage-loader top-stage-loader" aria-label="ステージ選択" hidden>
+          <div class="stage-loader-row top-stage-loader-row">
+            <label class="stage-row-label" for="stageDifficultySelect">ステージ</label>
+            <label class="stage-field" for="stageDifficultySelect">
+              <select id="stageDifficultySelect" aria-label="難易度">
+                <option value="low">Easy</option>
+                <option value="medium">Normal</option>
+                <option value="high">Hard</option>
+              </select>
+            </label>
+            <label class="stage-field" for="stageNumberInput">
+              <select id="stageNumberInput" aria-label="ステージ番号">
+                <option value="1">001</option>
+              </select>
+            </label>
+            <button id="loadStageButton" type="button">Play</button>
+            <button id="chooseStageFolderButton" type="button" hidden>JSONを選ぶ</button>
+            <input id="stageFolderInput" type="file" accept=".json,application/json" multiple hidden>
+          </div>
+          <p id="stageLoaderStatus" class="status-text" hidden></p>
+        </section>
+      </header>
+
+      <canvas
+        id="gameCanvas"
+        width="480"
+        height="480"
+        aria-label="Closed Loop stage maker canvas"
+      ></canvas>
+
+      <section class="hud" aria-label="ステージメーカー情報">
+        <div class="button-row mode-row" aria-label="ゲームモード" hidden>
+          <button id="randomModeButton" type="button" hidden>ランダム</button>
+          <button id="tutorialModeButton" type="button" hidden>チュートリアル</button>
+          <button id="makerModeButton" class="is-active" type="button" hidden>ステージメーカー</button>
+        </div>
+
+        <p id="instructionText" class="instructions" hidden></p>
+
+        <div class="status-grid" hidden style="display: none;">
+          <p><span class="label">鍵</span><span id="keyStatus">未取得</span></p>
+          <p><span class="label">爆弾</span><span id="bombStatus">0個</span></p>
+          <p><span class="label">解除装置</span><span id="disarmStatus">0個</span></p>
+          <p><span class="label">状態</span><span id="stateStatus">待機中</span></p>
+        </div>
+
+        <div class="button-row">
+          <button id="resetButton" type="button">リセット</button>
+          <button id="clearLoopButton" type="button" hidden>ループを消す</button>
+        </div>
+
+        <div id="tutorialButtonRow" class="button-row tutorial-row" hidden>
+          <button id="tutorialPrevButton" type="button">前へ</button>
+          <button id="tutorialNextButton" type="button">次へ</button>
+        </div>
+
+        <section id="makerPanel" class="maker-panel" aria-label="ステージメーカー設定">
+          <div class="maker-size-row">
+            <label class="maker-field" for="makerWidthInput">
+              幅
+              <input id="makerWidthInput" type="number" min="6" max="14" value="10">
+            </label>
+            <label class="maker-field" for="makerHeightInput">
+              高さ
+              <input id="makerHeightInput" type="number" min="6" max="14" value="10">
+            </label>
+            <button id="makerApplySizeButton" type="button">サイズを適用</button>
+            <button id="makerResetButton" type="button">配置を初期化</button>
+          </div>
+
+          <div class="maker-palette" aria-label="配置ツール">
+            <button id="makerToolPlayer" class="maker-tool is-active" type="button">プレイヤー</button>
+            <button id="makerToolKey" class="maker-tool" type="button">鍵</button>
+            <button id="makerToolGoal" class="maker-tool" type="button">ゴール</button>
+            <button id="makerToolBomb" class="maker-tool" type="button">爆弾</button>
+            <button id="makerToolDisarm" class="maker-tool" type="button">解除装置</button>
+            <button id="makerToolWall" class="maker-tool" type="button">壁</button>
+            <button id="makerToolErase" class="maker-tool" type="button">消しゴム</button>
+          </div>
+
+          <div class="button-row maker-action-row">
+            <button id="makerTestButton" type="button">テストプレイ開始</button>
+            <button id="makerEditButton" type="button" hidden>編集に戻る</button>
+            <button id="makerAutoSolveButton" type="button">自動で解く</button>
+          </div>
+          <p id="makerSolveStatus" class="status-text"></p>
+
+          <div class="maker-export-row">
+            <label class="maker-field" for="makerExportNumberInput">
+              JSON番号
+              <input id="makerExportNumberInput" type="number" min="1" step="1" value="1">
+            </label>
+            <button id="makerExportJsonButton" type="button">JSON出力</button>
+          </div>
+          <p id="makerExportStatus" class="status-text"></p>
+          <textarea
+            id="makerJsonOutput"
+            class="maker-json-output"
+            readonly
+            placeholder="ここにステージJSONが表示されます"
+          ></textarea>
+
+          <p id="makerHint" class="maker-hint"></p>
+        </section>
+
+        <p id="stageInfo" class="stage-info" hidden></p>
+      </section>
+    </section>
+
+    <section id="rulesScreen" class="game-panel rules-panel" hidden aria-labelledby="rulesTitle">
+      <header class="rules-header">
+        <div>
+          <p class="rules-kicker">How To Play</p>
+          <h2 id="rulesTitle">ルール</h2>
+        </div>
+        <button id="closeRulesButton" class="secondary-button" type="button">戻る</button>
+      </header>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

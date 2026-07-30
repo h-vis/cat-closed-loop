@@ -1396,6 +1396,7 @@ let rememberedTutorialIndex = 0;
 let rememberedMakerStage = createMakerStage();
 
 const gameState = createInitialState(cloneStageDefinition(DEFAULT_START_STAGE));
+const isMakerOnlyPage = document.body?.dataset?.appMode === "maker";
 
 function applyStage(stage) {
   const stageJsonState = getStageJsonState();
@@ -3130,7 +3131,11 @@ function syncHud() {
   }
 }
 
-globalThis.closedLoopDebug = {
+function registerClosedLoopDebug(debugApi) {
+  void debugApi;
+}
+
+registerClosedLoopDebug({
   createRandomDesignedStage,
   createTutorialStage,
   createMakerStage,
@@ -3151,7 +3156,7 @@ globalThis.closedLoopDebug = {
       status: gameState.status,
     };
   },
-};
+});
 
 canvas.addEventListener("mousedown", startDrawing);
 canvas.addEventListener("mousemove", updateDrawing);
@@ -3183,9 +3188,13 @@ for (const [tool, button] of Object.entries(makerToolButtons)) {
   button.addEventListener("click", () => setMakerSelectedTool(tool));
 }
 
-updateCanvasMetrics(initialRandomStage);
-updateStatus();
-render();
+if (isMakerOnlyPage) {
+  applyStage(cloneStageDefinition(rememberedMakerStage));
+} else {
+  updateCanvasMetrics(initialRandomStage);
+  updateStatus();
+  render();
+}
 
 function getStageModeKey() {
   if (!GAME_MODE.stage) {
@@ -4125,8 +4134,10 @@ async function handleStageNumberEnter(event) {
 getStageModeKey();
 setStageLoaderStatus(getDefaultStageLoaderMessage());
 refreshStageNumberInputs();
-globalThis.closedLoopDebug.loadStageByNumber = playStageByNumber;
-globalThis.closedLoopDebug.exportMakerStageJson = exportMakerStageJson;
+registerClosedLoopDebug({
+  loadStageByNumber: playStageByNumber,
+  exportMakerStageJson,
+});
 getStageJsonUi().stageDifficultySelect?.addEventListener("change", () => {
   handleStageDifficultyChange();
 });
@@ -4152,16 +4163,21 @@ getStageJsonUi().makerExportJsonButton?.addEventListener("click", () => {
   void exportMakerStageJson();
 });
 render();
-if (globalThis.location?.protocol !== "file:") {
+if (isMakerOnlyPage) {
+  setGameMode(GAME_MODE.maker);
+} else if (globalThis.location?.protocol !== "file:") {
   void playStageByNumber(1, DEFAULT_STAGE_DIFFICULTY);
 }
 
 const AUTO_SOLVER_CONFIG = {
-  maxSteps: 6,
-  maxVisitedStates: 4000,
+  maxSteps: 4,
+  maxVisitedStates: 250000,
   maxRectanglePerimeter: 52,
-  buildYieldInterval: 240,
-  searchYieldInterval: 18,
+  exhaustiveMaxPathCells: 32,
+  exhaustiveMaxCandidates: 60000,
+  strategicCandidateLimit: 900,
+  buildYieldInterval: 600,
+  searchYieldInterval: 60,
   animationMoveMs: 70,
   animationLoopPreviewMs: 140,
   animationLoopApplyMs: 220,
@@ -4651,6 +4667,170 @@ function buildAutoSolveForbiddenKeys(stage, searchState) {
   return forbiddenKeys;
 }
 
+async function buildAutoSolveCandidatesExhaustive(stage, runId = null) {
+  const autoSolveState = getMakerAutoSolveState();
+  const cacheKey = `${createAutoSolveCandidateKey(stage)}|exhaustive-v1|${AUTO_SOLVER_CONFIG.exhaustiveMaxPathCells}`;
+  if (autoSolveState.cacheByStageKey.has(cacheKey)) {
+    return autoSolveState.cacheByStageKey.get(cacheKey);
+  }
+
+  const boardSize = getStageBoardSize(stage);
+  const candidateMap = new Map();
+  const cells = [];
+  const borderKeys = new Set(buildAutoSolveBorderCells(boardSize).map(getCellKey));
+  const cellRankByKey = new Map();
+  let generatedCount = 0;
+  let stoppedByLimit = false;
+
+  for (let y = 0; y < boardSize.height; y += 1) {
+    for (let x = 0; x < boardSize.width; x += 1) {
+      const cell = { x, y };
+      cellRankByKey.set(getCellKey(cell), cells.length);
+      cells.push(cell);
+    }
+  }
+
+  function getOrderedNeighbors(cell) {
+    return getCellNeighbors(cell, boardSize).sort(compareGridPositions);
+  }
+
+  function shouldStop() {
+    if (candidateMap.size >= AUTO_SOLVER_CONFIG.exhaustiveMaxCandidates) {
+      stoppedByLimit = true;
+      return true;
+    }
+
+    return false;
+  }
+
+  async function maybeYield() {
+    generatedCount += 1;
+    if (generatedCount % AUTO_SOLVER_CONFIG.buildYieldInterval !== 0) {
+      return false;
+    }
+
+    if (runId !== null && isAutoSolveRunCancelled(runId)) {
+      return true;
+    }
+
+    setMakerAutoSolveStatus(
+      `総当たり候補を生成中... ${candidateMap.size}候補 / ${generatedCount}経路`
+    );
+    render();
+    await waitForAutoSolveTick();
+    return false;
+  }
+
+  async function addCandidateFromPath(path, kind) {
+    addAutoSolveCandidate(candidateMap, stage, path, kind);
+    return maybeYield();
+  }
+
+  for (const startCell of cells) {
+    if (shouldStop()) {
+      break;
+    }
+
+    const startKey = getCellKey(startCell);
+    const startRank = cellRankByKey.get(startKey);
+    const path = [clonePosition(startCell)];
+    const pathKeys = new Set([startKey]);
+    const stack = [
+      {
+        cell: startCell,
+        nextIndex: 0,
+        neighbors: getOrderedNeighbors(startCell),
+      },
+    ];
+
+    while (stack.length > 0) {
+      if (shouldStop()) {
+        break;
+      }
+
+      const frame = stack[stack.length - 1];
+
+      if (frame.nextIndex >= frame.neighbors.length) {
+        stack.pop();
+        pathKeys.delete(getCellKey(path[path.length - 1]));
+        path.pop();
+        continue;
+      }
+
+      const nextCell = frame.neighbors[frame.nextIndex];
+      frame.nextIndex += 1;
+      const nextKey = getCellKey(nextCell);
+      const nextRank = cellRankByKey.get(nextKey);
+
+      if (nextKey === startKey) {
+        if (path.length >= 4) {
+          const shouldCancel = await addCandidateFromPath(
+            [...path, clonePosition(startCell)],
+            "exhaustive-cycle"
+          );
+          if (shouldCancel) {
+            return [];
+          }
+        }
+        continue;
+      }
+
+      if (pathKeys.has(nextKey) || nextRank < startRank) {
+        continue;
+      }
+
+      if (
+        path.length >= 2 &&
+        borderKeys.has(startKey) &&
+        borderKeys.has(nextKey)
+      ) {
+        const shouldCancel = await addCandidateFromPath(
+          [...path, clonePosition(nextCell)],
+          "exhaustive-border"
+        );
+        if (shouldCancel) {
+          return [];
+        }
+      }
+
+      if (path.length + 1 >= AUTO_SOLVER_CONFIG.exhaustiveMaxPathCells) {
+        continue;
+      }
+
+      path.push(clonePosition(nextCell));
+      pathKeys.add(nextKey);
+      stack.push({
+        cell: nextCell,
+        nextIndex: 0,
+        neighbors: getOrderedNeighbors(nextCell),
+      });
+    }
+  }
+
+  const candidates = [...candidateMap.values()].sort((left, right) => {
+    if (left.lineCellCount !== right.lineCellCount) {
+      return left.lineCellCount - right.lineCellCount;
+    }
+
+    if (left.usesOuterWall !== right.usesOuterWall) {
+      return left.usesOuterWall ? -1 : 1;
+    }
+
+    return left.drawnCells.length - right.drawnCells.length;
+  });
+
+  if (stoppedByLimit) {
+    setMakerAutoSolveStatus(
+      `候補上限 ${AUTO_SOLVER_CONFIG.exhaustiveMaxCandidates} 件まで総当たりしました。探索を続けます...`
+    );
+  } else {
+    setMakerAutoSolveStatus(`総当たり候補 ${candidates.length} 件を生成しました。探索します...`);
+  }
+
+  autoSolveState.cacheByStageKey.set(cacheKey, candidates);
+  return candidates;
+}
+
 function canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys) {
   for (const cellKey of forbiddenKeys) {
     if (loopCandidate.lineCellKeys.has(cellKey)) {
@@ -4659,6 +4839,125 @@ function canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys) {
   }
 
   return true;
+}
+
+function countAutoSolveBalancedBombSpaces(searchState, loopCandidate, ignoredSpaceId = null) {
+  const bombsBySpace = groupPositionsByLoopSpaceForAutoSolve(
+    searchState.bombs,
+    loopCandidate
+  );
+  const disarmBySpace = groupPositionsByLoopSpaceForAutoSolve(
+    searchState.disarmItems,
+    loopCandidate
+  );
+  const spaceIds = new Set([...bombsBySpace.keys(), ...disarmBySpace.keys()]);
+  let balancedSpaceCount = 0;
+  let removableBombCount = 0;
+
+  for (const spaceId of spaceIds) {
+    if (spaceId === ignoredSpaceId) {
+      continue;
+    }
+
+    const bombCount = bombsBySpace.get(spaceId)?.length ?? 0;
+    const disarmCount = disarmBySpace.get(spaceId)?.length ?? 0;
+
+    if (bombCount > 0 && bombCount === disarmCount) {
+      balancedSpaceCount += 1;
+      removableBombCount += bombCount;
+    }
+  }
+
+  return { balancedSpaceCount, removableBombCount };
+}
+
+function getAutoSolveCandidateStrategyScore(stage, searchState, loopCandidate) {
+  const playerSpaceId = getLoopSpaceIdFromPosition(loopCandidate, stage.playerStart);
+  if (playerSpaceId === null) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const bombsBySpace = groupPositionsByLoopSpaceForAutoSolve(
+    searchState.bombs,
+    loopCandidate
+  );
+  const playerBombCount = bombsBySpace.get(playerSpaceId)?.length ?? 0;
+  if (playerBombCount > 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const keySpaceId = getLoopSpaceIdFromPosition(loopCandidate, stage.keyPosition);
+  const goalSpaceId = getLoopSpaceIdFromPosition(loopCandidate, stage.goalPosition);
+  const collectsKey = !searchState.keyCollected && keySpaceId === playerSpaceId;
+  const reachesGoal = goalSpaceId === playerSpaceId;
+  const clears = (searchState.keyCollected || collectsKey) && reachesGoal;
+  const { balancedSpaceCount, removableBombCount } =
+    countAutoSolveBalancedBombSpaces(searchState, loopCandidate, playerSpaceId);
+  const splitScore = Math.max(0, loopCandidate.spaces.length - 2);
+
+  return (
+    (clears ? -100000 : 0) +
+    removableBombCount * -12000 +
+    balancedSpaceCount * -5000 +
+    splitScore * -700 +
+    (collectsKey ? -2500 : 0) +
+    (searchState.keyCollected && reachesGoal ? -2500 : 0) +
+    loopCandidate.lineCellCount * 8 +
+    loopCandidate.drawnCells.length
+  );
+}
+
+function compareAutoSolveCandidatesStrategically(stage, searchState, left, right) {
+  const leftScore = getAutoSolveCandidateStrategyScore(stage, searchState, left);
+  const rightScore = getAutoSolveCandidateStrategyScore(stage, searchState, right);
+
+  if (leftScore !== rightScore) {
+    return leftScore - rightScore;
+  }
+
+  if (left.spaces.length !== right.spaces.length) {
+    return right.spaces.length - left.spaces.length;
+  }
+
+  if (left.lineCellCount !== right.lineCellCount) {
+    return left.lineCellCount - right.lineCellCount;
+  }
+
+  return left.drawnCells.length - right.drawnCells.length;
+}
+
+function selectAutoSolveStrategicCandidates(stage, searchState, candidates, forbiddenKeys) {
+  const scoredCandidates = [];
+
+  for (const loopCandidate of candidates) {
+    if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
+      continue;
+    }
+
+    const score = getAutoSolveCandidateStrategyScore(stage, searchState, loopCandidate);
+    if (!Number.isFinite(score)) {
+      continue;
+    }
+
+    scoredCandidates.push({ loopCandidate, score });
+  }
+
+  scoredCandidates.sort((left, right) => {
+    if (left.score !== right.score) {
+      return left.score - right.score;
+    }
+
+    return compareAutoSolveCandidatesStrategically(
+      stage,
+      searchState,
+      left.loopCandidate,
+      right.loopCandidate
+    );
+  });
+
+  return scoredCandidates
+    .slice(0, AUTO_SOLVER_CONFIG.strategicCandidateLimit)
+    .map((entry) => entry.loopCandidate);
 }
 
 function collectAutoSolveReachableSpaces(searchState, loopCandidate) {
@@ -4764,7 +5063,7 @@ function buildAutoSolveNextState(stage, currentState, loopCandidate, spaceId, an
 }
 
 async function findStageAutoSolveSolution(stage, runId = null) {
-  const candidates = await buildAutoSolveCandidates(stage, runId);
+  const candidates = await buildAutoSolveCandidatesExhaustive(stage, runId);
   if (runId !== null && isAutoSolveRunCancelled(runId)) {
     return null;
   }
@@ -4800,11 +5099,14 @@ async function findStageAutoSolveSolution(stage, runId = null) {
 
     const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, currentState);
 
-    for (const loopCandidate of candidates) {
-      if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
-        continue;
-      }
+    const strategicCandidates = selectAutoSolveStrategicCandidates(
+      stage,
+      currentState,
+      candidates,
+      forbiddenKeys
+    );
 
+    for (const loopCandidate of strategicCandidates) {
       const reachableSpaces = collectAutoSolveReachableSpaces(
         currentState,
         loopCandidate
@@ -5751,8 +6053,10 @@ createRandomDesignedStage = function createHardRandomDesignedStage() {
   return buildRandomStageDefinition(layout);
 };
 
-globalThis.closedLoopDebug.analyzeRandomStageLayout = analyzeRandomStageLayout;
-globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
+registerClosedLoopDebug({
+  analyzeRandomStageLayout,
+  createRandomDesignedStage,
+});
 
 function buildRandomStageDefinition(layout) {
   return {
@@ -6004,11 +6308,14 @@ function findStageAutoSolveSolutionSync(stage) {
 
     const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, currentState);
 
-    for (const loopCandidate of candidates) {
-      if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
-        continue;
-      }
+    const strategicCandidates = selectAutoSolveStrategicCandidates(
+      stage,
+      currentState,
+      candidates,
+      forbiddenKeys
+    );
 
+    for (const loopCandidate of strategicCandidates) {
       const nextState = buildAutoSolveNextState(stage, currentState, loopCandidate);
       if (!nextState) {
         continue;
@@ -6145,8 +6452,10 @@ createRandomDesignedStage = function createVerifiedRandomDesignedStage() {
   return buildRandomStageDefinition(layout);
 };
 
-globalThis.closedLoopDebug.findStageAutoSolveSolutionSync = findStageAutoSolveSolutionSync;
-globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
+registerClosedLoopDebug({
+  findStageAutoSolveSolutionSync,
+  createRandomDesignedStage,
+});
 
 buildRandomStagePool = function buildHardRandomStagePoolFinal(scoredLayouts) {
   const analyzedCandidates = [];
@@ -6313,7 +6622,9 @@ createRandomDesignedStage = function createHardRandomDesignedStageFinal() {
   return buildRandomStageDefinition(layout);
 };
 
-globalThis.closedLoopDebug.createRandomDesignedStage = createRandomDesignedStage;
+registerClosedLoopDebug({
+  createRandomDesignedStage,
+});
 
 function ensureRememberedRandomStageReady(forceRegenerate = false) {
   if (forceRegenerate) {
@@ -6784,8 +7095,10 @@ getMakerAutoSolveUi().button?.addEventListener("click", () => {
   void startMakerAutoSolve();
 });
 registerMakerAutoSolveCancelHandlers();
-globalThis.closedLoopDebug.findStageAutoSolveSolution = findStageAutoSolveSolution;
-globalThis.closedLoopDebug.startMakerAutoSolve = startMakerAutoSolve;
+registerClosedLoopDebug({
+  findStageAutoSolveSolution,
+  startMakerAutoSolve,
+});
 render();
 
 function updateStatus() {
@@ -7028,7 +7341,7 @@ function buildAutoSolveNextState(stage, currentState, loopCandidate) {
 }
 
 async function findStageAutoSolveSolution(stage, runId = null) {
-  const candidates = await buildAutoSolveCandidates(stage, runId);
+  const candidates = await buildAutoSolveCandidatesExhaustive(stage, runId);
   if (runId !== null && isAutoSolveRunCancelled(runId)) {
     return null;
   }
@@ -7064,11 +7377,14 @@ async function findStageAutoSolveSolution(stage, runId = null) {
 
     const forbiddenKeys = buildAutoSolveForbiddenKeys(stage, currentState);
 
-    for (const loopCandidate of candidates) {
-      if (!canAutoSolveCandidateBeDrawn(loopCandidate, forbiddenKeys)) {
-        continue;
-      }
+    const strategicCandidates = selectAutoSolveStrategicCandidates(
+      stage,
+      currentState,
+      candidates,
+      forbiddenKeys
+    );
 
+    for (const loopCandidate of strategicCandidates) {
       const nextState = buildAutoSolveNextState(stage, currentState, loopCandidate);
       if (!nextState) {
         continue;
