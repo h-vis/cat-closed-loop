@@ -54,7 +54,7 @@ const STAGE_PACKS = {
   [STAGE_DIFFICULTY.high]: { label: "Hard", directory: "high", count: 10 },
 };
 
-const DEFAULT_STAGE_DIFFICULTY = STAGE_DIFFICULTY.low;
+const DEFAULT_STAGE_DIFFICULTY = STAGE_DIFFICULTY.medium;
 
 const BASE_STAGE = {
   playerStart: { x: 1, y: 1 },
