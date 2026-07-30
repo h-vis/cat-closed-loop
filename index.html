@@ -141,8 +141,8 @@
 
       <section class="rules-lead">
         <p>
-          このゲームは、マスを塗ってループを作り、盤面の空間を切り分けるパズルです。
-          プレイヤーがいる空間を安全にしながら、鍵を取り、最後にゴールを同じ空間へ入れればクリアです。
+          このゲームは、一筆書きでマスを塗ってループを作り、空間を切り分けていくパズルです。
+          プレイヤーが爆弾と同じ空間に入らないようにしながら、鍵を取り、ゴールと同じ空間へ入れればクリアです。
         </p>
       </section>
 
@@ -150,61 +150,53 @@
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="player" width="72" height="72" aria-hidden="true"></canvas>
           <h3>プレイヤー</h3>
-          <p>青いキャラがあなたです。プレイヤーがいる空間を、線でうまく分けて安全地帯にしていきます。</p>
+          <p>青いキャラがあなたです。爆弾と同じ空間に入ったらゲームオーバーです</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="key" width="72" height="72" aria-hidden="true"></canvas>
           <h3>鍵</h3>
-          <p>鍵はプレイヤーと同じ空間にはは入ると取得。鍵を取得すると扉が開きます。</p>
+          <p>プレイヤーと同じ空間にはは入ると取得扱いになり、扉が開きます。</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="goalClosed" width="72" height="72" aria-hidden="true"></canvas>
           <h3>閉じたゴール</h3>
-          <p>鍵を取る前のゴールです。まだ入ってもクリアにはなりません。先に鍵が必要です。</p>
+          <p>鍵を取る前のゴールです。まだ入ってもクリアにはなりません。</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="goalOpen" width="72" height="72" aria-hidden="true"></canvas>
           <h3>開いたゴール</h3>
-          <p>鍵を取るとゴールが開きます。プレイヤーとゴールが同じ空間に入ればクリアです。</p>
+          <p>プレイヤー同じ空間に入ればクリアです。</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="bomb" width="72" height="72" aria-hidden="true"></canvas>
           <h3>爆弾</h3>
-          <p>プレイヤーと同じ空間に爆弾があると負けです。また、水入りバケツで爆弾を消すことが出来ます。</p>
+          <p>プレイヤーと同じ空間に爆弾があるとゲームオーバーです。水入りバケツで消すことが出来ます。</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="waterBucket" width="72" height="72" aria-hidden="true"></canvas>
           <h3>水入りバケツ</h3>
-          <p>爆弾と同じ数の水入りバケツが同じ空間に入ると、その空間の爆弾とバケツは対消滅します。</p>
+          <p>爆弾と同じ数の水入りバケツが同じ空間に入ると、その空間の爆弾とバケツは対消滅します。どちらかが多くても消滅しません</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="wall" width="72" height="72" aria-hidden="true"></canvas>
           <h3>壁</h3>
-          <p>壁のあるマスは塗れません。ループを作るときの通り道もふさがれます。</p>
+          <p>壁のあるマスは塗れません。塗ったマスと接触した場合はループの一部として扱われます。</p>
         </article>
 
         <article class="rule-card">
           <div class="rule-icon sprite-loop" aria-hidden="true"></div>
           <h3>ループの作り方</h3>
-          <p>マスをドラッグで塗り、ひと続きの輪を作ります。線そのものは空間の内側ではなく、空間を分ける境界として扱われます。</p>
+          <p>マスをドラッグで塗り、ひと続きの輪を作ります。線は空間を分ける境界として扱われます。</p>
         </article>
       </section>
 
-      <section class="rules-notes">
-        <h3>覚えておくと楽なこと</h3>
-        <ul>
-          <li>ループの内側だけでなく、外側もひとつの空間として同じルールで判定されます。</li>
-          <li>ただしループや壁で完全に分断されたら、別の空間になります。</li>
-          <li>オブジェクトが置かれているマスは塗れません。</li>
-          <li>プレイヤーと爆弾が同じ空間に入ると、水入りバケツが同数あってもゲームオーバーです。</li>
-        </ul>
-      </section>
+
     </section>
   </main>
 
