@@ -23,6 +23,7 @@ const CONFIG = {
   drawingCellStrokeStyle: "rgba(15, 68, 126, 0.78)",
   gridLineStyle: "rgba(39, 61, 87, 0.16)",
   overlayFillStyle: "rgba(12, 25, 42, 0.62)",
+  touchDrawingCommitRatio: 0.68,
 };
 
 const STATUS = {
@@ -1397,6 +1398,8 @@ let rememberedMakerStage = createMakerStage();
 
 const gameState = createInitialState(cloneStageDefinition(DEFAULT_START_STAGE));
 const isMakerOnlyPage = document.body?.dataset?.appMode === "maker";
+const isAndroidWebViewPage =
+  new URLSearchParams(globalThis.location?.search ?? "").get("android") === "1";
 
 function applyStage(stage) {
   const stageJsonState = getStageJsonState();
@@ -1664,6 +1667,51 @@ function getGridCellFromPoint(point) {
     x: clampValue(Math.floor(point.x / CONFIG.cellSize), 0, boardSize.width - 1),
     y: clampValue(Math.floor(point.y / CONFIG.cellSize), 0, boardSize.height - 1),
   };
+}
+
+function isTouchDrawingEvent(event) {
+  return Boolean(event.touches?.length || event.changedTouches?.length);
+}
+
+function getStabilizedTouchDrawingCell(point) {
+  const cells = gameState.drawing.cells;
+  const lastCell = cells[cells.length - 1];
+
+  if (!lastCell) {
+    return getGridCellFromPoint(point);
+  }
+
+  const center = getCellCenter(lastCell);
+  const deltaX = point.x - center.x;
+  const deltaY = point.y - center.y;
+  const commitDistance = CONFIG.cellSize * CONFIG.touchDrawingCommitRatio;
+  const boardSize = activeBoardSize;
+
+  if (Math.abs(deltaX) < commitDistance && Math.abs(deltaY) < commitDistance) {
+    return lastCell;
+  }
+
+  if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+    return {
+      x: clampValue(lastCell.x + Math.sign(deltaX), 0, boardSize.width - 1),
+      y: lastCell.y,
+    };
+  }
+
+  return {
+    x: lastCell.x,
+    y: clampValue(lastCell.y + Math.sign(deltaY), 0, boardSize.height - 1),
+  };
+}
+
+function getDrawingTargetCell(event) {
+  const point = getCanvasPoint(event);
+
+  if (isTouchDrawingEvent(event)) {
+    return getStabilizedTouchDrawingCell(point);
+  }
+
+  return getGridCellFromPoint(point);
 }
 
 function getBlockedDrawingCellKeys() {
@@ -2439,7 +2487,7 @@ function updateDrawing(event) {
   }
 
   preventTouchBrowserAction(event);
-  appendDrawingPath(getGridCellFromPoint(getCanvasPoint(event)));
+  appendDrawingPath(getDrawingTargetCell(event));
   render();
 }
 
@@ -2473,7 +2521,7 @@ function finishDrawing(event) {
   }
 
   preventTouchBrowserAction(event);
-  appendDrawingPath(getGridCellFromPoint(getCanvasPoint(event)));
+  appendDrawingPath(getDrawingTargetCell(event));
   finalizeLoop();
 }
 
@@ -4287,7 +4335,7 @@ getStageJsonUi().makerCapturePngButton?.addEventListener("click", () => {
 render();
 if (isMakerOnlyPage) {
   setGameMode(GAME_MODE.maker);
-} else if (globalThis.location?.protocol !== "file:") {
+} else if (globalThis.location?.protocol !== "file:" || isAndroidWebViewPage) {
   void playStageByNumber(1, DEFAULT_STAGE_DIFFICULTY);
 }
 

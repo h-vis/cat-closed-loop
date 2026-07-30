@@ -2,3 +2,6 @@
 *.log
 __pycache__/
 screenshot/
+android/.gradle/
+android/**/build/
+android/app/src/main/assets/

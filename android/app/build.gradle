@@ -1,0 +1,32 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.closedloop.loopdungeon"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.closedloop.loopdungeon"
+        minSdk 23
+        targetSdk 35
+        versionCode 1
+        versionName "0.1.0"
+    }
+}
+
+tasks.register("syncWebAssets", Copy) {
+    def root = layout.projectDirectory.dir("../..")
+    from(root) {
+        include "index.html"
+        include "howto.html"
+        include "game.js"
+        include "style.css"
+        include "sozai/**"
+        include "stage/**"
+        include "tutorial/**"
+    }
+    into(layout.projectDirectory.dir("src/main/assets"))
+}
+
+preBuild.dependsOn("syncWebAssets")
