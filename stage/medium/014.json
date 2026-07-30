@@ -1,80 +1,58 @@
 {
-  "version": 1,
-  "boardSize": {
-    "width": 10,
-    "height": 10
-  },
-  "playerStart": {
-    "x": 1,
-    "y": 1
-  },
-  "keyPosition": {
-    "x": 3,
-    "y": 2
-  },
-  "goalPosition": {
-    "x": 8,
-    "y": 8
-  },
-  "bombs": [
-    {
-      "x": 9,
-      "y": 0
-    },
-    {
-      "x": 9,
-      "y": 2
-    },
-    {
-      "x": 9,
-      "y": 5
-    },
-    {
-      "x": 2,
-      "y": 9
-    },
-    {
-      "x": 0,
-      "y": 9
-    },
-    {
-      "x": 4,
-      "y": 9
-    }
-  ],
-  "disarmItems": [],
-  "wallBlocks": [
-    {
-      "x": 6,
-      "y": 5
-    },
-    {
-      "x": 6,
-      "y": 3
-    },
-    {
-      "x": 6,
-      "y": 1
-    },
-    {
-      "x": 5,
-      "y": 6
-    },
-    {
-      "x": 3,
-      "y": 6
-    },
-    {
-      "x": 1,
-      "y": 6
-    },
-    {
-      "x": 6,
-      "y": 6
-    }
-  ],
-  "designLabel": "ステージメーカー",
-  "designNote": "自由配置のステージを編集できます。",
-  "instructionText": "ステージメーカーのテストプレイ中です。プレイヤーは移動せず、ループで空間の分かれ方だけを調整します。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。",
-  "keyInitiallyCollected": false
+    "version":  1,
+    "boardSize":  {
+                      "width":  10,
+                      "height":  10
+                  },
+    "playerStart":  {
+                        "x":  3,
+                        "y":  4
+                    },
+    "keyPosition":  {
+                        "x":  4,
+                        "y":  4
+                    },
+    "goalPosition":  {
+                         "x":  8,
+                         "y":  1
+                     },
+    "bombs":  [
+                  {
+                      "x":  6,
+                      "y":  0
+                  },
+                  {
+                      "x":  6,
+                      "y":  2
+                  },
+                  {
+                      "x":  7,
+                      "y":  3
+                  },
+                  {
+                      "x":  9,
+                      "y":  3
+                  }
+              ],
+    "disarmItems":  [
+                        {
+                            "x":  0,
+                            "y":  7
+                        },
+                        {
+                            "x":  2,
+                            "y":  7
+                        },
+                        {
+                            "x":  2,
+                            "y":  9
+                        }
+                    ],
+    "wallBlocks":  [
+
+                   ],
+    "designLabel":  "Normal 014",
+    "designNote":  "Stage metadata repaired for release.",
+    "instructionText":  "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
+    "keyInitiallyCollected":  false
 }

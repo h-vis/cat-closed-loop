@@ -1,125 +1,74 @@
 {
-  "version": 1,
-  "boardSize": {
-    "width": 10,
-    "height": 10
-  },
-  "playerStart": {
-    "x": 0,
-    "y": 0
-  },
-  "keyPosition": {
-    "x": 7,
-    "y": 6
-  },
-  "goalPosition": {
-    "x": 8,
-    "y": 8
-  },
-  "bombs": [
-    {
-      "x": 6,
-      "y": 9
-    },
-    {
-      "x": 3,
-      "y": 9
-    },
-    {
-      "x": 2,
-      "y": 9
-    },
-    {
-      "x": 1,
-      "y": 9
-    },
-    {
-      "x": 0,
-      "y": 9
-    },
-    {
-      "x": 0,
-      "y": 8
-    },
-    {
-      "x": 0,
-      "y": 7
-    },
-    {
-      "x": 0,
-      "y": 4
-    },
-    {
-      "x": 0,
-      "y": 6
-    },
-    {
-      "x": 4,
-      "y": 0
-    },
-    {
-      "x": 5,
-      "y": 0
-    },
-    {
-      "x": 6,
-      "y": 0
-    },
-    {
-      "x": 7,
-      "y": 0
-    },
-    {
-      "x": 8,
-      "y": 0
-    },
-    {
-      "x": 9,
-      "y": 0
-    },
-    {
-      "x": 9,
-      "y": 1
-    },
-    {
-      "x": 9,
-      "y": 2
-    },
-    {
-      "x": 9,
-      "y": 3
-    },
-    {
-      "x": 9,
-      "y": 4
-    },
-    {
-      "x": 9,
-      "y": 5
-    },
-    {
-      "x": 9,
-      "y": 6
-    }
-  ],
-  "disarmItems": [
-    {
-      "x": 5,
-      "y": 9
-    },
-    {
-      "x": 0,
-      "y": 3
-    }
-  ],
-  "wallBlocks": [
-    {
-      "x": 0,
-      "y": 5
-    }
-  ],
-  "designLabel": "ステージメーカー",
-  "designNote": "自由配置のステージを編集できます。",
-  "instructionText": "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。プレイヤー・鍵・ゴールは1つずつ、爆弾・水入りバケツは複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。",
-  "keyInitiallyCollected": false
+    "version":  1,
+    "boardSize":  {
+                      "width":  10,
+                      "height":  10
+                  },
+    "playerStart":  {
+                        "x":  1,
+                        "y":  1
+                    },
+    "keyPosition":  {
+                        "x":  6,
+                        "y":  7
+                    },
+    "goalPosition":  {
+                         "x":  8,
+                         "y":  8
+                     },
+    "bombs":  [
+                  {
+                      "x":  7,
+                      "y":  5
+                  },
+                  {
+                      "x":  5,
+                      "y":  5
+                  },
+                  {
+                      "x":  3,
+                      "y":  5
+                  },
+                  {
+                      "x":  3,
+                      "y":  7
+                  },
+                  {
+                      "x":  3,
+                      "y":  9
+                  },
+                  {
+                      "x":  9,
+                      "y":  5
+                  }
+              ],
+    "disarmItems":  [
+                        {
+                            "x":  5,
+                            "y":  0
+                        },
+                        {
+                            "x":  5,
+                            "y":  2
+                        },
+                        {
+                            "x":  4,
+                            "y":  4
+                        },
+                        {
+                            "x":  2,
+                            "y":  4
+                        },
+                        {
+                            "x":  0,
+                            "y":  4
+                        }
+                    ],
+    "wallBlocks":  [
+
+                   ],
+    "designLabel":  "Normal 013",
+    "designNote":  "Stage metadata repaired for release.",
+    "instructionText":  "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
+    "keyInitiallyCollected":  false
 }

@@ -1,56 +1,227 @@
 {
-  "version": 1,
-  "boardSize": {
-    "width": 10,
-    "height": 10
-  },
-  "playerStart": {
-    "x": 3,
-    "y": 4
-  },
-  "keyPosition": {
-    "x": 4,
-    "y": 4
-  },
-  "goalPosition": {
-    "x": 8,
-    "y": 1
-  },
-  "bombs": [
-    {
-      "x": 6,
-      "y": 0
-    },
-    {
-      "x": 6,
-      "y": 2
-    },
-    {
-      "x": 7,
-      "y": 3
-    },
-    {
-      "x": 9,
-      "y": 3
-    }
-  ],
-  "disarmItems": [
-    {
-      "x": 0,
-      "y": 7
-    },
-    {
-      "x": 2,
-      "y": 7
-    },
-    {
-      "x": 2,
-      "y": 9
-    }
-  ],
-  "wallBlocks": [],
-  "designLabel": "ステージメーカー",
-  "designNote": "自由配置のステージを編集できます。",
-  "instructionText": "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。プレイヤー・鍵・ゴールは1つずつ、爆弾・水入りバケツは複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。",
-  "keyInitiallyCollected": false
+    "version":  1,
+    "boardSize":  {
+                      "width":  10,
+                      "height":  10
+                  },
+    "playerStart":  {
+                        "x":  3,
+                        "y":  0
+                    },
+    "keyPosition":  {
+                        "x":  7,
+                        "y":  2
+                    },
+    "goalPosition":  {
+                         "x":  8,
+                         "y":  8
+                     },
+    "bombs":  [
+                  {
+                      "x":  0,
+                      "y":  2
+                  },
+                  {
+                      "x":  0,
+                      "y":  3
+                  },
+                  {
+                      "x":  0,
+                      "y":  4
+                  },
+                  {
+                      "x":  0,
+                      "y":  5
+                  },
+                  {
+                      "x":  0,
+                      "y":  6
+                  },
+                  {
+                      "x":  0,
+                      "y":  7
+                  },
+                  {
+                      "x":  0,
+                      "y":  8
+                  },
+                  {
+                      "x":  0,
+                      "y":  9
+                  },
+                  {
+                      "x":  1,
+                      "y":  9
+                  },
+                  {
+                      "x":  2,
+                      "y":  9
+                  },
+                  {
+                      "x":  4,
+                      "y":  9
+                  },
+                  {
+                      "x":  3,
+                      "y":  9
+                  },
+                  {
+                      "x":  5,
+                      "y":  9
+                  },
+                  {
+                      "x":  5,
+                      "y":  8
+                  },
+                  {
+                      "x":  4,
+                      "y":  8
+                  },
+                  {
+                      "x":  3,
+                      "y":  8
+                  },
+                  {
+                      "x":  2,
+                      "y":  8
+                  },
+                  {
+                      "x":  1,
+                      "y":  8
+                  },
+                  {
+                      "x":  1,
+                      "y":  7
+                  },
+                  {
+                      "x":  2,
+                      "y":  7
+                  },
+                  {
+                      "x":  2,
+                      "y":  6
+                  },
+                  {
+                      "x":  1,
+                      "y":  6
+                  },
+                  {
+                      "x":  1,
+                      "y":  5
+                  },
+                  {
+                      "x":  1,
+                      "y":  4
+                  },
+                  {
+                      "x":  1,
+                      "y":  3
+                  },
+                  {
+                      "x":  1,
+                      "y":  2
+                  },
+                  {
+                      "x":  2,
+                      "y":  2
+                  },
+                  {
+                      "x":  2,
+                      "y":  3
+                  },
+                  {
+                      "x":  2,
+                      "y":  4
+                  },
+                  {
+                      "x":  2,
+                      "y":  5
+                  },
+                  {
+                      "x":  3,
+                      "y":  5
+                  },
+                  {
+                      "x":  3,
+                      "y":  7
+                  },
+                  {
+                      "x":  3,
+                      "y":  6
+                  },
+                  {
+                      "x":  4,
+                      "y":  6
+                  },
+                  {
+                      "x":  4,
+                      "y":  7
+                  },
+                  {
+                      "x":  5,
+                      "y":  7
+                  },
+                  {
+                      "x":  6,
+                      "y":  7
+                  },
+                  {
+                      "x":  6,
+                      "y":  8
+                  },
+                  {
+                      "x":  6,
+                      "y":  9
+                  },
+                  {
+                      "x":  3,
+                      "y":  4
+                  },
+                  {
+                      "x":  5,
+                      "y":  6
+                  },
+                  {
+                      "x":  3,
+                      "y":  3
+                  },
+                  {
+                      "x":  4,
+                      "y":  4
+                  },
+                  {
+                      "x":  4,
+                      "y":  5
+                  },
+                  {
+                      "x":  5,
+                      "y":  5
+                  },
+                  {
+                      "x":  9,
+                      "y":  3
+                  },
+                  {
+                      "x":  9,
+                      "y":  2
+                  },
+                  {
+                      "x":  9,
+                      "y":  1
+                  },
+                  {
+                      "x":  9,
+                      "y":  0
+                  }
+              ],
+    "disarmItems":  [
+
+                    ],
+    "wallBlocks":  [
+
+                   ],
+    "designLabel":  "Normal 009",
+    "designNote":  "Stage metadata repaired for release.",
+    "instructionText":  "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
+    "keyInitiallyCollected":  false
 }

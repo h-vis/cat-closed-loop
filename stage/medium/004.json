@@ -5,12 +5,12 @@
     "height": 10
   },
   "playerStart": {
-    "x": 3,
-    "y": 0
+    "x": 1,
+    "y": 9
   },
   "keyPosition": {
-    "x": 7,
-    "y": 2
+    "x": 2,
+    "y": 3
   },
   "goalPosition": {
     "x": 8,
@@ -18,206 +18,52 @@
   },
   "bombs": [
     {
-      "x": 0,
-      "y": 2
-    },
-    {
-      "x": 0,
-      "y": 3
-    },
-    {
-      "x": 0,
-      "y": 4
-    },
-    {
-      "x": 0,
-      "y": 5
-    },
-    {
-      "x": 0,
-      "y": 6
-    },
-    {
-      "x": 0,
-      "y": 7
-    },
-    {
-      "x": 0,
-      "y": 8
-    },
-    {
-      "x": 0,
-      "y": 9
-    },
-    {
-      "x": 1,
-      "y": 9
-    },
-    {
-      "x": 2,
-      "y": 9
-    },
-    {
-      "x": 4,
-      "y": 9
-    },
-    {
       "x": 3,
-      "y": 9
-    },
-    {
-      "x": 5,
-      "y": 9
-    },
-    {
-      "x": 5,
-      "y": 8
-    },
-    {
-      "x": 4,
-      "y": 8
-    },
-    {
-      "x": 3,
-      "y": 8
-    },
-    {
-      "x": 2,
-      "y": 8
-    },
-    {
-      "x": 1,
-      "y": 8
-    },
-    {
-      "x": 1,
-      "y": 7
-    },
-    {
-      "x": 2,
-      "y": 7
-    },
-    {
-      "x": 2,
-      "y": 6
-    },
-    {
-      "x": 1,
-      "y": 6
-    },
-    {
-      "x": 1,
-      "y": 5
-    },
-    {
-      "x": 1,
-      "y": 4
-    },
-    {
-      "x": 1,
-      "y": 3
-    },
-    {
-      "x": 1,
-      "y": 2
-    },
-    {
-      "x": 2,
-      "y": 2
-    },
-    {
-      "x": 2,
-      "y": 3
-    },
-    {
-      "x": 2,
-      "y": 4
-    },
-    {
-      "x": 2,
-      "y": 5
-    },
-    {
-      "x": 3,
-      "y": 5
-    },
-    {
-      "x": 3,
-      "y": 7
-    },
-    {
-      "x": 3,
-      "y": 6
-    },
-    {
-      "x": 4,
-      "y": 6
-    },
-    {
-      "x": 4,
-      "y": 7
-    },
-    {
-      "x": 5,
-      "y": 7
-    },
-    {
-      "x": 6,
-      "y": 7
-    },
-    {
-      "x": 6,
       "y": 8
     },
     {
       "x": 6,
-      "y": 9
-    },
-    {
-      "x": 3,
-      "y": 4
-    },
-    {
-      "x": 5,
-      "y": 6
-    },
-    {
-      "x": 3,
       "y": 3
     },
     {
       "x": 4,
-      "y": 4
-    },
-    {
-      "x": 4,
       "y": 5
-    },
-    {
-      "x": 5,
-      "y": 5
-    },
-    {
-      "x": 9,
-      "y": 3
-    },
-    {
-      "x": 9,
-      "y": 2
-    },
-    {
-      "x": 9,
-      "y": 1
-    },
-    {
-      "x": 9,
-      "y": 0
     }
   ],
-  "disarmItems": [],
-  "wallBlocks": [],
-  "designLabel": "ステージメーカー",
-  "designNote": "自由配置のステージを編集できます。",
-  "instructionText": "ステージメーカーのテストプレイ中です。プレイヤーは移動せず、ループで空間の分かれ方だけを調整します。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。",
+  "disarmItems": [
+    {
+      "x": 9,
+      "y": 2
+    },
+    {
+      "x": 3,
+      "y": 3
+    }
+  ],
+  "wallBlocks": [
+    {
+      "x": 9,
+      "y": 4
+    },
+    {
+      "x": 9,
+      "y": 3
+    },
+    {
+      "x": 8,
+      "y": 3
+    },
+    {
+      "x": 5,
+      "y": 3
+    },
+    {
+      "x": 7,
+      "y": 8
+    }
+  ],
+  "designLabel": "Normal 004 - pinpoint-relay / 左右反転",
+  "designNote": "Hard pack / family=pinpoint-relay / style=needle / minSteps=3 / forcedSteps=1 / winningFirstMoves=1 / optimalEstimate=8",
+  "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }
