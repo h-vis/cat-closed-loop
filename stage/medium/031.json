@@ -5,61 +5,61 @@
     "height": 10
   },
   "playerStart": {
-    "x": 1,
-    "y": 0
+    "x": 9,
+    "y": 1
   },
   "keyPosition": {
-    "x": 2,
-    "y": 6
+    "x": 3,
+    "y": 2
   },
   "goalPosition": {
     "x": 8,
-    "y": 1
+    "y": 8
   },
   "bombs": [
     {
-      "x": 3,
-      "y": 1
+      "x": 8,
+      "y": 3
     },
     {
-      "x": 6,
+      "x": 3,
       "y": 6
     },
     {
-      "x": 8,
-      "y": 5
+      "x": 4,
+      "y": 8
     }
   ],
   "disarmItems": [
     {
-      "x": 9,
-      "y": 7
+      "x": 2,
+      "y": 9
     },
     {
       "x": 3,
-      "y": 6
+      "y": 3
     }
   ],
   "wallBlocks": [
     {
-      "x": 9,
-      "y": 5
+      "x": 4,
+      "y": 9
     },
     {
-      "x": 9,
-      "y": 6
+      "x": 3,
+      "y": 9
     },
     {
-      "x": 8,
-      "y": 6
+      "x": 3,
+      "y": 8
     },
     {
-      "x": 8,
-      "y": 7
+      "x": 2,
+      "y": 8
     }
   ],
-  "designLabel": "Normal 031 - 外縁分業 / 主対角反転",
-  "designNote": "Extra Normal / family=外縁分業 / style=relay / minSteps=3 / forcedSteps=0 / winningFirstMoves=8 / optimalEstimate=999",
+  "designLabel": "Normal 031 - 外縁�E業 / 左右反転",
+  "designNote": "Extra Normal / family=外縁�E業 / style=relay / minSteps=3 / forcedSteps=0 / winningFirstMoves=8 / optimalEstimate=999",
   "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }

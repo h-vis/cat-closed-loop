@@ -5,12 +5,12 @@
                       "height":  10
                   },
     "playerStart":  {
-                        "x":  8,
-                        "y":  6
+                        "x":  3,
+                        "y":  4
                     },
     "keyPosition":  {
                         "x":  0,
-                        "y":  0
+                        "y":  5
                     },
     "goalPosition":  {
                          "x":  8,
@@ -18,44 +18,48 @@
                      },
     "bombs":  [
                   {
-                      "x":  4,
-                      "y":  0
-                  },
-                  {
-                      "x":  4,
+                      "x":  2,
                       "y":  2
                   },
                   {
-                      "x":  4,
-                      "y":  4
+                      "x":  7,
+                      "y":  3
                   },
                   {
-                      "x":  2,
-                      "y":  4
+                      "x":  1,
+                      "y":  7
                   },
                   {
-                      "x":  0,
+                      "x":  7,
+                      "y":  7
+                  },
+                  {
+                      "x":  9,
                       "y":  4
                   }
               ],
     "disarmItems":  [
                         {
-                            "x":  2,
+                            "x":  1,
+                            "y":  4
+                        },
+                        {
+                            "x":  8,
                             "y":  2
                         },
                         {
-                            "x":  2,
-                            "y":  0
+                            "x":  7,
+                            "y":  5
                         },
                         {
-                            "x":  0,
-                            "y":  2
+                            "x":  3,
+                            "y":  8
                         }
                     ],
     "wallBlocks":  [
 
                    ],
-    "designLabel":  "Normal 020",
+    "designLabel": "Normal 020",
     "designNote":  "Stage metadata repaired for release.",
     "instructionText":  "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
     "keyInitiallyCollected":  false

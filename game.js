@@ -51,7 +51,7 @@ const STAGE_DIFFICULTY = {
 
 const STAGE_PACKS = {
   [STAGE_DIFFICULTY.low]: { label: "Easy", directory: "low", count: 10 },
-  [STAGE_DIFFICULTY.medium]: { label: "Normal", directory: "medium", count: 40 },
+  [STAGE_DIFFICULTY.medium]: { label: "Normal", directory: "medium", count: 44 },
   [STAGE_DIFFICULTY.high]: { label: "Hard", directory: "high", count: 10 },
 };
 

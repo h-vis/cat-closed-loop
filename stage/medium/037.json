@@ -1,50 +1,57 @@
 {
-    "version":  1,
-    "boardSize":  {
-                      "width":  10,
-                      "height":  10
-                  },
-    "playerStart":  {
-                        "x":  1,
-                        "y":  6
-                    },
-    "keyPosition":  {
-                        "x":  3,
-                        "y":  8
-                    },
-    "goalPosition":  {
-                         "x":  8,
-                         "y":  1
-                     },
-    "bombs":  [
-                  {
-                      "x":  5,
-                      "y":  7
-                  },
-                  {
-                      "x":  7,
-                      "y":  4
-                  }
-              ],
-    "disarmItems":  [
-
-                    ],
-    "wallBlocks":  [
-                       {
-                           "x":  4,
-                           "y":  5
-                       },
-                       {
-                           "x":  5,
-                           "y":  5
-                       },
-                       {
-                           "x":  6,
-                           "y":  5
-                       }
-                   ],
-    "designLabel":  "Normal 037",
-    "designNote":  "Stage metadata repaired for release.",
-    "instructionText":  "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
-    "keyInitiallyCollected":  false
+  "version": 1,
+  "boardSize": {
+    "width": 10,
+    "height": 10
+  },
+  "playerStart": {
+    "x": 8,
+    "y": 8
+  },
+  "keyPosition": {
+    "x": 4,
+    "y": 8
+  },
+  "goalPosition": {
+    "x": 1,
+    "y": 3
+  },
+  "bombs": [
+    {
+      "x": 7,
+      "y": 4
+    },
+    {
+      "x": 1,
+      "y": 1
+    }
+  ],
+  "disarmItems": [
+    {
+      "x": 8,
+      "y": 1
+    },
+    {
+      "x": 4,
+      "y": 3
+    }
+  ],
+  "wallBlocks": [
+    {
+      "x": 6,
+      "y": 7
+    },
+    {
+      "x": 6,
+      "y": 6
+    },
+    {
+      "x": 5,
+      "y": 6
+    }
+  ],
+  "designLabel": "Normal 037 - 荳蛾嚆謗・ｨ・/ 180蠎ｦ蝗櫁ｻ｢ / 蟇ｾ豸域ｻ・梛",
+  "designNote": "Extra Normal / family=荳蛾嚆謗・ｨ・/ style=cleanup / minSteps=2 / forcedSteps=1 / winningFirstMoves=1 / optimalEstimate=638",
+  "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
+  "keyInitiallyCollected": false
 }
