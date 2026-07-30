@@ -1,4 +1,5 @@
 .vercel
+.android-build-tools/
 *.log
 __pycache__/
 screenshot/

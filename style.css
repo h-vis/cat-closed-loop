@@ -532,12 +532,12 @@ button:disabled {
 
 @media (max-width: 560px) {
   .game-panel {
-    padding: 18px;
-    border-radius: 18px;
+    padding: 8px;
+    border-radius: 14px;
   }
 
   .page {
-    padding: 22px 10px;
+    padding: 12px 4px;
   }
 
   .page-title {
