@@ -1430,6 +1430,15 @@ let rememberedRandomStage = initialRandomStage;
 let rememberedTutorialIndex = 0;
 let rememberedMakerStage = createMakerStage();
 const CLEARED_STAGES_STORAGE_KEY = "closedLoopClearedStages";
+const PURCHASED_PREMIUM_PACKS_STORAGE_KEY = "closedLoopPurchasedPremiumPacks";
+const PREMIUM_STAGE_PACKS = {
+  mediumExpansion: {
+    id: "medium-expansion",
+    stageNumbersByDifficulty: {
+      [STAGE_DIFFICULTY.medium]: [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52],
+    },
+  },
+};
 
 const gameState = createInitialState(cloneStageDefinition(DEFAULT_START_STAGE));
 const isMakerOnlyPage = document.body?.dataset?.appMode === "maker";
@@ -3465,6 +3474,9 @@ function getStageJsonUi() {
     makerCapturePngButton: document.getElementById("makerCapturePngButton"),
     makerExportStatus: document.getElementById("makerExportStatus"),
     makerJsonOutput: document.getElementById("makerJsonOutput"),
+    premiumStageControls: document.getElementById("premiumStageControls"),
+    premiumStageNote: document.getElementById("premiumStageNote"),
+    unlockPremiumButton: document.getElementById("unlockPremiumButton"),
   };
 }
 
@@ -3497,6 +3509,11 @@ const UI_TRANSLATIONS = {
     stage: "Stage",
     reset: "Reset",
     clearLoop: "Clear Loop",
+    premiumLockedOption: "Premium",
+    premiumPackLocked: "This stage belongs to premium content.",
+    premiumPackUnlock: "Unlock Premium",
+    premiumUnlockSuccess: "Premium content unlocked for this device.",
+    premiumLockedStatus: "This stage is locked until premium content is unlocked.",
     loading: "is loading...",
     switched: "Switched to",
   },
@@ -3512,6 +3529,11 @@ const UI_TRANSLATIONS = {
     stage: "ステージ",
     reset: "リセット",
     clearLoop: "線を消す",
+    premiumLockedOption: "有料",
+    premiumPackLocked: "このステージは有料コンテンツに含まれています。",
+    premiumPackUnlock: "有料ステージを解放",
+    premiumUnlockSuccess: "この端末で有料コンテンツを解放しました。",
+    premiumLockedStatus: "このステージは有料コンテンツを解放するまで遊べません。",
     loading: "を読み込み中...",
     switched: "ステージリストを切り替えました:",
   },
@@ -3741,6 +3763,7 @@ function applyUiLanguage() {
   setElementText("stageRowLabel", getUiText("stage"));
   setElementText("resetButton", getUiText("reset"));
   setElementText("clearLoopButton", getUiText("clearLoop"));
+  setElementText("unlockPremiumButton", getUiText("premiumPackUnlock"));
 
   const { homeHowtoButton, gameHowtoButton } = getScreenUi();
   if (homeHowtoButton) {
@@ -3755,6 +3778,7 @@ function applyUiLanguage() {
   }
   updateLanguageDialogOptions();
   updateHowtoLinks();
+  updatePremiumStageControls();
 }
 
 function setUiLanguage(nextLanguage) {
@@ -3835,6 +3859,98 @@ function setMakerExportStatus(message, isError = false) {
 
 function formatStageNumber(stageNumber) {
   return String(stageNumber).padStart(3, "0");
+}
+
+function loadPurchasedPremiumPackIds() {
+  try {
+    const rawValue = globalThis.localStorage?.getItem(PURCHASED_PREMIUM_PACKS_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    return Array.isArray(parsedValue) ? parsedValue.filter((value) => typeof value === "string") : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+function savePurchasedPremiumPackIds(packIds) {
+  try {
+    globalThis.localStorage?.setItem(
+      PURCHASED_PREMIUM_PACKS_STORAGE_KEY,
+      JSON.stringify([...new Set(packIds)])
+    );
+  } catch (_error) {
+    // Purchase flags are persisted for convenience; storage failure should not break navigation.
+  }
+}
+
+function getPremiumStagePackForStage(stageDifficulty, stageNumber) {
+  const normalizedDifficulty = normalizeStageDifficulty(stageDifficulty);
+
+  for (const premiumPack of Object.values(PREMIUM_STAGE_PACKS)) {
+    const targetNumbers = premiumPack.stageNumbersByDifficulty[normalizedDifficulty] ?? [];
+    if (targetNumbers.includes(stageNumber)) {
+      return premiumPack;
+    }
+  }
+
+  return null;
+}
+
+function isPremiumStage(stageDifficulty, stageNumber) {
+  return getPremiumStagePackForStage(stageDifficulty, stageNumber) !== null;
+}
+
+function isPremiumPackPurchased(packId) {
+  return loadPurchasedPremiumPackIds().includes(packId);
+}
+
+function isStageUnlocked(stageDifficulty, stageNumber) {
+  const premiumPack = getPremiumStagePackForStage(stageDifficulty, stageNumber);
+  if (!premiumPack) {
+    return true;
+  }
+
+  return isPremiumPackPurchased(premiumPack.id);
+}
+
+function unlockPremiumPack(packId) {
+  const purchasedPackIds = loadPurchasedPremiumPackIds();
+  if (purchasedPackIds.includes(packId)) {
+    return false;
+  }
+
+  purchasedPackIds.push(packId);
+  savePurchasedPremiumPackIds(purchasedPackIds);
+  return true;
+}
+
+function updatePremiumStageControls() {
+  const {
+    premiumStageControls,
+    premiumStageNote,
+    unlockPremiumButton,
+    stageNumberInput,
+  } = getStageJsonUi();
+
+  if (!premiumStageControls || !premiumStageNote || !unlockPremiumButton || !stageNumberInput) {
+    return;
+  }
+
+  const stageDifficulty = getSelectedStageDifficulty();
+  const stageNumber = parseStageNumber(stageNumberInput.value ?? "1");
+  const premiumPack = getPremiumStagePackForStage(stageDifficulty, stageNumber);
+
+  if (!premiumPack || isPremiumPackPurchased(premiumPack.id)) {
+    premiumStageControls.hidden = true;
+    premiumStageNote.textContent = "";
+    return;
+  }
+
+  premiumStageControls.hidden = false;
+  premiumStageNote.textContent = `${getUiText("premiumPackLocked")} ${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)}`;
 }
 
 function getClearedStageStorageKey(stageDifficulty, stageNumber) {
@@ -4204,6 +4320,7 @@ function getKnownStageNumbers(stageDifficulty = getSelectedStageDifficulty()) {
 function refreshStageNumberInputs(resetToFirst = false) {
   const stageNumbers = getKnownStageNumbers();
   const { stageNumberInput, makerExportNumberInput } = getStageJsonUi();
+  const selectedDifficulty = getSelectedStageDifficulty();
 
   if (stageNumberInput) {
     const currentValue = Number.parseInt(stageNumberInput.value, 10);
@@ -4218,10 +4335,13 @@ function refreshStageNumberInputs(resetToFirst = false) {
       stageNumberInput.innerHTML = stageNumbers
         .map((stageNumber) => {
           const stageNumberLabel = formatStageNumber(stageNumber);
-          const clearedMark = isStageCleared(getSelectedStageDifficulty(), stageNumber)
+          const clearedMark = isStageCleared(selectedDifficulty, stageNumber)
             ? " ✅"
             : "";
-          return `<option value="${stageNumber}">${stageNumberLabel}${clearedMark}</option>`;
+          const premiumMark = isPremiumStage(selectedDifficulty, stageNumber)
+            ? ` 🔒${getUiText("premiumLockedOption")}`
+            : "";
+          return `<option value="${stageNumber}">${stageNumberLabel}${clearedMark}${premiumMark}</option>`;
         })
         .join("");
     }
@@ -4233,6 +4353,8 @@ function refreshStageNumberInputs(resetToFirst = false) {
       stageNumberInput.value = String(nextValue);
     }
   }
+
+  updatePremiumStageControls();
 
   if (makerExportNumberInput && !isElementFocused(makerExportNumberInput)) {
     const nextStageNumber = stageNumbers.length > 0 ? stageNumbers[stageNumbers.length - 1] + 1 : 1;
@@ -4467,6 +4589,14 @@ async function playStageByNumber(stageNumberOverride = null, stageDifficultyOver
     stageJsonState.selectedDifficulty = stageDifficulty;
     if (stageDifficultySelect) {
       stageDifficultySelect.value = stageDifficulty;
+    }
+    if (!isStageUnlocked(stageDifficulty, stageNumber)) {
+      if (stageNumberInput) {
+        stageNumberInput.value = String(stageNumber);
+      }
+      updatePremiumStageControls();
+      setStageLoaderStatus(getUiText("premiumLockedStatus"), true);
+      return;
     }
 
     setStageLoaderStatus(
@@ -4970,7 +5100,27 @@ getStageJsonUi().stageFolderInput?.addEventListener("change", (event) => {
   void handleStageFolderInputChange(event);
 });
 getStageJsonUi().stageNumberInput?.addEventListener("change", () => {
+  updatePremiumStageControls();
   void playStageByNumber();
+});
+getStageJsonUi().unlockPremiumButton?.addEventListener("click", () => {
+  const { stageNumberInput } = getStageJsonUi();
+  if (!stageNumberInput) {
+    return;
+  }
+
+  const stageDifficulty = getSelectedStageDifficulty();
+  const stageNumber = parseStageNumber(stageNumberInput.value ?? "1");
+  const premiumPack = getPremiumStagePackForStage(stageDifficulty, stageNumber);
+  if (!premiumPack) {
+    return;
+  }
+
+  unlockPremiumPack(premiumPack.id);
+  refreshStageNumberInputs();
+  updatePremiumStageControls();
+  setStageLoaderStatus(getUiText("premiumUnlockSuccess"));
+  void playStageByNumber(stageNumber, stageDifficulty);
 });
 getStageJsonUi().makerExportJsonButton?.addEventListener("click", () => {
   void exportMakerStageJson();
