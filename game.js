@@ -1429,6 +1429,7 @@ const initialRandomStage = cloneStageDefinition(DEFAULT_RANDOM_STAGE);
 let rememberedRandomStage = initialRandomStage;
 let rememberedTutorialIndex = 0;
 let rememberedMakerStage = createMakerStage();
+const CLEARED_STAGES_STORAGE_KEY = "closedLoopClearedStages";
 
 const gameState = createInitialState(cloneStageDefinition(DEFAULT_START_STAGE));
 const isMakerOnlyPage = document.body?.dataset?.appMode === "maker";
@@ -2413,6 +2414,13 @@ function applyLoopEffects() {
 
   if (gameState.key.collected && gameState.goalSharesPlayerSpace) {
     gameState.clear = true;
+    if (gameState.mode === getStageModeKey()) {
+      rememberClearedStage(
+        gameState.stage.stageDifficulty ?? getStageJsonState().selectedDifficulty,
+        gameState.stage.stageNumber
+      );
+      refreshStageNumberInputs();
+    }
   }
 
   applyWarpEffectInPlayerSpace("lateWarps");
@@ -3449,7 +3457,6 @@ function getStageJsonUi() {
   return {
     stageDifficultySelect: document.getElementById("stageDifficultySelect"),
     stageNumberInput: document.getElementById("stageNumberInput"),
-    loadStageButton: document.getElementById("loadStageButton"),
     chooseStageFolderButton: document.getElementById("chooseStageFolderButton"),
     stageFolderInput: document.getElementById("stageFolderInput"),
     stageLoaderStatus: document.getElementById("stageLoaderStatus"),
@@ -3468,6 +3475,8 @@ function getScreenUi() {
     rulesScreen: document.getElementById("rulesScreen"),
     startGameButton: document.getElementById("startGameButton"),
     languageSelect: document.getElementById("languageSelect"),
+    languageMenuButton: document.getElementById("languageMenuButton"),
+    languageDialog: document.getElementById("languageDialog"),
     homeHowtoButton: document.getElementById("homeHowtoButton"),
     gameHowtoButton: document.getElementById("gameHowtoButton"),
     openRulesButton: document.getElementById("openRulesButton"),
@@ -3479,13 +3488,13 @@ const UI_TRANSLATIONS = {
   en: {
     homeKicker: "Draw One Line",
     homeTitle: "Closed Loop Dungeon",
-    homeLead: "Draw loops to divide the dungeon, collect the key, and reach the goal.",
+    homeLead: "Carve the dungeon with a single loop. Key. Door. Escape.",
     languageLabel: "Language",
+    languageButtonLabel: "Language",
     startGameButton: "Start Game",
     howTo: "How to Play",
     title: "Title",
     stage: "Stage",
-    play: "Play",
     reset: "Reset",
     clearLoop: "Clear Loop",
     loading: "is loading...",
@@ -3493,14 +3502,14 @@ const UI_TRANSLATIONS = {
   },
   ja: {
     homeKicker: "一筆書きパズル",
-    homeTitle: "Closed Loop Dungeon",
-    homeLead: "線でダンジョンを区切り、鍵を取り、ゴールへたどり着こう。",
+    homeTitle: "きりわけダンジョン",
+    homeLead: "空間を一筆書きで斬り、ダンジョンを突破せよ",
     languageLabel: "言語",
+    languageButtonLabel: "言語",
     startGameButton: "ゲーム開始",
     howTo: "遊び方",
     title: "タイトル",
     stage: "ステージ",
-    play: "プレイ",
     reset: "リセット",
     clearLoop: "線を消す",
     loading: "を読み込み中...",
@@ -3536,6 +3545,42 @@ function setElementText(id, text) {
   if (element) {
     element.textContent = text;
   }
+}
+
+function updateLanguageDialogOptions() {
+  const optionButtons = document.querySelectorAll("[data-language-option]");
+  for (const optionButton of optionButtons) {
+    const isSelected = optionButton.dataset.languageOption === uiLanguage;
+    optionButton.classList.toggle("is-selected", isSelected);
+    optionButton.setAttribute("aria-pressed", isSelected ? "true" : "false");
+    const checkElement = optionButton.querySelector(".language-option-check");
+    if (checkElement) {
+      checkElement.textContent = isSelected ? "✓" : "";
+    }
+  }
+}
+
+function openLanguageDialog() {
+  const { languageDialog } = getScreenUi();
+  if (!languageDialog) {
+    return;
+  }
+
+  updateLanguageDialogOptions();
+  languageDialog.hidden = false;
+  document
+    .querySelector(`[data-language-option="${uiLanguage}"]`)
+    ?.focus();
+}
+
+function closeLanguageDialog() {
+  const { languageDialog, languageMenuButton } = getScreenUi();
+  if (!languageDialog) {
+    return;
+  }
+
+  languageDialog.hidden = true;
+  languageMenuButton?.focus();
 }
 
 function updateHowtoLinks() {
@@ -3682,6 +3727,7 @@ function restoreHowtoReturnState() {
 
 function applyUiLanguage() {
   document.documentElement.lang = uiLanguage;
+  document.title = uiLanguage === "ja" ? "きりわけダンジョン" : "Closed Loop Dungeon";
   const { languageSelect } = getScreenUi();
   if (languageSelect) {
     languageSelect.value = uiLanguage;
@@ -3693,7 +3739,6 @@ function applyUiLanguage() {
   setElementText("languageLabel", getUiText("languageLabel"));
   setElementText("startGameButton", getUiText("startGameButton"));
   setElementText("stageRowLabel", getUiText("stage"));
-  setElementText("loadStageButton", getUiText("play"));
   setElementText("resetButton", getUiText("reset"));
   setElementText("clearLoopButton", getUiText("clearLoop"));
 
@@ -3704,6 +3749,11 @@ function applyUiLanguage() {
   if (gameHowtoButton) {
     gameHowtoButton.textContent = getUiText("howTo");
   }
+  const { languageMenuButton } = getScreenUi();
+  if (languageMenuButton) {
+    languageMenuButton.setAttribute("aria-label", getUiText("languageButtonLabel"));
+  }
+  updateLanguageDialogOptions();
   updateHowtoLinks();
 }
 
@@ -3711,6 +3761,7 @@ function setUiLanguage(nextLanguage) {
   uiLanguage = nextLanguage === "ja" ? "ja" : "en";
   globalThis.localStorage?.setItem("closedLoopLanguage", uiLanguage);
   applyUiLanguage();
+  closeLanguageDialog();
 }
 
 function showHomeScreen() {
@@ -3784,6 +3835,58 @@ function setMakerExportStatus(message, isError = false) {
 
 function formatStageNumber(stageNumber) {
   return String(stageNumber).padStart(3, "0");
+}
+
+function getClearedStageStorageKey(stageDifficulty, stageNumber) {
+  return `${normalizeStageDifficulty(stageDifficulty)}:${formatStageNumber(stageNumber)}`;
+}
+
+function loadClearedStages() {
+  try {
+    const rawValue = globalThis.localStorage?.getItem(CLEARED_STAGES_STORAGE_KEY);
+    if (!rawValue) {
+      return {};
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    return parsedValue && typeof parsedValue === "object" ? parsedValue : {};
+  } catch (_error) {
+    return {};
+  }
+}
+
+function isStageCleared(stageDifficulty, stageNumber) {
+  if (!Number.isInteger(stageNumber)) {
+    return false;
+  }
+
+  const clearedStages = loadClearedStages();
+  return Boolean(
+    clearedStages[getClearedStageStorageKey(stageDifficulty, stageNumber)]
+  );
+}
+
+function rememberClearedStage(stageDifficulty, stageNumber) {
+  if (!Number.isInteger(stageNumber)) {
+    return;
+  }
+
+  const clearedStages = loadClearedStages();
+  const clearedStageKey = getClearedStageStorageKey(stageDifficulty, stageNumber);
+  if (clearedStages[clearedStageKey]) {
+    return;
+  }
+
+  clearedStages[clearedStageKey] = true;
+
+  try {
+    globalThis.localStorage?.setItem(
+      CLEARED_STAGES_STORAGE_KEY,
+      JSON.stringify(clearedStages)
+    );
+  } catch (_error) {
+    // Clear markers are a convenience; storage failure should not break gameplay.
+  }
 }
 
 function normalizeStageDifficulty(value) {
@@ -4115,7 +4218,10 @@ function refreshStageNumberInputs(resetToFirst = false) {
       stageNumberInput.innerHTML = stageNumbers
         .map((stageNumber) => {
           const stageNumberLabel = formatStageNumber(stageNumber);
-          return `<option value="${stageNumber}">${stageNumberLabel}</option>`;
+          const clearedMark = isStageCleared(getSelectedStageDifficulty(), stageNumber)
+            ? " ✅"
+            : "";
+          return `<option value="${stageNumber}">${stageNumberLabel}${clearedMark}</option>`;
         })
         .join("");
     }
@@ -4825,6 +4931,25 @@ getScreenUi().languageSelect?.addEventListener("change", (event) => {
   setUiLanguage(event.target?.value);
   setStageLoaderStatus(getDefaultStageLoaderMessage());
 });
+getScreenUi().languageMenuButton?.addEventListener("click", () => {
+  openLanguageDialog();
+});
+getScreenUi().languageDialog?.addEventListener("click", (event) => {
+  if (event.target === getScreenUi().languageDialog) {
+    closeLanguageDialog();
+  }
+});
+for (const optionButton of document.querySelectorAll("[data-language-option]")) {
+  optionButton.addEventListener("click", () => {
+    setUiLanguage(optionButton.dataset.languageOption);
+    setStageLoaderStatus(getDefaultStageLoaderMessage());
+  });
+}
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !getScreenUi().languageDialog?.hidden) {
+    closeLanguageDialog();
+  }
+});
 getScreenUi().startGameButton?.addEventListener("click", () => {
   showGameScreen();
   void playStageByNumber();
@@ -4837,9 +4962,6 @@ getScreenUi().openRulesButton?.addEventListener("click", () => {
 });
 getScreenUi().closeRulesButton?.addEventListener("click", () => {
   showGameScreen();
-});
-getStageJsonUi().loadStageButton?.addEventListener("click", () => {
-  void playStageByNumber();
 });
 getStageJsonUi().chooseStageFolderButton?.addEventListener("click", () => {
   void chooseStageFolder();
@@ -7871,7 +7993,6 @@ function registerMakerAutoSolveCancelHandlers() {
     makerResetButton,
     makerTestButton,
     makerEditButton,
-    getStageJsonUi().loadStageButton,
     getStageJsonUi().chooseStageFolderButton,
   ];
 

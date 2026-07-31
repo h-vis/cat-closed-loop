@@ -74,6 +74,10 @@
     function applyHowtoLanguage() {
       document.documentElement.lang = howtoLanguage;
       localStorage.setItem("closedLoopLanguage", howtoLanguage);
+      document.title =
+        howtoLanguage === "ja"
+          ? "遊び方 - きりわけダンジョン"
+          : "How to Play - Closed Loop Dungeon";
       document.querySelector(".page-title").textContent =
         howtoLanguage === "ja" ? "遊び方" : "How to Play";
       document.getElementById("backToGameLink").textContent =

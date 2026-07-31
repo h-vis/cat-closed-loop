@@ -8,8 +8,6 @@
 </head>
 <body>
   <main class="page">
-    <h1 class="page-title">Closed Loop Dungeon</h1>
-
     <section id="homeScreen" class="game-panel home-panel">
       <div class="home-layout">
         <div class="home-copy">
@@ -20,6 +18,13 @@
           </p>
         </div>
 
+        <img
+          class="home-hero-image"
+          src="sozai/title_illustration.png"
+          alt=""
+          aria-hidden="true"
+        >
+
         <div class="home-actions">
           <label class="language-field" for="languageSelect">
             <span id="languageLabel">Language</span>
@@ -29,10 +34,37 @@
             </select>
           </label>
           <button id="startGameButton" type="button">Start Game</button>
-          <a id="homeHowtoButton" class="button-link secondary-button" href="howto.html">How to Play</a>
+          <div class="home-secondary-actions">
+            <a id="homeHowtoButton" class="button-link secondary-button" href="howto.html">How to Play</a>
+            <button
+              id="languageMenuButton"
+              class="icon-button secondary-button"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="languageDialog"
+              aria-label="Language"
+            >
+              <span aria-hidden="true">A/文</span>
+            </button>
+          </div>
         </div>
       </div>
     </section>
+
+    <div id="languageDialog" class="modal-backdrop" hidden>
+      <section class="language-dialog" role="dialog" aria-modal="true" aria-label="Language">
+        <div class="language-option-list">
+          <button class="language-option" type="button" data-language-option="en">
+            <span>English</span>
+            <span class="language-option-check" aria-hidden="true"></span>
+          </button>
+          <button class="language-option" type="button" data-language-option="ja">
+            <span>日本語</span>
+            <span class="language-option-check" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
+    </div>
 
     <section id="gameScreen" class="game-panel" hidden>
       <header class="panel-header">
@@ -54,7 +86,6 @@
                 <option value="1">001</option>
               </select>
             </label>
-            <button id="loadStageButton" type="button">Play</button>
             <button id="chooseStageFolderButton" type="button" hidden>JSONを選ぶ</button>
             <input
               id="stageFolderInput"
