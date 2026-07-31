@@ -10,15 +10,39 @@
   <main class="page">
     <h1 class="page-title">Closed Loop Dungeon</h1>
 
-    <section id="gameScreen" class="game-panel">
+    <section id="homeScreen" class="game-panel home-panel">
+      <div class="home-layout">
+        <div class="home-copy">
+          <p id="homeKicker" class="home-kicker">Draw One Line</p>
+          <h2 id="homeTitle">Closed Loop Dungeon</h2>
+          <p id="homeLead">
+            Draw loops to divide the dungeon, collect the key, and reach the goal.
+          </p>
+        </div>
+
+        <div class="home-actions">
+          <label class="language-field" for="languageSelect">
+            <span id="languageLabel">Language</span>
+            <select id="languageSelect">
+              <option value="en">English</option>
+              <option value="ja">日本語</option>
+            </select>
+          </label>
+          <button id="startGameButton" type="button">Start Game</button>
+          <a id="homeHowtoButton" class="button-link secondary-button" href="howto.html">How to Play</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="game-panel" hidden>
       <header class="panel-header">
         <div class="panel-action-row">
-          <a class="button-link secondary-button" href="howto.html">遊び方</a>
+          <a id="gameHowtoButton" class="button-link secondary-button" href="howto.html">How to Play</a>
         </div>
 
         <section class="stage-loader top-stage-loader" aria-label="ステージ選択">
           <div class="stage-loader-row top-stage-loader-row">
-            <label class="stage-row-label" for="stageDifficultySelect">ステージ</label>
+            <label id="stageRowLabel" class="stage-row-label" for="stageDifficultySelect">Stage</label>
             <label class="stage-field" for="stageDifficultySelect">
               <select id="stageDifficultySelect" aria-label="難易度">
                 <option value="low">Easy</option>
@@ -202,6 +226,7 @@
     </section>
   </main>
 
-  <script src="game.js?v=stage-manifest-1"></script>
+  <script src="stage/manifest.js?v=stage-manifest-1"></script>
+  <script src="game.js?v=stage-manifest-2"></script>
 </body>
 </html>

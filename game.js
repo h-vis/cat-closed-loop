@@ -3411,6 +3411,7 @@ function getStageModeKey() {
 
 function getStageJsonState() {
   if (!globalThis.__closedLoopStageJsonState) {
+    const builtInStageManifest = globalThis.CLOSED_LOOP_STAGE_MANIFEST ?? {};
     globalThis.__closedLoopStageJsonState = {
       rememberedStage: null,
       rememberedStageNumber: null,
@@ -3428,9 +3429,15 @@ function getStageJsonState() {
         [STAGE_DIFFICULTY.high]: [],
       },
       builtInStageNumbersByDifficulty: {
-        [STAGE_DIFFICULTY.low]: [],
-        [STAGE_DIFFICULTY.medium]: [],
-        [STAGE_DIFFICULTY.high]: [],
+        [STAGE_DIFFICULTY.low]: normalizeStageManifestNumbers(
+          builtInStageManifest.low
+        ),
+        [STAGE_DIFFICULTY.medium]: normalizeStageManifestNumbers(
+          builtInStageManifest.medium
+        ),
+        [STAGE_DIFFICULTY.high]: normalizeStageManifestNumbers(
+          builtInStageManifest.high
+        ),
       },
     };
   }
@@ -3456,15 +3463,250 @@ function getStageJsonUi() {
 
 function getScreenUi() {
   return {
+    homeScreen: document.getElementById("homeScreen"),
     gameScreen: document.getElementById("gameScreen"),
     rulesScreen: document.getElementById("rulesScreen"),
+    startGameButton: document.getElementById("startGameButton"),
+    languageSelect: document.getElementById("languageSelect"),
+    homeHowtoButton: document.getElementById("homeHowtoButton"),
+    gameHowtoButton: document.getElementById("gameHowtoButton"),
     openRulesButton: document.getElementById("openRulesButton"),
     closeRulesButton: document.getElementById("closeRulesButton"),
   };
 }
 
+const UI_TRANSLATIONS = {
+  en: {
+    homeKicker: "Draw One Line",
+    homeTitle: "Closed Loop Dungeon",
+    homeLead: "Draw loops to divide the dungeon, collect the key, and reach the goal.",
+    languageLabel: "Language",
+    startGameButton: "Start Game",
+    howTo: "How to Play",
+    title: "Title",
+    stage: "Stage",
+    play: "Play",
+    reset: "Reset",
+    clearLoop: "Clear Loop",
+    loading: "is loading...",
+    switched: "Switched to",
+  },
+  ja: {
+    homeKicker: "一筆書きパズル",
+    homeTitle: "Closed Loop Dungeon",
+    homeLead: "線でダンジョンを区切り、鍵を取り、ゴールへたどり着こう。",
+    languageLabel: "言語",
+    startGameButton: "ゲーム開始",
+    howTo: "遊び方",
+    title: "タイトル",
+    stage: "ステージ",
+    play: "プレイ",
+    reset: "リセット",
+    clearLoop: "線を消す",
+    loading: "を読み込み中...",
+    switched: "ステージリストを切り替えました:",
+  },
+};
+
+function getInitialUiLanguage() {
+  const queryLanguage = new URLSearchParams(globalThis.location?.search ?? "").get("lang");
+  if (queryLanguage === "ja" || queryLanguage === "en") {
+    return queryLanguage;
+  }
+
+  const savedLanguage = globalThis.localStorage?.getItem("closedLoopLanguage");
+  if (savedLanguage === "ja" || savedLanguage === "en") {
+    return savedLanguage;
+  }
+
+  return String(navigator.language || "").toLowerCase().startsWith("ja")
+    ? "ja"
+    : "en";
+}
+
+let uiLanguage = getInitialUiLanguage();
+
+function getUiText(key) {
+  return UI_TRANSLATIONS[uiLanguage]?.[key] ?? UI_TRANSLATIONS.en[key] ?? key;
+}
+
+function setElementText(id, text) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = text;
+  }
+}
+
+function updateHowtoLinks() {
+  const { homeHowtoButton, gameHowtoButton } = getScreenUi();
+  const href = `howto.html?lang=${uiLanguage}`;
+  if (homeHowtoButton) {
+    homeHowtoButton.href = href;
+  }
+  if (gameHowtoButton) {
+    gameHowtoButton.href = `${href}&return=game`;
+  }
+}
+
+const HOWTO_RETURN_STATE_KEY = "closedLoopHowtoReturnState";
+
+function serializeHowtoReturnState() {
+  return {
+    version: 1,
+    mode: gameState.mode,
+    tutorialIndex: gameState.tutorialIndex,
+    stage: cloneStageDefinition(gameState.stage),
+    player: clonePosition(gameState.player),
+    key: {
+      position: clonePosition(gameState.key.position),
+      collected: Boolean(gameState.key.collected),
+    },
+    bombs: clonePositions(gameState.bombs),
+    disarmItems: clonePositions(gameState.disarmItems),
+    warps: clonePositions(gameState.warps),
+    lateWarps: clonePositions(gameState.lateWarps),
+    wallBlocks: clonePositions(gameState.wallBlocks),
+    loopDrawnLineCells: gameState.loop
+      ? clonePositions(gameState.loop.drawnLineCells)
+      : null,
+    drawingCells: clonePositions(gameState.drawing.cells),
+    playerSpaceId: gameState.playerSpaceId,
+    playerInsideLoop: Boolean(gameState.playerInsideLoop),
+    goalInsideLoop: Boolean(gameState.goalInsideLoop),
+    goalSharesPlayerSpace: Boolean(gameState.goalSharesPlayerSpace),
+    explodedBombs: clonePositions(gameState.explodedBombs),
+    clear: Boolean(gameState.clear),
+    gameOver: Boolean(gameState.gameOver),
+    status: gameState.status,
+  };
+}
+
+function saveHowtoReturnState() {
+  try {
+    globalThis.sessionStorage?.setItem(
+      HOWTO_RETURN_STATE_KEY,
+      JSON.stringify(serializeHowtoReturnState())
+    );
+  } catch (_error) {
+    // Returning from how-to is a convenience; failing to save should not block navigation.
+  }
+}
+
+function restoreHowtoReturnState() {
+  const query = new URLSearchParams(globalThis.location?.search ?? "");
+  if (query.get("resume") !== "1") {
+    return false;
+  }
+
+  try {
+    const storedState = globalThis.sessionStorage?.getItem(HOWTO_RETURN_STATE_KEY);
+    if (!storedState) {
+      return false;
+    }
+
+    const parsedState = JSON.parse(storedState);
+    if (parsedState?.version !== 1 || !parsedState.stage) {
+      return false;
+    }
+
+    const nextStage = cloneStageDefinition(parsedState.stage);
+    Object.assign(gameState, createInitialState(nextStage));
+    gameState.mode = parsedState.mode ?? nextStage.mode ?? gameState.mode;
+    gameState.tutorialIndex = parsedState.tutorialIndex ?? nextStage.tutorialIndex ?? null;
+    gameState.player = clonePosition(parsedState.player ?? nextStage.playerStart);
+    gameState.key = {
+      position: clonePosition(parsedState.key?.position ?? nextStage.keyPosition),
+      collected: Boolean(parsedState.key?.collected),
+    };
+    gameState.bombs = clonePositions(parsedState.bombs ?? nextStage.bombs);
+    gameState.disarmItems = clonePositions(parsedState.disarmItems ?? nextStage.disarmItems);
+    gameState.warps = clonePositions(parsedState.warps ?? nextStage.warps ?? []);
+    gameState.lateWarps = clonePositions(parsedState.lateWarps ?? nextStage.lateWarps ?? []);
+    gameState.wallBlocks = clonePositions(parsedState.wallBlocks ?? nextStage.wallBlocks ?? []);
+    gameState.drawing = {
+      active: false,
+      cells: clonePositions(parsedState.drawingCells ?? []),
+    };
+    gameState.loop = Array.isArray(parsedState.loopDrawnLineCells)
+      ? buildLoopFromCells(parsedState.loopDrawnLineCells)
+      : null;
+    gameState.playerSpaceId = parsedState.playerSpaceId ?? null;
+    gameState.playerInsideLoop = Boolean(parsedState.playerInsideLoop);
+    gameState.goalInsideLoop = Boolean(parsedState.goalInsideLoop);
+    gameState.goalSharesPlayerSpace = Boolean(parsedState.goalSharesPlayerSpace);
+    gameState.explodedBombs = clonePositions(parsedState.explodedBombs ?? []);
+    gameState.clear = Boolean(parsedState.clear);
+    gameState.gameOver = Boolean(parsedState.gameOver);
+    gameState.status = parsedState.status ?? STATUS.idle;
+
+    updateCanvasMetrics(nextStage);
+    const { stageDifficultySelect, stageNumberInput } = getStageJsonUi();
+    if (stageDifficultySelect && nextStage.stageDifficulty) {
+      stageDifficultySelect.value = normalizeStageDifficulty(nextStage.stageDifficulty);
+    }
+    if (stageNumberInput && Number.isInteger(nextStage.stageNumber)) {
+      stageNumberInput.value = String(nextStage.stageNumber);
+    }
+    showGameScreen();
+    render();
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
+function applyUiLanguage() {
+  document.documentElement.lang = uiLanguage;
+  const { languageSelect } = getScreenUi();
+  if (languageSelect) {
+    languageSelect.value = uiLanguage;
+  }
+
+  setElementText("homeKicker", getUiText("homeKicker"));
+  setElementText("homeTitle", getUiText("homeTitle"));
+  setElementText("homeLead", getUiText("homeLead"));
+  setElementText("languageLabel", getUiText("languageLabel"));
+  setElementText("startGameButton", getUiText("startGameButton"));
+  setElementText("stageRowLabel", getUiText("stage"));
+  setElementText("loadStageButton", getUiText("play"));
+  setElementText("resetButton", getUiText("reset"));
+  setElementText("clearLoopButton", getUiText("clearLoop"));
+
+  const { homeHowtoButton, gameHowtoButton } = getScreenUi();
+  if (homeHowtoButton) {
+    homeHowtoButton.textContent = getUiText("howTo");
+  }
+  if (gameHowtoButton) {
+    gameHowtoButton.textContent = getUiText("howTo");
+  }
+  updateHowtoLinks();
+}
+
+function setUiLanguage(nextLanguage) {
+  uiLanguage = nextLanguage === "ja" ? "ja" : "en";
+  globalThis.localStorage?.setItem("closedLoopLanguage", uiLanguage);
+  applyUiLanguage();
+}
+
+function showHomeScreen() {
+  const { homeScreen, gameScreen, rulesScreen } = getScreenUi();
+  if (homeScreen) {
+    homeScreen.hidden = false;
+  }
+  if (gameScreen) {
+    gameScreen.hidden = true;
+  }
+  if (rulesScreen) {
+    rulesScreen.hidden = true;
+  }
+  globalThis.scrollTo?.({ top: 0, behavior: "smooth" });
+}
+
 function showGameScreen() {
-  const { gameScreen, rulesScreen } = getScreenUi();
+  const { homeScreen, gameScreen, rulesScreen } = getScreenUi();
+  if (homeScreen) {
+    homeScreen.hidden = true;
+  }
   if (gameScreen) {
     gameScreen.hidden = false;
   }
@@ -3494,6 +3736,12 @@ function setStatusText(element, message, isError = false) {
 }
 
 function getDefaultStageLoaderMessage() {
+  if (uiLanguage === "ja") {
+    return globalThis.location?.protocol === "file:"
+      ? "内蔵ステージを読み込めます。"
+      : "内蔵ステージを読み込めます。";
+  }
+
   return globalThis.location?.protocol === "file:"
     ? "Built-in stage JSON can be loaded with the stage folder picker."
     : "Built-in stages such as stage/low/001.json are available.";
@@ -3541,22 +3789,56 @@ function normalizeStageManifestNumbers(values) {
   )].sort((left, right) => left - right);
 }
 
+function readJsonWithXhr(path) {
+  return new Promise((resolve) => {
+    if (typeof XMLHttpRequest !== "function") {
+      resolve(null);
+      return;
+    }
+
+    const request = new XMLHttpRequest();
+    request.overrideMimeType?.("application/json");
+    request.open("GET", path, true);
+    request.onload = () => {
+      if (request.status !== 0 && (request.status < 200 || request.status >= 300)) {
+        resolve(null);
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(request.responseText));
+      } catch (_error) {
+        resolve(null);
+      }
+    };
+    request.onerror = () => resolve(null);
+    request.send();
+  });
+}
+
+async function readJsonResource(path) {
+  if (globalThis.location?.protocol !== "file:" || isAndroidWebViewPage) {
+    const response = await fetch(path, { cache: "no-store" }).catch(() => null);
+    if (response?.ok) {
+      return response.json();
+    }
+  }
+
+  return readJsonWithXhr(path);
+}
+
 async function loadBuiltInStageManifest() {
   const stageJsonState = getStageJsonState();
 
-  if (globalThis.location?.protocol === "file:") {
+  if (globalThis.location?.protocol === "file:" && !isAndroidWebViewPage) {
     return false;
   }
 
-  const response = await fetch("stage/manifest.json", { cache: "no-store" }).catch(
-    () => null
-  );
-
-  if (!response || !response.ok) {
+  const manifest = await readJsonResource("stage/manifest.json");
+  if (!manifest) {
     return false;
   }
 
-  const manifest = await response.json();
   for (const stageDifficulty of Object.values(STAGE_DIFFICULTY)) {
     const pack = STAGE_PACKS[stageDifficulty];
     stageJsonState.builtInStageNumbersByDifficulty[stageDifficulty] =
@@ -3983,30 +4265,27 @@ async function loadStageFromDirectoryHandle(stageNumber, stageDifficulty) {
 async function fetchStageByNumber(stageNumber, stageDifficulty) {
   const normalizedDifficulty = normalizeStageDifficulty(stageDifficulty);
 
-  if (globalThis.location?.protocol === "file:") {
+  if (globalThis.location?.protocol === "file:" && !isAndroidWebViewPage) {
     return null;
   }
 
   for (const fileName of getStageFileNameCandidates(stageNumber)) {
-    const response = await fetch(
-      `stage/${STAGE_PACKS[normalizedDifficulty].directory}/${fileName}`,
-      { cache: "no-store" }
-    ).catch(() => null);
-    if (!response || !response.ok) {
+    const parsedJson = await readJsonResource(
+      `stage/${STAGE_PACKS[normalizedDifficulty].directory}/${fileName}`
+    );
+    if (!parsedJson) {
       continue;
     }
 
-    const parsedJson = await response.json();
     return normalizeStageJsonDefinition(parsedJson, stageNumber);
   }
 
   for (const fileName of getStageFileNameCandidates(stageNumber)) {
-    const response = await fetch(`stage/${fileName}`, { cache: "no-store" }).catch(() => null);
-    if (!response || !response.ok) {
+    const parsedJson = await readJsonResource(`stage/${fileName}`);
+    if (!parsedJson) {
       continue;
     }
 
-    const parsedJson = await response.json();
     return normalizeStageJsonDefinition(parsedJson, stageNumber);
   }
 
@@ -4060,7 +4339,7 @@ async function playStageByNumber(stageNumberOverride = null, stageDifficultyOver
     }
 
     setStageLoaderStatus(
-      `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)} is loading...`
+      `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)} ${getUiText("loading")}`
     );
 
     const loadedStage = await resolveStageByNumber(stageNumber, stageDifficulty);
@@ -4499,6 +4778,7 @@ async function handleStageNumberEnter(event) {
 }
 
 getStageModeKey();
+applyUiLanguage();
 setStageLoaderStatus(getDefaultStageLoaderMessage());
 void loadBuiltInStageManifest().then((loaded) => {
   refreshStageNumberInputs();
@@ -4512,6 +4792,17 @@ registerClosedLoopDebug({
 });
 getStageJsonUi().stageDifficultySelect?.addEventListener("change", () => {
   handleStageDifficultyChange();
+});
+getScreenUi().languageSelect?.addEventListener("change", (event) => {
+  setUiLanguage(event.target?.value);
+  setStageLoaderStatus(getDefaultStageLoaderMessage());
+});
+getScreenUi().startGameButton?.addEventListener("click", () => {
+  showGameScreen();
+  void playStageByNumber();
+});
+getScreenUi().gameHowtoButton?.addEventListener("click", () => {
+  saveHowtoReturnState();
 });
 getScreenUi().openRulesButton?.addEventListener("click", () => {
   showRulesScreen();
@@ -4540,8 +4831,8 @@ getStageJsonUi().makerCapturePngButton?.addEventListener("click", () => {
 render();
 if (isMakerOnlyPage) {
   setGameMode(GAME_MODE.maker);
-} else if (globalThis.location?.protocol !== "file:" || isAndroidWebViewPage) {
-  void playStageByNumber(1, DEFAULT_STAGE_DIFFICULTY);
+} else {
+  restoreHowtoReturnState();
 }
 
 const AUTO_SOLVER_CONFIG = {

@@ -1,18 +1,18 @@
-<!DOCTYPE html>
-<html lang="ja">
+﻿<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>遊び方 - Closed Loop Dungeon</title>
+  <title>How to Play - Closed Loop Dungeon</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="page howto-page">
-    <h1 class="page-title">遊び方</h1>
+    <h1 class="page-title">How to Play</h1>
 
     <section class="game-panel howto-panel">
       <header class="howto-header">
-        <a class="button-link secondary-button" href="index.html">ゲームに戻る</a>
+        <a id="backToGameLink" class="button-link secondary-button" href="index.html">Back to Game</a>
       </header>
 
       <div id="howtoSteps" class="howto-steps" aria-live="polite"></div>
@@ -20,6 +20,71 @@
   </main>
 
   <script>
+    const HOWTO_ENGLISH_TEXT = [
+      "Closed Loop Dungeon is a puzzle about drawing one continuous line to divide the dungeon into separate areas.",
+      "Draw a loop so the hero and the key are in the same area.",
+      "The key has been collected.",
+      "When the hero and key share an area, the hero automatically picks up the key. Now aim for the goal.",
+      "Put the hero and the goal in the same area. A simple loop like this is enough.",
+      "When the hero reaches the open goal, the stage is cleared.",
+      "Next, learn about bombs.",
+      "If the hero and a bomb are in the same area, it is game over.",
+      "Bombs can be removed with water buckets.",
+      "Put the same number of bombs and buckets in one area to cancel them out.",
+      "It is fine if other objects are also in that area, as long as the hero is not there.",
+      "The bomb and bucket disappear.",
+      "If the hero is in the bomb area, the bomb explodes before buckets can help.",
+      "Even with a bucket, the hero still loses in that area.",
+      "Bombs and buckets cancel only when their counts match.",
+      "If there are more buckets than bombs, nothing disappears.",
+      "Wall blocks change how loops work. A wall block must touch the drawn line to become part of the loop.",
+      "A line connected to the edge of the stage can also form a closed boundary.",
+      "Use walls and the edge of the stage to divide the dungeon efficiently.",
+      "Purple warps activate before bombs, keys, and goals are checked.",
+      "If exactly one purple warp is in the hero's area, the hero moves to the other purple warp.",
+      "After a purple warp activates, both purple warps disappear.",
+      "If both purple warps are in the hero's area, nothing happens.",
+      "Cyan warps activate at the very end of the turn.",
+      "Cyan warps let the current bomb, key, and goal checks happen before moving the hero.",
+      "Use purple warps for immediate movement.",
+      "Use cyan warps to set up the next move.",
+      "A stage can contain both kinds of warp.",
+      "Think about which timing happens first before drawing your loop.",
+      "Some puzzles require splitting the dungeon into three or more areas.",
+      "Do not put the hero and bombs in the same area unless a warp moves the hero first.",
+      "Put bombs and the same number of buckets together in areas away from the hero.",
+      "Try to isolate dangerous objects while keeping a route to the goal.",
+      "The stage is solved when all required effects happen in the right order.",
+      "A single line can create several useful spaces.",
+      "If a plan fails, reset and draw a different boundary.",
+      "Later stages combine bombs, buckets, walls, and warps.",
+      "Read the board first, then draw the loop.",
+      "Good luck in the dungeon."
+    ];
+
+    function getInitialLanguage() {
+      const queryLanguage = new URLSearchParams(location.search).get("lang");
+      const savedLanguage = localStorage.getItem("closedLoopLanguage");
+      const language = queryLanguage || savedLanguage || navigator.language;
+      return String(language).toLowerCase().startsWith("ja") ? "ja" : "en";
+    }
+
+    const howtoLanguage = getInitialLanguage();
+
+    function applyHowtoLanguage() {
+      document.documentElement.lang = howtoLanguage;
+      localStorage.setItem("closedLoopLanguage", howtoLanguage);
+      document.querySelector(".page-title").textContent =
+        howtoLanguage === "ja" ? "遊び方" : "How to Play";
+      document.getElementById("backToGameLink").textContent =
+        howtoLanguage === "ja" ? "ゲームに戻る" : "Back to Game";
+      const shouldReturnToGame =
+        new URLSearchParams(location.search).get("return") === "game";
+      document.getElementById("backToGameLink").href = shouldReturnToGame
+        ? `index.html?lang=${howtoLanguage}&resume=1`
+        : `index.html?lang=${howtoLanguage}`;
+    }
+
     function getStepText(step) {
       if (Array.isArray(step.text)) {
         return step.text.join("\n");
@@ -28,30 +93,65 @@
       return step.text || "";
     }
 
+    function readJsonWithXhr(path) {
+      return new Promise((resolve, reject) => {
+        if (typeof XMLHttpRequest !== "function") {
+          reject(new Error("XMLHttpRequest is unavailable."));
+          return;
+        }
+
+        const request = new XMLHttpRequest();
+        request.overrideMimeType?.("application/json");
+        request.open("GET", path, true);
+        request.onload = () => {
+          if (request.status !== 0 && (request.status < 200 || request.status >= 300)) {
+            reject(new Error(`${path} could not be loaded.`));
+            return;
+          }
+
+          try {
+            resolve(JSON.parse(request.responseText));
+          } catch (error) {
+            reject(error);
+          }
+        };
+        request.onerror = () => reject(new Error(`${path} could not be loaded.`));
+        request.send();
+      });
+    }
+
+    async function readJsonResource(path) {
+      const response = await fetch(path).catch(() => null);
+      if (response?.ok) {
+        return response.json();
+      }
+
+      return readJsonWithXhr(path);
+    }
+
     async function loadHowToSteps() {
       const stepsContainer = document.getElementById("howtoSteps");
 
       try {
-        const response = await fetch("tutorial/howto.json");
-        if (!response.ok) {
-          throw new Error("tutorial/howto.json を読み込めませんでした");
-        }
-
-        const data = await response.json();
+        const data = await readJsonResource("tutorial/howto.json");
         const steps = Array.isArray(data.steps) ? data.steps : [];
         stepsContainer.replaceChildren(
           ...steps.map((step, index) => {
-            const text = getStepText(step);
+            const originalText = getStepText(step);
+            const localizedText =
+              howtoLanguage === "en" ? HOWTO_ENGLISH_TEXT[index] || originalText : originalText;
             const article = document.createElement("article");
             article.className = "howto-step";
 
             const image = document.createElement("img");
             image.src = `tutorial/${step.image}`;
-            image.alt = text || `遊び方 ${index + 1}`;
+            image.alt = localizedText || `How to Play ${index + 1}`;
             image.loading = "lazy";
 
             const caption = document.createElement("p");
-            caption.textContent = text || "ここに説明文を書いてください。";
+            caption.textContent =
+              localizedText ||
+              (howtoLanguage === "ja" ? "ここに説明文を書いてください。" : "Add an explanation here.");
 
             article.append(image, caption);
             return article;
@@ -62,6 +162,7 @@
       }
     }
 
+    applyHowtoLanguage();
     void loadHowToSteps();
   </script>
 </body>
