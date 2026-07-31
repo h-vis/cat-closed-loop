@@ -22,44 +22,44 @@
   <script>
     const HOWTO_ENGLISH_TEXT = [
       "Closed Loop Dungeon is a puzzle about drawing one continuous line to divide the dungeon into separate areas.",
-      "Draw a loop so the hero and the key are in the same area.",
-      "The key has been collected.",
-      "When the hero and key share an area, the hero automatically picks up the key. Now aim for the goal.",
-      "Put the hero and the goal in the same area. A simple loop like this is enough.",
-      "When the hero reaches the open goal, the stage is cleared.",
-      "Next, learn about bombs.",
+      "Draw a line like this to enclose the hero and the key in the same area.",
+      "You made a continuous line.",
+      "When the hero and the key are in the same area, the hero automatically collects the key. The goal opens, so head there next.",
+      "Next, put the hero and the goal in the same area. A simple one-line shape like this is fine.",
+      "The hero and the goal are in the same area, so the stage is cleared.",
+      "Next, let's look at bombs.",
       "If the hero and a bomb are in the same area, it is game over.",
       "Bombs can be removed with water buckets.",
-      "Put the same number of bombs and buckets in one area to cancel them out.",
-      "It is fine if other objects are also in that area, as long as the hero is not there.",
-      "The bomb and bucket disappear.",
-      "If the hero is in the bomb area, the bomb explodes before buckets can help.",
-      "Even with a bucket, the hero still loses in that area.",
-      "Bombs and buckets cancel only when their counts match.",
-      "If there are more buckets than bombs, nothing disappears.",
-      "Wall blocks change how loops work. A wall block must touch the drawn line to become part of the loop.",
-      "A line connected to the edge of the stage can also form a closed boundary.",
-      "Use walls and the edge of the stage to divide the dungeon efficiently.",
-      "Purple warps activate before bombs, keys, and goals are checked.",
-      "If exactly one purple warp is in the hero's area, the hero moves to the other purple warp.",
-      "After a purple warp activates, both purple warps disappear.",
-      "If both purple warps are in the hero's area, nothing happens.",
-      "Cyan warps activate at the very end of the turn.",
-      "Cyan warps let the current bomb, key, and goal checks happen before moving the hero.",
-      "Use purple warps for immediate movement.",
-      "Use cyan warps to set up the next move.",
-      "A stage can contain both kinds of warp.",
-      "Think about which timing happens first before drawing your loop.",
-      "Some puzzles require splitting the dungeon into three or more areas.",
-      "Do not put the hero and bombs in the same area unless a warp moves the hero first.",
-      "Put bombs and the same number of buckets together in areas away from the hero.",
-      "Try to isolate dangerous objects while keeping a route to the goal.",
-      "The stage is solved when all required effects happen in the right order.",
-      "A single line can create several useful spaces.",
-      "If a plan fails, reset and draw a different boundary.",
-      "Later stages combine bombs, buckets, walls, and warps.",
-      "Read the board first, then draw the loop.",
-      "Good luck in the dungeon."
+      "Put the same number of bombs and buckets in one area to remove them.",
+      "Other objects can also be in that area, as long as the hero is not there.",
+      "Only the bomb and the bucket disappear.",
+      "However, if the hero is in the same area, the bomb explodes first.",
+      "Even if there is a bucket, it is still game over.",
+      "Bombs and buckets disappear only when their numbers are equal. If there are more bombs, they do not disappear.",
+      "If there are more buckets, they do not disappear either.",
+      "The line must form one continuous stroke. If line blocks touch other line blocks in four or more directions like this, it is not counted as one stroke.",
+      "However, a shape connected to the edge of the stage can still be judged as closed.",
+      "This kind of shape is not counted as one continuous loop.",
+      "Keep separate lines apart from each other.",
+      "Next, let's look at wall objects. Walls are the dark blue blocks.",
+      "A wall can work as part of your line.",
+      "Because of that, walls are also included when the game checks whether the line is one continuous stroke. This kind of drawing is not allowed.",
+      "However, there is no problem if the wall is not touching the line.",
+      "This case is also not allowed because the wall block is touching the drawn line.",
+      "Next, let's look at warp gates.",
+      "If the hero enters the same area as a warp gate...",
+      "The hero moves to the other warp gate.",
+      "However, if both warp gates are in the same area as the hero...",
+      "The warp does not activate.",
+      "Next, let's look at warp timing.",
+      "Purple warp gates activate before bombs, goals, and other stage effects are checked.",
+      "If there is no bomb in the area after warping, it is not game over.",
+      "On the other hand, if there is a bomb in the area after warping...",
+      "It is game over.",
+      "Cyan warp gates activate after bombs, goals, and other stage effects are checked.",
+      "If there is a bomb in the area before warping, it is game over.",
+      "On the other hand, even if there is a bomb in the area after warping...",
+      "It is not game over."
     ];
 
     function getInitialLanguage() {
@@ -78,11 +78,18 @@
         howtoLanguage === "ja" ? "遊び方" : "How to Play";
       document.getElementById("backToGameLink").textContent =
         howtoLanguage === "ja" ? "ゲームに戻る" : "Back to Game";
-      const shouldReturnToGame =
-        new URLSearchParams(location.search).get("return") === "game";
+      const currentParams = new URLSearchParams(location.search);
+      const shouldReturnToGame = currentParams.get("return") === "game";
+      const backParams = new URLSearchParams({ lang: howtoLanguage });
+      if (currentParams.get("android") === "1") {
+        backParams.set("android", "1");
+      }
+      if (shouldReturnToGame) {
+        backParams.set("resume", "1");
+      }
       document.getElementById("backToGameLink").href = shouldReturnToGame
-        ? `index.html?lang=${howtoLanguage}&resume=1`
-        : `index.html?lang=${howtoLanguage}`;
+        ? `index.html?${backParams.toString()}`
+        : `index.html?${backParams.toString()}`;
     }
 
     function getStepText(step) {

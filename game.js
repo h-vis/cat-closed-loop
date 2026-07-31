@@ -3525,6 +3525,7 @@ function getInitialUiLanguage() {
 }
 
 let uiLanguage = getInitialUiLanguage();
+let didRestoreHowtoReturnState = false;
 
 function getUiText(key) {
   return UI_TRANSLATIONS[uiLanguage]?.[key] ?? UI_TRANSLATIONS.en[key] ?? key;
@@ -3539,22 +3540,33 @@ function setElementText(id, text) {
 
 function updateHowtoLinks() {
   const { homeHowtoButton, gameHowtoButton } = getScreenUi();
-  const href = `howto.html?lang=${uiLanguage}`;
+  const params = new URLSearchParams({ lang: uiLanguage });
+  if (isAndroidWebViewPage) {
+    params.set("android", "1");
+  }
+  const href = `howto.html?${params.toString()}`;
   if (homeHowtoButton) {
     homeHowtoButton.href = href;
   }
   if (gameHowtoButton) {
-    gameHowtoButton.href = `${href}&return=game`;
+    const gameParams = new URLSearchParams(params);
+    gameParams.set("return", "game");
+    gameHowtoButton.href = `howto.html?${gameParams.toString()}`;
   }
 }
 
 const HOWTO_RETURN_STATE_KEY = "closedLoopHowtoReturnState";
 
 function serializeHowtoReturnState() {
+  const { stageDifficultySelect, stageNumberInput } = getStageJsonUi();
   return {
     version: 1,
     mode: gameState.mode,
     tutorialIndex: gameState.tutorialIndex,
+    selectedStageDifficulty:
+      stageDifficultySelect?.value ?? gameState.stage.stageDifficulty ?? DEFAULT_STAGE_DIFFICULTY,
+    selectedStageNumber:
+      parseStageNumber(stageNumberInput?.value ?? gameState.stage.stageNumber ?? "1"),
     stage: cloneStageDefinition(gameState.stage),
     player: clonePosition(gameState.player),
     key: {
@@ -3640,12 +3652,25 @@ function restoreHowtoReturnState() {
     gameState.status = parsedState.status ?? STATUS.idle;
 
     updateCanvasMetrics(nextStage);
-    const { stageDifficultySelect, stageNumberInput } = getStageJsonUi();
-    if (stageDifficultySelect && nextStage.stageDifficulty) {
-      stageDifficultySelect.value = normalizeStageDifficulty(nextStage.stageDifficulty);
+    const restoredStageDifficulty = normalizeStageDifficulty(
+      parsedState.selectedStageDifficulty ?? nextStage.stageDifficulty
+    );
+    const stageJsonState = getStageJsonState();
+    if (nextStage.mode === getStageModeKey()) {
+      stageJsonState.rememberedStage = cloneStageDefinition(nextStage);
+      stageJsonState.rememberedStageNumber = nextStage.stageNumber ?? null;
+      stageJsonState.rememberedStageDifficulty = restoredStageDifficulty;
+      stageJsonState.selectedDifficulty = stageJsonState.rememberedStageDifficulty;
     }
-    if (stageNumberInput && Number.isInteger(nextStage.stageNumber)) {
-      stageNumberInput.value = String(nextStage.stageNumber);
+    const restoredStageNumber = Number.isInteger(parsedState.selectedStageNumber)
+      ? parsedState.selectedStageNumber
+      : nextStage.stageNumber;
+    const { stageDifficultySelect, stageNumberInput } = getStageJsonUi();
+    if (stageDifficultySelect) {
+      stageDifficultySelect.value = restoredStageDifficulty;
+    }
+    if (stageNumberInput && Number.isInteger(restoredStageNumber)) {
+      stageNumberInput.value = String(restoredStageNumber);
     }
     showGameScreen();
     render();
@@ -4785,6 +4810,9 @@ void loadBuiltInStageManifest().then((loaded) => {
   if (loaded) {
     setStageLoaderStatus(`Built-in stages loaded: ${buildStageImportSummary(getStageJsonState())}`);
   }
+  if (!isMakerOnlyPage && !didRestoreHowtoReturnState && restoreHowtoReturnState()) {
+    didRestoreHowtoReturnState = true;
+  }
 });
 registerClosedLoopDebug({
   loadStageByNumber: playStageByNumber,
@@ -4831,8 +4859,6 @@ getStageJsonUi().makerCapturePngButton?.addEventListener("click", () => {
 render();
 if (isMakerOnlyPage) {
   setGameMode(GAME_MODE.maker);
-} else {
-  restoreHowtoReturnState();
 }
 
 const AUTO_SOLVER_CONFIG = {
