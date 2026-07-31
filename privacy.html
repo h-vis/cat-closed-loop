@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy | きりわけダンジョン / Closed Loop Dungeon</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .policy-page {
+      width: min(100%, 920px);
+      gap: 20px;
+    }
+
+    .policy-header {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .policy-header h1 {
+      margin: 0;
+      color: #f7d777;
+      font-family: Georgia, "Times New Roman", "Yu Mincho", serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1.05;
+      text-shadow: 0 4px 0 #33230e, 0 0 18px rgba(216, 168, 62, 0.3);
+    }
+
+    .policy-subtitle,
+    .policy-date,
+    .policy-lead {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .policy-panel {
+      width: min(100%, 920px);
+      display: grid;
+      gap: 24px;
+    }
+
+    .policy-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .policy-section h2 {
+      margin: 0;
+      color: #f7d777;
+      font-family: Georgia, "Times New Roman", "Yu Mincho", serif;
+      font-size: 1.35rem;
+      line-height: 1.25;
+    }
+
+    .policy-section h3 {
+      margin: 8px 0 0;
+      color: var(--parchment);
+      font-size: 1rem;
+    }
+
+    .policy-section p,
+    .policy-section li {
+      margin: 0;
+      color: var(--text);
+      line-height: 1.75;
+    }
+
+    .policy-section ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      display: grid;
+      gap: 8px;
+    }
+
+    .policy-divider {
+      height: 1px;
+      border: 0;
+      background: rgba(255, 240, 199, 0.18);
+      margin: 4px 0;
+    }
+
+    .policy-note {
+      padding: 14px 16px;
+      border: 2px solid rgba(216, 168, 62, 0.38);
+      border-radius: 8px;
+      background: rgba(255, 240, 199, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="policy-page">
+      <header class="policy-header">
+        <p class="home-kicker">Privacy Policy</p>
+        <h1>プライバシーポリシー</h1>
+        <p class="policy-subtitle">きりわけダンジョン / Closed Loop Dungeon</p>
+        <p class="policy-date">制定日: 2026年7月31日 / Effective date: July 31, 2026</p>
+        <p class="policy-lead">
+          本ポリシーは、「きりわけダンジョン / Closed Loop Dungeon」（以下「本アプリ」）における
+          情報の取り扱いについて説明するものです。
+        </p>
+      </header>
+    </section>
+
+    <section class="game-panel policy-panel">
+      <section class="policy-section">
+        <h2>1. 収集する情報</h2>
+        <p>
+          本アプリは、ユーザー登録機能を提供しておらず、開発者がユーザーの氏名、メールアドレス、
+          電話番号、住所、連絡先、写真、音声、メッセージ内容等を直接収集することはありません。
+        </p>
+        <p>本アプリが扱う情報は、主に次のとおりです。</p>
+        <ul>
+          <li>端末内に保存される設定情報: 言語設定、クリア済みステージ情報、復帰用の一時状態、有料ステージ解放状態</li>
+          <li>ゲームプレイに必要なローカルデータ: ステージデータ、チュートリアル表示データ</li>
+          <li>任意機能でユーザーが扱うローカルファイル: ステージJSON、ステージ画像キャプチャ</li>
+          <li>Google Play Billing による購入状態: 有料コンテンツの購入可否、購入トークンに基づく処理結果</li>
+        </ul>
+      </section>
+
+      <section class="policy-section">
+        <h2>2. 情報の利用目的</h2>
+        <ul>
+          <li>ゲーム設定、言語設定、クリア状態、有料解放状態を端末内で保持するため</li>
+          <li>遊び方ページやゲーム画面からの復帰をスムーズに行うため</li>
+          <li>ユーザーが選択したステージデータの読み込み、保存、画像出力を行うため</li>
+          <li>Google Play を通じたアプリ内課金の処理、復元、権利付与を行うため</li>
+        </ul>
+      </section>
+
+      <section class="policy-section">
+        <h2>3. 端末内保存について</h2>
+        <p>
+          本アプリは、ゲーム体験を維持するために、Web Storage や SharedPreferences 等の
+          端末内保存機能を利用します。これらの情報は原則として端末外へ自動送信されません。
+        </p>
+        <div class="policy-note">
+          <p>
+            保存される主な内容: 言語設定、クリア済みステージ、有料ステージの解放状態、
+            遊び方から戻るための一時的なゲーム状態
+          </p>
+        </div>
+      </section>
+
+      <section class="policy-section">
+        <h2>4. 課金情報について</h2>
+        <p>
+          本アプリは、Google Play Billing を利用してアプリ内課金を提供します。
+          決済処理、請求情報、支払手段等は Google により処理され、開発者がユーザーの
+          クレジットカード番号その他の支払情報を直接取得することはありません。
+        </p>
+        <p>
+          開発者は、本アプリ内で有料コンテンツの解放可否を判断するために、
+          Google Play Billing から提供される購入状態を利用します。
+        </p>
+      </section>
+
+      <section class="policy-section">
+        <h2>5. 外部送信・第三者提供</h2>
+        <p>
+          本アプリは、開発者独自の分析ツール、広告SDK、トラッキングSDK、外部マーケティングツールを
+          現時点では組み込んでいません。
+        </p>
+        <p>
+          ただし、Google Play Billing の利用に伴い、Google が課金処理に必要な情報を取り扱う場合があります。
+          その取り扱いは Google のプライバシーポリシーおよび関連規約に従います。
+        </p>
+      </section>
+
+      <section class="policy-section">
+        <h2>6. 任意機能として扱うファイル</h2>
+        <p>
+          ステージメーカー、JSON 入出力、画像キャプチャ等の機能を利用した場合、
+          ユーザーが選択または保存したファイルは、ユーザーの操作に基づいて端末またはローカル環境に保存されます。
+        </p>
+        <p>
+          これらのファイルは、開発者のサーバーへ自動送信されるものではありません。
+        </p>
+      </section>
+
+      <section class="policy-section">
+        <h2>7. お子様の利用</h2>
+        <p>
+          本アプリは一般向けのパズルゲームです。開発者は、保護者の同意を必要とすることを前提に
+          児童の個人情報を意図的に収集することはありません。
+        </p>
+      </section>
+
+      <section class="policy-section">
+        <h2>8. ポリシーの変更</h2>
+        <p>
+          本ポリシーは、法令、サービス内容、課金機能、外部連携等の変更に応じて改定される場合があります。
+          重要な変更がある場合は、アプリ配布ページまたは公開先ページ等で周知します。
+        </p>
+      </section>
+
+      <section class="policy-section">
+        <h2>9. お問い合わせ</h2>
+        <p>
+          本ポリシーに関するお問い合わせは、Google Play ストアの本アプリ掲載ページに表示される
+          デベロッパー連絡先をご利用ください。
+        </p>
+      </section>
+
+      <hr class="policy-divider">
+
+      <section class="policy-section">
+        <h2>English Summary</h2>
+        <h3>What we collect</h3>
+        <p>
+          We do not directly collect your name, email address, phone number, payment card details,
+          messages, photos, or other personal contact information.
+        </p>
+        <p>
+          The app stores gameplay-related data locally on your device, such as language settings,
+          cleared stages, premium unlock state, and temporary return state.
+        </p>
+
+        <h3>In-app purchases</h3>
+        <p>
+          Premium purchases are processed through Google Play Billing. Payment and billing information
+          is handled by Google. We only use purchase status to unlock premium content in the app.
+        </p>
+
+        <h3>Files and screenshots</h3>
+        <p>
+          If you use optional local tools such as stage import, export, or screenshot capture,
+          those files are handled locally based on your actions and are not automatically uploaded to us.
+        </p>
+
+        <h3>Contact</h3>
+        <p>
+          For privacy questions, please use the developer contact information shown on the app's
+          Google Play store listing.
+        </p>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

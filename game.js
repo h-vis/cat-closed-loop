@@ -1433,7 +1433,7 @@ const CLEARED_STAGES_STORAGE_KEY = "closedLoopClearedStages";
 const PURCHASED_PREMIUM_PACKS_STORAGE_KEY = "closedLoopPurchasedPremiumPacks";
 const PREMIUM_STAGE_PACKS = {
   mediumExpansion: {
-    id: "medium-expansion",
+    id: "premium_stage_pack",
     stageNumbersByDifficulty: {
       [STAGE_DIFFICULTY.medium]: [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52],
     },
@@ -3509,10 +3509,14 @@ const UI_TRANSLATIONS = {
     stage: "Stage",
     reset: "Reset",
     clearLoop: "Clear Loop",
-    premiumLockedOption: "Premium",
     premiumPackLocked: "This stage belongs to premium content.",
     premiumPackUnlock: "Unlock Premium",
     premiumUnlockSuccess: "Premium content unlocked for this device.",
+    premiumPurchaseStarted: "Opening purchase screen...",
+    premiumPurchaseCanceled: "Purchase canceled.",
+    premiumPurchaseFailed: "Purchase could not be completed.",
+    premiumBillingUnavailable: "Purchases are not available right now.",
+    premiumProductUnavailable: "Premium content is not available in this build.",
     premiumLockedStatus: "This stage is locked until premium content is unlocked.",
     loading: "is loading...",
     switched: "Switched to",
@@ -3529,10 +3533,14 @@ const UI_TRANSLATIONS = {
     stage: "ステージ",
     reset: "リセット",
     clearLoop: "線を消す",
-    premiumLockedOption: "有料",
     premiumPackLocked: "このステージは有料コンテンツに含まれています。",
     premiumPackUnlock: "有料ステージを解放",
     premiumUnlockSuccess: "この端末で有料コンテンツを解放しました。",
+    premiumPurchaseStarted: "購入画面を開いています...",
+    premiumPurchaseCanceled: "購入をキャンセルしました。",
+    premiumPurchaseFailed: "購入を完了できませんでした。",
+    premiumBillingUnavailable: "現在、購入機能を利用できません。",
+    premiumProductUnavailable: "このビルドでは有料コンテンツを利用できません。",
     premiumLockedStatus: "このステージは有料コンテンツを解放するまで遊べません。",
     loading: "を読み込み中...",
     switched: "ステージリストを切り替えました:",
@@ -3875,6 +3883,26 @@ function loadPurchasedPremiumPackIds() {
   }
 }
 
+function mergePurchasedPremiumPackIds(packIds) {
+  const purchasedPackIds = loadPurchasedPremiumPackIds();
+  let didChange = false;
+
+  for (const packId of packIds) {
+    if (typeof packId !== "string" || purchasedPackIds.includes(packId)) {
+      continue;
+    }
+
+    purchasedPackIds.push(packId);
+    didChange = true;
+  }
+
+  if (didChange) {
+    savePurchasedPremiumPackIds(purchasedPackIds);
+  }
+
+  return didChange;
+}
+
 function savePurchasedPremiumPackIds(packIds) {
   try {
     globalThis.localStorage?.setItem(
@@ -3926,6 +3954,55 @@ function unlockPremiumPack(packId) {
   savePurchasedPremiumPackIds(purchasedPackIds);
   return true;
 }
+
+function requestNativePremiumPurchase(packId) {
+  const nativeBilling = globalThis.ClosedLoopBilling;
+  if (!isAndroidWebViewPage || !nativeBilling?.purchasePremiumPack) {
+    return false;
+  }
+
+  nativeBilling.purchasePremiumPack(packId);
+  return true;
+}
+
+function restoreNativePurchases() {
+  const nativeBilling = globalThis.ClosedLoopBilling;
+  if (!isAndroidWebViewPage || !nativeBilling?.restorePurchases) {
+    return;
+  }
+
+  nativeBilling.restorePurchases();
+}
+
+globalThis.closedLoopBilling = {
+  setPurchasedPremiumPacks(packIds) {
+    if (!Array.isArray(packIds)) {
+      return;
+    }
+
+    mergePurchasedPremiumPackIds(packIds);
+    refreshStageNumberInputs();
+    updatePremiumStageControls();
+  },
+  setBillingStatus(status) {
+    const statusTextByCode = {
+      billingReady: null,
+      purchaseComplete: getUiText("premiumUnlockSuccess"),
+      purchaseCanceled: getUiText("premiumPurchaseCanceled"),
+      purchaseFailed: getUiText("premiumPurchaseFailed"),
+      acknowledgeFailed: getUiText("premiumPurchaseFailed"),
+      billingUnavailable: getUiText("premiumBillingUnavailable"),
+      productUnavailable: getUiText("premiumProductUnavailable"),
+    };
+    const statusText = statusTextByCode[status];
+    if (statusText) {
+      setStageLoaderStatus(
+        statusText,
+        ["purchaseFailed", "acknowledgeFailed", "billingUnavailable", "productUnavailable"].includes(status)
+      );
+    }
+  },
+};
 
 function updatePremiumStageControls() {
   const {
@@ -4339,7 +4416,7 @@ function refreshStageNumberInputs(resetToFirst = false) {
             ? " ✅"
             : "";
           const premiumMark = isPremiumStage(selectedDifficulty, stageNumber)
-            ? ` 🔒${getUiText("premiumLockedOption")}`
+            ? " 🔒"
             : "";
           return `<option value="${stageNumber}">${stageNumberLabel}${clearedMark}${premiumMark}</option>`;
         })
@@ -5040,6 +5117,7 @@ async function handleStageNumberEnter(event) {
 
 getStageModeKey();
 applyUiLanguage();
+restoreNativePurchases();
 setStageLoaderStatus(getDefaultStageLoaderMessage());
 void loadBuiltInStageManifest().then((loaded) => {
   refreshStageNumberInputs();
@@ -5113,6 +5191,11 @@ getStageJsonUi().unlockPremiumButton?.addEventListener("click", () => {
   const stageNumber = parseStageNumber(stageNumberInput.value ?? "1");
   const premiumPack = getPremiumStagePackForStage(stageDifficulty, stageNumber);
   if (!premiumPack) {
+    return;
+  }
+
+  if (requestNativePremiumPurchase(premiumPack.id)) {
+    setStageLoaderStatus(getUiText("premiumPurchaseStarted"));
     return;
   }
 
