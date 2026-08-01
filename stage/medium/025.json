@@ -5,69 +5,61 @@
     "height": 10
   },
   "playerStart": {
-    "x": 9,
-    "y": 8
+    "x": 8,
+    "y": 0
   },
   "keyPosition": {
-    "x": 6,
-    "y": 7
+    "x": 7,
+    "y": 6
   },
   "goalPosition": {
-    "x": 8,
+    "x": 1,
     "y": 1
   },
   "bombs": [
     {
-      "x": 8,
+      "x": 6,
+      "y": 1
+    },
+    {
+      "x": 3,
       "y": 6
     },
     {
-      "x": 0,
-      "y": 3
-    },
-    {
-      "x": 4,
-      "y": 1
+      "x": 1,
+      "y": 5
     }
   ],
   "disarmItems": [
     {
-      "x": 2,
-      "y": 0
+      "x": 0,
+      "y": 7
     },
     {
-      "x": 3,
+      "x": 6,
       "y": 6
     }
   ],
   "wallBlocks": [
     {
-      "x": 4,
-      "y": 0
+      "x": 0,
+      "y": 5
     },
     {
-      "x": 3,
-      "y": 0
+      "x": 0,
+      "y": 6
     },
     {
-      "x": 3,
-      "y": 1
+      "x": 1,
+      "y": 6
     },
     {
-      "x": 2,
-      "y": 1
-    },
-    {
-      "x": 3,
-      "y": 4
-    },
-    {
-      "x": 2,
-      "y": 9
+      "x": 1,
+      "y": 7
     }
   ],
-  "designLabel": "Normal 025 - single-lane / 上下反転",
-  "designNote": "Hard pack / family=single-lane / style=needle / minSteps=3 / forcedSteps=1 / winningFirstMoves=1 / optimalEstimate=228",
+  "designLabel": "Normal 033 - 外縁�E業 / 90度回転",
+  "designNote": "Extra Normal / family=外縁�E業 / style=relay / minSteps=3 / forcedSteps=0 / winningFirstMoves=8 / optimalEstimate=999",
   "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }

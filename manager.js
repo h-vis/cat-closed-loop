@@ -5,6 +5,7 @@ const DIFFICULTIES = [
 ];
 
 const PREMIUM_PACK_ID = "premium_stage_pack";
+
 const state = {
   directoryHandle: null,
   stageOrderByDifficulty: {
@@ -78,12 +79,72 @@ function expandRanges(ranges) {
     if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from) {
       continue;
     }
+
     for (let value = from; value <= to; value += 1) {
       numbers.push(value);
     }
   }
 
   return numbers;
+}
+
+function sanitizeJsonText(jsonText) {
+  let sanitized = "";
+  let inString = false;
+  let escaping = false;
+
+  for (let index = 0; index < jsonText.length; index += 1) {
+    const character = jsonText[index];
+
+    if (escaping) {
+      sanitized += character;
+      escaping = false;
+      continue;
+    }
+
+    if (character === "\\") {
+      sanitized += character;
+      escaping = true;
+      continue;
+    }
+
+    if (character === "\"") {
+      sanitized += character;
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) {
+      if (character === "\r") {
+        sanitized += "\\r";
+        continue;
+      }
+      if (character === "\n") {
+        sanitized += "\\n";
+        continue;
+      }
+      if (character === "\t") {
+        sanitized += "\\t";
+        continue;
+      }
+    }
+
+    sanitized += character;
+  }
+
+  return sanitized;
+}
+
+function parseJsonLenient(jsonText) {
+  try {
+    return JSON.parse(jsonText);
+  } catch (_error) {
+    try {
+      return JSON.parse(sanitizeJsonText(jsonText));
+    } catch (_nestedError) {
+      return null;
+    }
+  }
 }
 
 async function readJsonWithXhr(path) {
@@ -98,7 +159,7 @@ async function readJsonWithXhr(path) {
       }
 
       try {
-        resolve(JSON.parse(request.responseText));
+        resolve(parseJsonLenient(request.responseText));
       } catch (_error) {
         resolve(null);
       }
@@ -111,7 +172,8 @@ async function readJsonWithXhr(path) {
 async function readJsonResource(path) {
   const response = await fetch(path, { cache: "no-store" }).catch(() => null);
   if (response?.ok) {
-    return response.json();
+    const text = await response.text().catch(() => null);
+    return text === null ? null : parseJsonLenient(text);
   }
 
   return readJsonWithXhr(path);
@@ -148,39 +210,47 @@ function collectPremiumSetsFromConfig(premiumConfig) {
 }
 
 async function loadStageManagerData() {
-  setStatus("ステージ設定を読み込んでいます...");
+  try {
+    setStatus("ステージ設定を読み込んでいます...");
 
-  const [manifest, premiumConfig] = await Promise.all([
-    readJsonResource("stage/manifest.json"),
-    readJsonResource("stage/premium-packs.json"),
-  ]);
+    const [manifest, premiumConfig] = await Promise.all([
+      readJsonResource("stage/manifest.json"),
+      readJsonResource("stage/premium-packs.json"),
+    ]);
 
-  const premiumByDifficulty = collectPremiumSetsFromConfig(premiumConfig);
-
-  for (const { key } of DIFFICULTIES) {
-    const stageOrder = normalizeStageNumbers(manifest?.[key]);
-    state.stageOrderByDifficulty[key] = stageOrder;
-    state.premiumByDifficulty[key] = premiumByDifficulty[key];
-    state.stagesByDifficulty[key] = new Map();
-  }
-
-  const stageLoads = [];
-  for (const { key } of DIFFICULTIES) {
-    for (const stageNumber of state.stageOrderByDifficulty[key]) {
-      stageLoads.push(
-        readStageJson(key, stageNumber).then((stageJson) => {
-          if (stageJson) {
-            state.stagesByDifficulty[key].set(stageNumber, stageJson);
-          }
-        })
-      );
+    if (!manifest) {
+      throw new Error("stage/manifest.json を読み込めませんでした。");
     }
-  }
 
-  await Promise.all(stageLoads);
-  updateOutputs();
-  renderDifficultySections();
-  setStatus("ステージ管理データを読み込みました。");
+    const premiumByDifficulty = collectPremiumSetsFromConfig(premiumConfig);
+
+    for (const { key } of DIFFICULTIES) {
+      const stageOrder = normalizeStageNumbers(manifest?.[key]);
+      state.stageOrderByDifficulty[key] = stageOrder;
+      state.premiumByDifficulty[key] = premiumByDifficulty[key];
+      state.stagesByDifficulty[key] = new Map();
+    }
+
+    const stageLoads = [];
+    for (const { key } of DIFFICULTIES) {
+      for (const stageNumber of state.stageOrderByDifficulty[key]) {
+        stageLoads.push(
+          readStageJson(key, stageNumber).then((stageJson) => {
+            if (stageJson) {
+              state.stagesByDifficulty[key].set(stageNumber, stageJson);
+            }
+          })
+        );
+      }
+    }
+
+    await Promise.all(stageLoads);
+    updateOutputs();
+    renderDifficultySections();
+    setStatus("ステージ管理データを読み込みました。");
+  } catch (error) {
+    setStatus(`読み込みに失敗しました: ${error.message}`, true);
+  }
 }
 
 function buildManifestJson() {
@@ -219,6 +289,7 @@ function compressStageNumbersToRanges(stageNumbers) {
 
 function buildPremiumConfigJson() {
   const rangesByDifficulty = {};
+
   for (const { key } of DIFFICULTIES) {
     const premiumNumbersInOrder = state.stageOrderByDifficulty[key]
       .map((stageNumber, index) => (
@@ -243,14 +314,11 @@ function buildPremiumConfigJson() {
 }
 
 function updateOutputs() {
-  const manifestJson = JSON.stringify(buildManifestJson(), null, 2);
-  const premiumJson = JSON.stringify(buildPremiumConfigJson(), null, 2);
-
   if (ui.manifestOutput) {
-    ui.manifestOutput.value = manifestJson;
+    ui.manifestOutput.value = JSON.stringify(buildManifestJson(), null, 2);
   }
   if (ui.premiumOutput) {
-    ui.premiumOutput.value = premiumJson;
+    ui.premiumOutput.value = JSON.stringify(buildPremiumConfigJson(), null, 2);
   }
 }
 
@@ -327,6 +395,7 @@ function drawStageThumbnail(canvas, stageJson) {
     if (!point) {
       return;
     }
+
     const x = offsetX + point.x * cellSize + cellSize * inset;
     const y = offsetY + point.y * cellSize + cellSize * inset;
     const size = cellSize * (1 - inset * 2);
@@ -380,11 +449,13 @@ function createStageCard(difficulty, stageNumber, index) {
 
   const title = document.createElement("div");
   title.className = "stage-manager-title";
-  title.textContent = `${formatStageNumber(renumberedStageNumber)} ${stageJson?.designLabel ?? ""}`.trim();
+  title.textContent = `${formatStageNumber(renumberedStageNumber)} ${stageJson?.designLabel ?? "読み込み失敗"}`.trim();
 
   const subline = document.createElement("div");
   subline.className = "stage-manager-subline";
-  subline.textContent = `元ファイル: ${formatStageNumber(stageNumber)}.json`;
+  subline.textContent = stageJson
+    ? `元ファイル: ${formatStageNumber(stageNumber)}.json`
+    : `元ファイル: ${formatStageNumber(stageNumber)}.json / JSON を読めませんでした`;
 
   const controls = document.createElement("div");
   controls.className = "stage-manager-controls";
@@ -434,6 +505,7 @@ function renderDifficultySections() {
   }
 
   ui.difficultySections.innerHTML = "";
+
   for (const { key, label } of DIFFICULTIES) {
     const section = document.createElement("section");
     section.className = "manager-difficulty-section";
@@ -494,6 +566,7 @@ async function chooseSaveDirectory() {
     if (error?.name === "AbortError") {
       return;
     }
+
     setStatus(`保存先フォルダの選択に失敗しました: ${error.message}`, true);
   }
 }
@@ -579,9 +652,11 @@ async function saveAllFiles() {
 ui.reloadButton?.addEventListener("click", () => {
   void loadStageManagerData();
 });
+
 ui.chooseFolderButton?.addEventListener("click", () => {
   void chooseSaveDirectory();
 });
+
 ui.saveAllButton?.addEventListener("click", () => {
   void saveAllFiles();
 });

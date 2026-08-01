@@ -4227,6 +4227,65 @@ function normalizeStageManifestNumbers(values) {
   )].sort((left, right) => left - right);
 }
 
+function sanitizeJsonText(jsonText) {
+  let sanitized = "";
+  let inString = false;
+  let escaping = false;
+
+  for (let index = 0; index < jsonText.length; index += 1) {
+    const character = jsonText[index];
+
+    if (escaping) {
+      sanitized += character;
+      escaping = false;
+      continue;
+    }
+
+    if (character === "\\") {
+      sanitized += character;
+      escaping = true;
+      continue;
+    }
+
+    if (character === "\"") {
+      sanitized += character;
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) {
+      if (character === "\r") {
+        sanitized += "\\r";
+        continue;
+      }
+      if (character === "\n") {
+        sanitized += "\\n";
+        continue;
+      }
+      if (character === "\t") {
+        sanitized += "\\t";
+        continue;
+      }
+    }
+
+    sanitized += character;
+  }
+
+  return sanitized;
+}
+
+function parseJsonLenient(jsonText) {
+  try {
+    return JSON.parse(jsonText);
+  } catch (_error) {
+    try {
+      return JSON.parse(sanitizeJsonText(jsonText));
+    } catch (_nestedError) {
+      return null;
+    }
+  }
+}
+
 function readJsonWithXhr(path) {
   return new Promise((resolve) => {
     if (typeof XMLHttpRequest !== "function") {
@@ -4244,7 +4303,7 @@ function readJsonWithXhr(path) {
       }
 
       try {
-        resolve(JSON.parse(request.responseText));
+        resolve(parseJsonLenient(request.responseText));
       } catch (_error) {
         resolve(null);
       }
@@ -4258,7 +4317,8 @@ async function readJsonResource(path) {
   if (globalThis.location?.protocol !== "file:" || isAndroidWebViewPage) {
     const response = await fetch(path, { cache: "no-store" }).catch(() => null);
     if (response?.ok) {
-      return response.json();
+      const text = await response.text().catch(() => null);
+      return text === null ? null : parseJsonLenient(text);
     }
   }
 
