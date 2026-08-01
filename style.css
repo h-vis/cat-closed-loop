@@ -739,6 +739,14 @@ button:disabled {
   line-height: 1.5;
 }
 
+.stage-solver-row {
+  margin-top: 8px;
+}
+
+.stage-solver-row button {
+  width: auto;
+}
+
 .status-text.is-error {
   color: #a11d33;
 }
@@ -1021,6 +1029,10 @@ button:disabled {
 
   .top-stage-loader-row {
     gap: 4px;
+  }
+
+  .stage-solver-row button {
+    width: 100%;
   }
 
   .top-stage-loader-row button {

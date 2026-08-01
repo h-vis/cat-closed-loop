@@ -3491,6 +3491,7 @@ function getStageJsonUi() {
   return {
     stageDifficultySelect: document.getElementById("stageDifficultySelect"),
     stageNumberInput: document.getElementById("stageNumberInput"),
+    stageRegionSolveButton: document.getElementById("stageRegionSolveButton"),
     chooseStageFolderButton: document.getElementById("chooseStageFolderButton"),
     stageFolderInput: document.getElementById("stageFolderInput"),
     stageLoaderStatus: document.getElementById("stageLoaderStatus"),
@@ -6640,6 +6641,172 @@ async function playAutoSolveSolution(stage, solution, runId) {
 
   return gameState.clear;
 }
+
+function getStageRegionSolveState() {
+  if (!globalThis.__closedLoopStageRegionSolveState) {
+    globalThis.__closedLoopStageRegionSolveState = {
+      running: false,
+      runId: 0,
+      lastSolution: null,
+    };
+  }
+
+  return globalThis.__closedLoopStageRegionSolveState;
+}
+
+function isStageRegionSolveCancelled(runId) {
+  return getStageRegionSolveState().runId !== runId;
+}
+
+async function playStageRegionSolveSolution(stage, solution, runId) {
+  applyStage(cloneStageDefinition(stage));
+
+  for (const step of solution) {
+    if (isStageRegionSolveCancelled(runId)) {
+      return false;
+    }
+
+    clearLoopStateWithoutRender();
+    gameState.drawing.active = true;
+    gameState.drawing.cells = clonePositions(step.drawnCells);
+    updateStatus();
+    render();
+    await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopPreviewMs);
+
+    if (isStageRegionSolveCancelled(runId)) {
+      return false;
+    }
+
+    const nextLoop = buildLoopFromCells(
+      step.drawnCells,
+      activeBoardSize,
+      gameState.wallBlocks
+    );
+    if (!nextLoop) {
+      return false;
+    }
+
+    gameState.loop = nextLoop;
+    gameState.drawing.active = false;
+    gameState.drawing.cells = [];
+    applyLoopEffects();
+    render();
+    await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopApplyMs);
+  }
+
+  return gameState.clear;
+}
+
+function syncStageRegionSolveHud() {
+  const { stageRegionSolveButton } = getStageJsonUi();
+  if (!stageRegionSolveButton) {
+    return;
+  }
+
+  const state = getStageRegionSolveState();
+  const isMakerMode = gameState.mode === GAME_MODE.maker;
+  const disabled =
+    state.running ||
+    (isMakerMode ? false : gameState.mode !== getStageModeKey()) ||
+    (isMakerMode ? false : isCurrentStageLocked());
+
+  stageRegionSolveButton.disabled = disabled;
+  stageRegionSolveButton.textContent = state.running ? "Solving..." : "New Solver";
+}
+
+function setStageRegionSolveStatus(message, isError = false) {
+  if (gameState.mode === GAME_MODE.maker) {
+    setMakerAutoSolveStatus(message, isError);
+    return;
+  }
+
+  setStageLoaderStatus(message, isError);
+}
+
+async function startStageRegionSolve() {
+  const solverApi = globalThis.closedLoopRegionSolver;
+  if (!solverApi || typeof solverApi.findStageRegionBasedSolution !== "function") {
+    setStageRegionSolveStatus("New solver is not available.", true);
+    return;
+  }
+
+  const isMakerMode = gameState.mode === GAME_MODE.maker;
+  if (!isMakerMode && (gameState.mode !== getStageModeKey() || isCurrentStageLocked())) {
+    return;
+  }
+
+  const solveState = getStageRegionSolveState();
+  if (solveState.running) {
+    return;
+  }
+
+  const stageToSolve = cloneStageDefinition(gameState.stage);
+  solveState.running = true;
+  solveState.runId += 1;
+  solveState.lastSolution = null;
+  const runId = solveState.runId;
+  setStageRegionSolveStatus("Running new solver...");
+  syncStageRegionSolveHud();
+  render();
+
+  try {
+    await waitForAutoSolveTick();
+    const solution = solverApi.findStageRegionBasedSolution(stageToSolve, {
+      maxSteps: AUTO_SOLVER_CONFIG.maxSteps,
+    });
+
+    if (isStageRegionSolveCancelled(runId)) {
+      return;
+    }
+
+    if (!solution || solution.length === 0) {
+      solveState.running = false;
+      setStageRegionSolveStatus("New solver could not find a solution.", true);
+      syncStageRegionSolveHud();
+      render();
+      return;
+    }
+
+    solveState.lastSolution = solution;
+    setStageRegionSolveStatus(`New solver found ${solution.length} step(s).`);
+    syncStageRegionSolveHud();
+    render();
+
+    const solved = await playStageRegionSolveSolution(stageToSolve, solution, runId);
+    if (isStageRegionSolveCancelled(runId)) {
+      return;
+    }
+
+    solveState.running = false;
+    setStageRegionSolveStatus(
+      solved
+        ? `New solver cleared the stage in ${solution.length} step(s).`
+        : "New solver replay stopped before clear.",
+      !solved
+    );
+    syncStageRegionSolveHud();
+    render();
+  } catch (error) {
+    if (isStageRegionSolveCancelled(runId)) {
+      return;
+    }
+
+    solveState.running = false;
+    setStageRegionSolveStatus(`New solver failed: ${error.message}`, true);
+    syncStageRegionSolveHud();
+    render();
+  }
+}
+
+getStageJsonUi().stageRegionSolveButton?.addEventListener("click", () => {
+  void startStageRegionSolve();
+});
+
+const renderWithoutStageRegionSolveHud = render;
+render = function renderWithStageRegionSolveHud() {
+  renderWithoutStageRegionSolveHud();
+  syncStageRegionSolveHud();
+};
 
 buildRandomStagePool = function buildHardRandomStagePoolFinal(scoredLayouts) {
   const analyzedCandidates = [];
