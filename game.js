@@ -4651,7 +4651,7 @@ function getVisibleStageNumbers(stageDifficulty = getSelectedStageDifficulty()) 
   return stageNumbers.filter((stageNumber) => !isPremiumStage(stageDifficulty, stageNumber));
 }
 
-function hasClearedAllFreeWebStages() {
+function hasClearedLastFreeWebStage() {
   if (isAndroidWebViewPage) {
     return false;
   }
@@ -4662,14 +4662,13 @@ function hasClearedAllFreeWebStages() {
       continue;
     }
 
-    for (const stageNumber of visibleStageNumbers) {
-      if (!isStageCleared(stageDifficulty, stageNumber)) {
-        return false;
-      }
+    const lastStageNumber = visibleStageNumbers[visibleStageNumbers.length - 1];
+    if (isStageCleared(stageDifficulty, lastStageNumber)) {
+      return true;
     }
   }
 
-  return true;
+  return false;
 }
 
 function updateStageSelectOptionDecorations(stageNumberInput, stageDifficulty) {
@@ -4701,7 +4700,7 @@ function updateWebStorePromo() {
   webStorePromo.hidden =
     isMakerOnlyPage ||
     gameState.mode !== getStageModeKey() ||
-    !hasClearedAllFreeWebStages();
+    !hasClearedLastFreeWebStage();
 }
 
 function refreshStageNumberInputs(resetToFirst = false) {
