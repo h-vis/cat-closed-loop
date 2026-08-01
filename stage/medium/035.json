@@ -58,8 +58,8 @@
       "y": 7
     }
   ],
-  "designLabel": "Normal 035 - 外縁�E業 / 主対角反転",
-  "designNote": "Extra Normal / family=外縁�E業 / style=relay / minSteps=3 / forcedSteps=0 / winningFirstMoves=8 / optimalEstimate=999",
+  "designLabel": "Normal 035 - 外縁�E業 / 主対角反転",
+  "designNote": "Extra Normal / family=外縁�E業 / style=relay / minSteps=3 / forcedSteps=0 / winningFirstMoves=8 / optimalEstimate=999",
   "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }

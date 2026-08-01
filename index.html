@@ -48,6 +48,7 @@
             </button>
           </div>
         </div>
+        <button id="homeVersionButton" class="home-version-button" type="button">v0.1.1</button>
       </div>
     </section>
 
@@ -95,20 +96,24 @@
               hidden
             >
           </div>
-          <div id="premiumStageControls" class="premium-stage-controls" hidden>
-            <p id="premiumStageNote" class="premium-stage-note"></p>
-            <button id="unlockPremiumButton" class="secondary-button" type="button">Unlock Premium</button>
-          </div>
           <p id="stageLoaderStatus" class="status-text" hidden></p>
         </section>
       </header>
 
-      <canvas
-        id="gameCanvas"
-        width="480"
-        height="480"
-        aria-label="Closed Loop puzzle game canvas"
-      ></canvas>
+      <div id="gameCanvasShell" class="game-canvas-shell">
+        <canvas
+          id="gameCanvas"
+          width="480"
+          height="480"
+          aria-label="Closed Loop puzzle game canvas"
+        ></canvas>
+        <div id="premiumStageOverlay" class="premium-stage-overlay" hidden>
+          <div class="premium-stage-overlay-card">
+            <p id="premiumStageOverlayNote" class="premium-stage-overlay-note"></p>
+            <button id="unlockPremiumButton" class="secondary-button" type="button">Unlock Premium</button>
+          </div>
+        </div>
+      </div>
 
       <section class="hud" aria-label="ゲーム情報">
         <div class="button-row mode-row" aria-label="ゲームモード" hidden>
@@ -129,6 +134,17 @@
         <div class="button-row">
           <button id="resetButton" type="button">リセット</button>
           <button id="clearLoopButton" type="button" hidden>ループを消す</button>
+        </div>
+
+        <div id="webStorePromo" class="web-store-promo" hidden>
+          <p id="webStorePromoText" class="web-store-promo-text"></p>
+          <a
+            id="webStorePromoLink"
+            class="button-link secondary-button"
+            href="https://play.google.com/store/apps/details?id=com.hvis.closedloopdungeon"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Get the App</a>
         </div>
 
         <div id="tutorialButtonRow" class="button-row tutorial-row" hidden>

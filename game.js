@@ -1429,16 +1429,13 @@ const initialRandomStage = cloneStageDefinition(DEFAULT_RANDOM_STAGE);
 let rememberedRandomStage = initialRandomStage;
 let rememberedTutorialIndex = 0;
 let rememberedMakerStage = createMakerStage();
+const APP_VERSION = "0.1.1";
+const APP_VERSION_LABEL = `v${APP_VERSION}`;
 const CLEARED_STAGES_STORAGE_KEY = "closedLoopClearedStages";
 const PURCHASED_PREMIUM_PACKS_STORAGE_KEY = "closedLoopPurchasedPremiumPacks";
-const PREMIUM_STAGE_PACKS = {
-  mediumExpansion: {
-    id: "premium_stage_pack",
-    stageNumbersByDifficulty: {
-      [STAGE_DIFFICULTY.medium]: [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52],
-    },
-  },
-};
+const REVIEW_UNLOCK_STORAGE_KEY = "closedLoopReviewUnlockEnabled";
+const REVIEW_UNLOCK_TAP_TARGET = 7;
+const REVIEW_UNLOCK_RESET_MS = 1800;
 
 const gameState = createInitialState(cloneStageDefinition(DEFAULT_START_STAGE));
 const isMakerOnlyPage = document.body?.dataset?.appMode === "maker";
@@ -2567,6 +2564,10 @@ function appendDrawingPath(rawCell) {
 function startDrawing(event) {
   preventTouchBrowserAction(event);
 
+  if (isCurrentStageLocked()) {
+    return;
+  }
+
   if (gameState.gameOver || gameState.clear) {
     return;
   }
@@ -2596,6 +2597,10 @@ function startDrawing(event) {
 }
 
 function updateDrawing(event) {
+  if (isCurrentStageLocked()) {
+    return;
+  }
+
   if (!gameState.drawing.active) {
     return;
   }
@@ -2630,6 +2635,15 @@ function finalizeLoop() {
 }
 
 function finishDrawing(event) {
+  if (isCurrentStageLocked()) {
+    if (gameState.drawing.active) {
+      clearLoop();
+      render();
+    }
+    preventTouchBrowserAction(event);
+    return;
+  }
+
   if (!gameState.drawing.active) {
     return;
   }
@@ -3462,6 +3476,17 @@ function getStageJsonState() {
   return globalThis.__closedLoopStageJsonState;
 }
 
+function getPremiumPackState() {
+  if (!globalThis.__closedLoopPremiumPackState) {
+    globalThis.__closedLoopPremiumPackState = {
+      packs: [],
+      loaded: false,
+    };
+  }
+
+  return globalThis.__closedLoopPremiumPackState;
+}
+
 function getStageJsonUi() {
   return {
     stageDifficultySelect: document.getElementById("stageDifficultySelect"),
@@ -3474,8 +3499,8 @@ function getStageJsonUi() {
     makerCapturePngButton: document.getElementById("makerCapturePngButton"),
     makerExportStatus: document.getElementById("makerExportStatus"),
     makerJsonOutput: document.getElementById("makerJsonOutput"),
-    premiumStageControls: document.getElementById("premiumStageControls"),
-    premiumStageNote: document.getElementById("premiumStageNote"),
+    premiumStageOverlay: document.getElementById("premiumStageOverlay"),
+    premiumStageOverlayNote: document.getElementById("premiumStageOverlayNote"),
     unlockPremiumButton: document.getElementById("unlockPremiumButton"),
   };
 }
@@ -3486,11 +3511,15 @@ function getScreenUi() {
     gameScreen: document.getElementById("gameScreen"),
     rulesScreen: document.getElementById("rulesScreen"),
     startGameButton: document.getElementById("startGameButton"),
+    homeVersionButton: document.getElementById("homeVersionButton"),
     languageSelect: document.getElementById("languageSelect"),
     languageMenuButton: document.getElementById("languageMenuButton"),
     languageDialog: document.getElementById("languageDialog"),
     homeHowtoButton: document.getElementById("homeHowtoButton"),
     gameHowtoButton: document.getElementById("gameHowtoButton"),
+    webStorePromo: document.getElementById("webStorePromo"),
+    webStorePromoText: document.getElementById("webStorePromoText"),
+    webStorePromoLink: document.getElementById("webStorePromoLink"),
     openRulesButton: document.getElementById("openRulesButton"),
     closeRulesButton: document.getElementById("closeRulesButton"),
   };
@@ -3512,6 +3541,7 @@ const UI_TRANSLATIONS = {
     premiumPackLocked: "This stage belongs to premium content.",
     premiumPackUnlock: "Unlock Premium",
     premiumUnlockSuccess: "Premium content unlocked for this device.",
+    reviewUnlockEnabled: "Review access enabled.",
     premiumPurchaseStarted: "Opening purchase screen...",
     premiumPurchaseCanceled: "Purchase canceled.",
     premiumPurchaseFailed: "Purchase could not be completed.",
@@ -3536,6 +3566,7 @@ const UI_TRANSLATIONS = {
     premiumPackLocked: "このステージは有料コンテンツに含まれています。",
     premiumPackUnlock: "有料ステージを解放",
     premiumUnlockSuccess: "この端末で有料コンテンツを解放しました。",
+    reviewUnlockEnabled: "レビュー用アクセスを有効にしました。",
     premiumPurchaseStarted: "購入画面を開いています...",
     premiumPurchaseCanceled: "購入をキャンセルしました。",
     premiumPurchaseFailed: "購入を完了できませんでした。",
@@ -3546,6 +3577,13 @@ const UI_TRANSLATIONS = {
     switched: "ステージリストを切り替えました:",
   },
 };
+
+UI_TRANSLATIONS.en.premiumOverlayLocked = "This stage is locked.";
+UI_TRANSLATIONS.ja.premiumOverlayLocked = "このステージはロックされています。";
+UI_TRANSLATIONS.en.webStorePromoText = "You cleared every free web stage. Find more stages in the Android app.";
+UI_TRANSLATIONS.ja.webStorePromoText = "Web版の無料ステージをすべてクリアしました。さらに多くのステージはAndroidアプリで遊べます。";
+UI_TRANSLATIONS.en.webStorePromoButton = "Get the App";
+UI_TRANSLATIONS.ja.webStorePromoButton = "アプリで続きを遊ぶ";
 
 function getInitialUiLanguage() {
   const queryLanguage = new URLSearchParams(globalThis.location?.search ?? "").get("lang");
@@ -3565,6 +3603,8 @@ function getInitialUiLanguage() {
 
 let uiLanguage = getInitialUiLanguage();
 let didRestoreHowtoReturnState = false;
+let reviewUnlockTapCount = 0;
+let reviewUnlockResetTimerId = null;
 
 function getUiText(key) {
   return UI_TRANSLATIONS[uiLanguage]?.[key] ?? UI_TRANSLATIONS.en[key] ?? key;
@@ -3768,6 +3808,7 @@ function applyUiLanguage() {
   setElementText("homeLead", getUiText("homeLead"));
   setElementText("languageLabel", getUiText("languageLabel"));
   setElementText("startGameButton", getUiText("startGameButton"));
+  setElementText("homeVersionButton", APP_VERSION_LABEL);
   setElementText("stageRowLabel", getUiText("stage"));
   setElementText("resetButton", getUiText("reset"));
   setElementText("clearLoopButton", getUiText("clearLoop"));
@@ -3779,6 +3820,13 @@ function applyUiLanguage() {
   }
   if (gameHowtoButton) {
     gameHowtoButton.textContent = getUiText("howTo");
+  }
+  const { webStorePromoText, webStorePromoLink } = getScreenUi();
+  if (webStorePromoText) {
+    webStorePromoText.textContent = getUiText("webStorePromoText");
+  }
+  if (webStorePromoLink) {
+    webStorePromoLink.textContent = getUiText("webStorePromoButton");
   }
   const { languageMenuButton } = getScreenUi();
   if (languageMenuButton) {
@@ -3883,6 +3931,18 @@ function loadPurchasedPremiumPackIds() {
   }
 }
 
+function isReviewUnlockEnabled() {
+  return globalThis.localStorage?.getItem(REVIEW_UNLOCK_STORAGE_KEY) === "true";
+}
+
+function setReviewUnlockEnabled() {
+  try {
+    globalThis.localStorage?.setItem(REVIEW_UNLOCK_STORAGE_KEY, "true");
+  } catch (_error) {
+    // Review access is a convenience for store reviewers; storage failure should not block play.
+  }
+}
+
 function mergePurchasedPremiumPackIds(packIds) {
   const purchasedPackIds = loadPurchasedPremiumPackIds();
   let didChange = false;
@@ -3903,6 +3963,14 @@ function mergePurchasedPremiumPackIds(packIds) {
   return didChange;
 }
 
+function getAllPremiumPackIds() {
+  return [...new Set(
+    getPremiumPackState().packs
+      .map((premiumPack) => premiumPack.id)
+      .filter((packId) => typeof packId === "string" && packId.length > 0)
+  )];
+}
+
 function savePurchasedPremiumPackIds(packIds) {
   try {
     globalThis.localStorage?.setItem(
@@ -3917,7 +3985,7 @@ function savePurchasedPremiumPackIds(packIds) {
 function getPremiumStagePackForStage(stageDifficulty, stageNumber) {
   const normalizedDifficulty = normalizeStageDifficulty(stageDifficulty);
 
-  for (const premiumPack of Object.values(PREMIUM_STAGE_PACKS)) {
+  for (const premiumPack of getPremiumPackState().packs) {
     const targetNumbers = premiumPack.stageNumbersByDifficulty[normalizedDifficulty] ?? [];
     if (targetNumbers.includes(stageNumber)) {
       return premiumPack;
@@ -3932,6 +4000,10 @@ function isPremiumStage(stageDifficulty, stageNumber) {
 }
 
 function isPremiumPackPurchased(packId) {
+  if (isReviewUnlockEnabled() && getAllPremiumPackIds().includes(packId)) {
+    return true;
+  }
+
   return loadPurchasedPremiumPackIds().includes(packId);
 }
 
@@ -4004,15 +4076,48 @@ globalThis.closedLoopBilling = {
   },
 };
 
+function enableReviewUnlock() {
+  setReviewUnlockEnabled();
+  mergePurchasedPremiumPackIds(getAllPremiumPackIds());
+  refreshStageNumberInputs();
+  updatePremiumStageControls();
+  setStageLoaderStatus(getUiText("reviewUnlockEnabled"));
+}
+
+function resetReviewUnlockTapCounter() {
+  reviewUnlockTapCount = 0;
+  if (reviewUnlockResetTimerId !== null) {
+    globalThis.clearTimeout(reviewUnlockResetTimerId);
+    reviewUnlockResetTimerId = null;
+  }
+}
+
+function handleHomeVersionTap() {
+  reviewUnlockTapCount += 1;
+  if (reviewUnlockResetTimerId !== null) {
+    globalThis.clearTimeout(reviewUnlockResetTimerId);
+  }
+
+  if (reviewUnlockTapCount >= REVIEW_UNLOCK_TAP_TARGET) {
+    resetReviewUnlockTapCounter();
+    enableReviewUnlock();
+    return;
+  }
+
+  reviewUnlockResetTimerId = globalThis.setTimeout(() => {
+    resetReviewUnlockTapCounter();
+  }, REVIEW_UNLOCK_RESET_MS);
+}
+
 function updatePremiumStageControls() {
   const {
-    premiumStageControls,
-    premiumStageNote,
+    premiumStageOverlay,
+    premiumStageOverlayNote,
     unlockPremiumButton,
     stageNumberInput,
   } = getStageJsonUi();
 
-  if (!premiumStageControls || !premiumStageNote || !unlockPremiumButton || !stageNumberInput) {
+  if (!premiumStageOverlay || !premiumStageOverlayNote || !unlockPremiumButton || !stageNumberInput) {
     return;
   }
 
@@ -4021,13 +4126,25 @@ function updatePremiumStageControls() {
   const premiumPack = getPremiumStagePackForStage(stageDifficulty, stageNumber);
 
   if (!premiumPack || isPremiumPackPurchased(premiumPack.id)) {
-    premiumStageControls.hidden = true;
-    premiumStageNote.textContent = "";
+    premiumStageOverlay.hidden = true;
+    premiumStageOverlayNote.textContent = "";
     return;
   }
 
-  premiumStageControls.hidden = false;
-  premiumStageNote.textContent = `${getUiText("premiumPackLocked")} ${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)}`;
+  premiumStageOverlay.hidden = false;
+  premiumStageOverlayNote.textContent = `${getUiText("premiumOverlayLocked")} ${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)}`;
+}
+
+function isCurrentStageLocked() {
+  if (gameState.mode !== getStageModeKey()) {
+    return false;
+  }
+
+  const stageDifficulty = normalizeStageDifficulty(
+    gameState.stage?.stageDifficulty ?? getSelectedStageDifficulty()
+  );
+  const stageNumber = parseStageNumber(gameState.stage?.stageNumber ?? "1");
+  return !isStageUnlocked(stageDifficulty, stageNumber);
 }
 
 function getClearedStageStorageKey(stageDifficulty, stageNumber) {
@@ -4146,6 +4263,77 @@ async function readJsonResource(path) {
   }
 
   return readJsonWithXhr(path);
+}
+
+function expandStageNumberRanges(ranges) {
+  if (!Array.isArray(ranges)) {
+    return [];
+  }
+
+  const stageNumbers = [];
+  for (const range of ranges) {
+    const from = Number.parseInt(String(range?.from), 10);
+    const to = Number.parseInt(String(range?.to), 10);
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from) {
+      continue;
+    }
+
+    for (let stageNumber = from; stageNumber <= to; stageNumber += 1) {
+      stageNumbers.push(stageNumber);
+    }
+  }
+
+  return stageNumbers;
+}
+
+function normalizePremiumPackJson(packJson) {
+  if (!packJson || typeof packJson !== "object") {
+    return null;
+  }
+
+  const id = typeof packJson.id === "string" ? packJson.id.trim() : "";
+  if (!id) {
+    return null;
+  }
+
+  const stageNumbersByDifficulty = {};
+  for (const stageDifficulty of Object.values(STAGE_DIFFICULTY)) {
+    const explicitStageNumbers = normalizeStageManifestNumbers(
+      packJson.stageNumbersByDifficulty?.[stageDifficulty]
+    );
+    const rangeStageNumbers = expandStageNumberRanges(
+      packJson.rangesByDifficulty?.[stageDifficulty]
+    );
+
+    stageNumbersByDifficulty[stageDifficulty] = normalizeStageManifestNumbers([
+      ...explicitStageNumbers,
+      ...rangeStageNumbers,
+    ]);
+  }
+
+  return {
+    id,
+    stageNumbersByDifficulty,
+  };
+}
+
+async function loadPremiumPackConfig() {
+  const premiumPackState = getPremiumPackState();
+
+  if (premiumPackState.loaded) {
+    return premiumPackState.packs;
+  }
+
+  const premiumPackJson = await readJsonResource("stage/premium-packs.json");
+  const normalizedPacks = Array.isArray(premiumPackJson?.packs)
+    ? premiumPackJson.packs
+        .map((packJson) => normalizePremiumPackJson(packJson))
+        .filter((pack) => pack !== null)
+    : [];
+
+  premiumPackState.packs = normalizedPacks;
+  premiumPackState.loaded = true;
+  return premiumPackState.packs;
 }
 
 async function loadBuiltInStageManifest() {
@@ -4394,8 +4582,50 @@ function getKnownStageNumbers(stageDifficulty = getSelectedStageDifficulty()) {
   return [...numbers].sort((left, right) => left - right);
 }
 
+function getVisibleStageNumbers(stageDifficulty = getSelectedStageDifficulty()) {
+  const stageNumbers = getKnownStageNumbers(stageDifficulty);
+  if (isAndroidWebViewPage) {
+    return stageNumbers;
+  }
+
+  return stageNumbers.filter((stageNumber) => !isPremiumStage(stageDifficulty, stageNumber));
+}
+
+function hasClearedAllFreeWebStages() {
+  if (isAndroidWebViewPage) {
+    return false;
+  }
+
+  for (const stageDifficulty of Object.values(STAGE_DIFFICULTY)) {
+    const visibleStageNumbers = getVisibleStageNumbers(stageDifficulty);
+    if (visibleStageNumbers.length === 0) {
+      continue;
+    }
+
+    for (const stageNumber of visibleStageNumbers) {
+      if (!isStageCleared(stageDifficulty, stageNumber)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+function updateWebStorePromo() {
+  const { webStorePromo } = getScreenUi();
+  if (!webStorePromo) {
+    return;
+  }
+
+  webStorePromo.hidden =
+    isMakerOnlyPage ||
+    gameState.mode !== getStageModeKey() ||
+    !hasClearedAllFreeWebStages();
+}
+
 function refreshStageNumberInputs(resetToFirst = false) {
-  const stageNumbers = getKnownStageNumbers();
+  const stageNumbers = getVisibleStageNumbers();
   const { stageNumberInput, makerExportNumberInput } = getStageJsonUi();
   const selectedDifficulty = getSelectedStageDifficulty();
 
@@ -4432,6 +4662,7 @@ function refreshStageNumberInputs(resetToFirst = false) {
   }
 
   updatePremiumStageControls();
+  updateWebStorePromo();
 
   if (makerExportNumberInput && !isElementFocused(makerExportNumberInput)) {
     const nextStageNumber = stageNumbers.length > 0 ? stageNumbers[stageNumbers.length - 1] + 1 : 1;
@@ -4667,14 +4898,6 @@ async function playStageByNumber(stageNumberOverride = null, stageDifficultyOver
     if (stageDifficultySelect) {
       stageDifficultySelect.value = stageDifficulty;
     }
-    if (!isStageUnlocked(stageDifficulty, stageNumber)) {
-      if (stageNumberInput) {
-        stageNumberInput.value = String(stageNumber);
-      }
-      updatePremiumStageControls();
-      setStageLoaderStatus(getUiText("premiumLockedStatus"), true);
-      return;
-    }
 
     setStageLoaderStatus(
       `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)} ${getUiText("loading")}`
@@ -4694,7 +4917,10 @@ async function playStageByNumber(stageNumberOverride = null, stageDifficultyOver
     }
     refreshStageNumberInputs();
     setStageLoaderStatus(
-      `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)} loaded.`
+      isStageUnlocked(stageDifficulty, stageNumber)
+        ? `${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)} loaded.`
+        : getUiText("premiumLockedStatus"),
+      !isStageUnlocked(stageDifficulty, stageNumber)
     );
   } catch (error) {
     setStageLoaderStatus(error.message, true);
@@ -5117,9 +5343,15 @@ async function handleStageNumberEnter(event) {
 
 getStageModeKey();
 applyUiLanguage();
+if (isReviewUnlockEnabled()) {
+  mergePurchasedPremiumPackIds(getAllPremiumPackIds());
+}
 restoreNativePurchases();
 setStageLoaderStatus(getDefaultStageLoaderMessage());
-void loadBuiltInStageManifest().then((loaded) => {
+void Promise.all([
+  loadBuiltInStageManifest(),
+  loadPremiumPackConfig(),
+]).then(([loaded]) => {
   refreshStageNumberInputs();
   if (loaded) {
     setStageLoaderStatus(`Built-in stages loaded: ${buildStageImportSummary(getStageJsonState())}`);
@@ -5161,6 +5393,9 @@ document.addEventListener("keydown", (event) => {
 getScreenUi().startGameButton?.addEventListener("click", () => {
   showGameScreen();
   void playStageByNumber();
+});
+getScreenUi().homeVersionButton?.addEventListener("click", () => {
+  handleHomeVersionTap();
 });
 getScreenUi().gameHowtoButton?.addEventListener("click", () => {
   saveHowtoReturnState();
@@ -7693,7 +7928,7 @@ function ensureRememberedRandomStageReady(forceRegenerate = false) {
 }
 
 function getNextKnownStageNumber(currentStageNumber, stageDifficulty) {
-  const stageNumbers = getKnownStageNumbers(stageDifficulty);
+  const stageNumbers = getVisibleStageNumbers(stageDifficulty);
   if (stageNumbers.length === 0) {
     return 1;
   }
@@ -7744,6 +7979,10 @@ function handleCanvasTouchEndAfterClear(event) {
 }
 
 canvas.addEventListener("click", (event) => {
+  if (isCurrentStageLocked()) {
+    return;
+  }
+
   if (Date.now() - lastCanvasClearTouchTime < 700) {
     return;
   }
@@ -8297,6 +8536,11 @@ function handleKeyDown(event) {
   const key = event.key.toLowerCase();
 
   if (key === "r") {
+    if (isCurrentStageLocked()) {
+      event.preventDefault();
+      return;
+    }
+
     event.preventDefault();
     resetGame(event.shiftKey);
     return;
@@ -8313,6 +8557,9 @@ function handleKeyDown(event) {
     "d",
   ].includes(key)) {
     event.preventDefault();
+    if (isCurrentStageLocked()) {
+      return;
+    }
   }
 }
 

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stage Manager</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-app-mode="manager">
+  <main class="page manager-page">
+    <section class="game-panel manager-panel">
+      <header class="manager-header">
+        <div>
+          <p class="home-kicker">Stage Manager</p>
+          <h1 class="manager-title">ステージ管理</h1>
+          <p class="manager-lead">並び順、有料設定、保存用JSONをまとめて調整できます。</p>
+        </div>
+        <div class="manager-nav">
+          <a class="button-link secondary-button" href="maker.html">ステージメーカー</a>
+          <a class="button-link secondary-button" href="index.html">ゲームへ</a>
+        </div>
+      </header>
+
+      <section class="manager-toolbar">
+        <div class="manager-toolbar-group">
+          <button id="managerReloadButton" type="button">読み込み直し</button>
+          <button id="managerChooseFolderButton" class="secondary-button" type="button">保存先を選ぶ</button>
+        </div>
+        <div class="manager-toolbar-group">
+          <button id="managerSaveAllButton" type="button">全体保存</button>
+        </div>
+      </section>
+
+      <p id="managerStatus" class="status-text"></p>
+
+      <section class="manager-output-panel">
+        <div class="manager-output-block">
+          <h2>manifest.json</h2>
+          <textarea id="managerManifestOutput" class="manager-json-output" readonly></textarea>
+        </div>
+        <div class="manager-output-block">
+          <h2>premium-packs.json</h2>
+          <textarea id="managerPremiumOutput" class="manager-json-output" readonly></textarea>
+        </div>
+      </section>
+
+      <section id="managerDifficultySections" class="manager-difficulty-sections"></section>
+    </section>
+  </main>
+
+  <script src="manager.js"></script>
+</body>
+</html>

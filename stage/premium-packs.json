@@ -1,0 +1,51 @@
+{
+  "packs": [
+    {
+      "id": "premium_stage_pack",
+      "rangesByDifficulty": {
+        "medium": [
+          {
+            "from": 12,
+            "to": 12
+          },
+          {
+            "from": 15,
+            "to": 16
+          },
+          {
+            "from": 18,
+            "to": 18
+          },
+          {
+            "from": 21,
+            "to": 21
+          },
+          {
+            "from": 23,
+            "to": 23
+          },
+          {
+            "from": 26,
+            "to": 26
+          },
+          {
+            "from": 29,
+            "to": 29
+          },
+          {
+            "from": 36,
+            "to": 37
+          },
+          {
+            "from": 42,
+            "to": 43
+          },
+          {
+            "from": 46,
+            "to": 52
+          }
+        ]
+      }
+    }
+  ]
+}
