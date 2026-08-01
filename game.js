@@ -3578,12 +3578,12 @@ const UI_TRANSLATIONS = {
   },
 };
 
-UI_TRANSLATIONS.en.premiumOverlayLocked = "This stage is locked.";
-UI_TRANSLATIONS.ja.premiumOverlayLocked = "このステージはロックされています。";
-UI_TRANSLATIONS.en.webStorePromoText = "You cleared every free web stage. Find more stages in the Android app.";
-UI_TRANSLATIONS.ja.webStorePromoText = "Web版の無料ステージをすべてクリアしました。さらに多くのステージはAndroidアプリで遊べます。";
+UI_TRANSLATIONS.en.premiumOverlayLocked = "This stage is locked. Unlock it by purchasing the premium stage pack.";
+UI_TRANSLATIONS.ja.premiumOverlayLocked = "有料プラン限定ステージです。";
+UI_TRANSLATIONS.en.webStorePromoText = "You cleared every free web stage. Find more stages in the App.";
+UI_TRANSLATIONS.ja.webStorePromoText = "おめでとう！Web版のステージをすべてクリアしました。アプリ版ではでもっとたくさんのステージが遊べるようになります。";
 UI_TRANSLATIONS.en.webStorePromoButton = "Get the App";
-UI_TRANSLATIONS.ja.webStorePromoButton = "アプリで続きを遊ぶ";
+UI_TRANSLATIONS.ja.webStorePromoButton = "アプリで遊ぶ";
 
 function getInitialUiLanguage() {
   const queryLanguage = new URLSearchParams(globalThis.location?.search ?? "").get("lang");
