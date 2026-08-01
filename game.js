@@ -4672,6 +4672,26 @@ function hasClearedAllFreeWebStages() {
   return true;
 }
 
+function updateStageSelectOptionDecorations(stageNumberInput, stageDifficulty) {
+  if (!stageNumberInput || stageNumberInput.tagName !== "SELECT") {
+    return;
+  }
+
+  for (const option of stageNumberInput.options) {
+    const stageNumber = parseStageNumber(option.value);
+    const baseLabel = formatStageNumber(stageNumber);
+    const clearedMark = isStageCleared(stageDifficulty, stageNumber) ? " ✅" : "";
+
+    let premiumMark = "";
+    if (isAndroidWebViewPage) {
+      const premiumPack = getPremiumStagePackForStage(stageDifficulty, stageNumber);
+      premiumMark = premiumPack && !isPremiumPackPurchased(premiumPack.id) ? " ♛" : "";
+    }
+
+    option.textContent = `${baseLabel}${clearedMark}${premiumMark}`;
+  }
+}
+
 function updateWebStorePromo() {
   const { webStorePromo } = getScreenUi();
   if (!webStorePromo) {
@@ -4719,6 +4739,8 @@ function refreshStageNumberInputs(resetToFirst = false) {
     ) {
       stageNumberInput.value = String(nextValue);
     }
+
+    updateStageSelectOptionDecorations(stageNumberInput, selectedDifficulty);
   }
 
   updatePremiumStageControls();
