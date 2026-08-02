@@ -6,82 +6,52 @@
   },
   "playerStart": {
     "x": 1,
-    "y": 1
+    "y": 8
   },
   "keyPosition": {
-    "x": 2,
-    "y": 5
+    "x": 5,
+    "y": 8
   },
   "goalPosition": {
     "x": 8,
-    "y": 8
+    "y": 3
   },
   "bombs": [
-    {
-      "x": 1,
-      "y": 4
-    },
     {
       "x": 2,
       "y": 4
     },
     {
-      "x": 3,
-      "y": 4
-    },
-    {
-      "x": 4,
-      "y": 4
-    },
-    {
-      "x": 6,
-      "y": 1
-    },
-    {
-      "x": 7,
-      "y": 1
-    },
-    {
       "x": 8,
-      "y": 1
-    },
-    {
-      "x": 9,
       "y": 1
     }
   ],
   "disarmItems": [
     {
-      "x": 2,
-      "y": 6
-    },
-    {
-      "x": 3,
-      "y": 6
-    },
-    {
-      "x": 9,
-      "y": 3
-    },
-    {
-      "x": 8,
-      "y": 3
-    }
-  ],
-  "warps": [],
-  "lateWarps": [
-    {
-      "x": 3,
+      "x": 1,
       "y": 1
     },
     {
       "x": 5,
-      "y": 4
+      "y": 3
     }
   ],
-  "wallBlocks": [],
-  "designLabel": "ステージメーカー",
-  "designNote": "自由配置のステージを編集できます。",
-  "instructionText": "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。プレイヤー・鍵・ゴールは1つずつ、爆弾・水入りバケツは複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。",
+  "wallBlocks": [
+    {
+      "x": 3,
+      "y": 7
+    },
+    {
+      "x": 3,
+      "y": 6
+    },
+    {
+      "x": 4,
+      "y": 6
+    }
+  ],
+  "designLabel": "Normal 038 - 三隅掁E��E/ 上下反転 / 対消滁E��",
+  "designNote": "Extra Normal / family=三隅掁E��E/ style=cleanup / minSteps=2 / forcedSteps=1 / winningFirstMoves=1 / optimalEstimate=637",
+  "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }

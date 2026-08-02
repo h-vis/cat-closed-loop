@@ -4440,9 +4440,10 @@ async function loadBuiltInStageManifest() {
 function getSelectedStageDifficulty() {
   const stageJsonState = getStageJsonState();
   const { stageDifficultySelect } = getStageJsonUi();
-  const stageDifficulty = normalizeStageDifficulty(
-    stageDifficultySelect?.value ?? stageJsonState.selectedDifficulty
-  );
+  const stageDifficulty =
+    stageDifficultySelect?.hidden || stageDifficultySelect?.closest("[hidden]")
+      ? DEFAULT_STAGE_DIFFICULTY
+      : normalizeStageDifficulty(stageDifficultySelect?.value ?? stageJsonState.selectedDifficulty);
 
   stageJsonState.selectedDifficulty = stageDifficulty;
   if (stageDifficultySelect && stageDifficultySelect.value !== stageDifficulty) {

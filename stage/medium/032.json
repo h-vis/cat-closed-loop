@@ -6,11 +6,11 @@
   },
   "playerStart": {
     "x": 1,
-    "y": 1
+    "y": 9
   },
   "keyPosition": {
-    "x": 8,
-    "y": 1
+    "x": 2,
+    "y": 3
   },
   "goalPosition": {
     "x": 8,
@@ -18,101 +18,48 @@
   },
   "bombs": [
     {
-      "x": 0,
-      "y": 4
-    },
-    {
-      "x": 1,
-      "y": 4
-    },
-    {
-      "x": 2,
-      "y": 4
-    },
-    {
       "x": 3,
-      "y": 4
-    },
-    {
-      "x": 4,
-      "y": 4
-    },
-    {
-      "x": 5,
-      "y": 4
+      "y": 8
     },
     {
       "x": 6,
-      "y": 4
-    },
-    {
-      "x": 7,
-      "y": 4
+      "y": 3
     },
     {
       "x": 8,
       "y": 4
-    },
-    {
-      "x": 9,
-      "y": 4
-    },
-    {
-      "x": 9,
-      "y": 5
-    },
-    {
-      "x": 8,
-      "y": 5
-    },
-    {
-      "x": 7,
-      "y": 5
-    },
-    {
-      "x": 6,
-      "y": 5
-    },
-    {
-      "x": 5,
-      "y": 5
-    },
-    {
-      "x": 4,
-      "y": 5
-    },
-    {
-      "x": 3,
-      "y": 5
-    },
-    {
-      "x": 2,
-      "y": 5
-    },
-    {
-      "x": 1,
-      "y": 5
-    },
-    {
-      "x": 0,
-      "y": 5
     }
   ],
-  "disarmItems": [],
-  "warps": [],
-  "lateWarps": [
+  "disarmItems": [
     {
-      "x": 5,
+      "x": 9,
       "y": 2
     },
     {
-      "x": 2,
-      "y": 8
+      "x": 3,
+      "y": 3
     }
   ],
-  "wallBlocks": [],
-  "designLabel": "ステージメーカー",
-  "designNote": "自由配置のステージを編集できます。",
-  "instructionText": "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。プレイヤー・鍵・ゴールは1つずつ、爆弾・水入りバケツは複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。",
+  "wallBlocks": [
+    {
+      "x": 9,
+      "y": 4
+    },
+    {
+      "x": 9,
+      "y": 3
+    },
+    {
+      "x": 8,
+      "y": 3
+    },
+    {
+      "x": 8,
+      "y": 2
+    }
+  ],
+  "designLabel": "Normal 034 - 外縁�E業 / 270度回転",
+  "designNote": "Extra Normal / family=外縁�E業 / style=relay / minSteps=3 / forcedSteps=0 / winningFirstMoves=8 / optimalEstimate=999",
+  "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }

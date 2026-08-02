@@ -6,97 +6,60 @@
   },
   "playerStart": {
     "x": 0,
-    "y": 9
+    "y": 4
   },
   "keyPosition": {
-    "x": 8,
-    "y": 1
+    "x": 2,
+    "y": 0
   },
   "goalPosition": {
-    "x": 4,
-    "y": 4
+    "x": 7,
+    "y": 7
   },
   "bombs": [
     {
-      "x": 1,
-      "y": 2
-    },
-    {
-      "x": 1,
-      "y": 4
-    },
-    {
-      "x": 3,
-      "y": 6
-    },
-    {
-      "x": 5,
-      "y": 6
-    },
-    {
-      "x": 8,
-      "y": 6
-    },
-    {
-      "x": 7,
-      "y": 5
-    },
-    {
-      "x": 6,
-      "y": 4
-    },
-    {
-      "x": 4,
-      "y": 2
-    },
-    {
-      "x": 3,
+      "x": 9,
       "y": 1
     },
     {
-      "x": 2,
-      "y": 0
-    },
-    {
-      "x": 2,
+      "x": 5,
       "y": 4
     },
     {
-      "x": 1,
-      "y": 6
-    },
-    {
       "x": 2,
-      "y": 8
+      "y": 6
     }
   ],
   "disarmItems": [
     {
-      "x": 6,
-      "y": 2
-    },
-    {
-      "x": 6,
-      "y": 1
-    },
-    {
-      "x": 7,
-      "y": 2
-    },
-    {
-      "x": 6,
-      "y": 8
+      "x": 2,
+      "y": 3
     },
     {
       "x": 6,
       "y": 7
     }
   ],
-  "warps": [],
-  "lateWarps": [],
-  "wallBlocks": [],
-  "designLabel": "ステージメーカー",
-  "designNote": "自由配置のステージを編集できます。",
-  "instructionText": "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。プレイヤー・鍵・ゴールは1つずつ、爆弾・水入りバケツは複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。",
+  "wallBlocks": [
+    {
+      "x": 5,
+      "y": 7
+    },
+    {
+      "x": 5,
+      "y": 8
+    },
+    {
+      "x": 5,
+      "y": 9
+    },
+    {
+      "x": 4,
+      "y": 9
+    }
+  ],
+  "designLabel": "Normal 030 - 三段迂回 / 左右反転",
+  "designNote": "Extra Normal / family=三段迂回 / style=gauntlet / minSteps=3 / forcedSteps=1 / winningFirstMoves=20 / optimalEstimate=999",
+  "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }
