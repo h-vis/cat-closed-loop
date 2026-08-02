@@ -20,6 +20,13 @@ function compareGridPositions(left, right) {
   return left.x - right.x;
 }
 
+function positionsMatch(left, right) {
+  if (!left || !right) {
+    return false;
+  }
+  return left.x === right.x && left.y === right.y;
+}
+
 function normalizeStage(stageJson) {
   return {
     version: Number(stageJson?.version ?? 1),
@@ -295,16 +302,22 @@ function buildLoopFromDrawnCells(drawnCells, stage) {
 }
 
 function createStateSignature(state) {
+  const playerSignature = getCellKey(state.playerPosition);
   const bombSignature = clonePositions(state.bombs).sort(compareGridPositions).map(getCellKey).join("|");
   const disarmSignature = clonePositions(state.disarmItems).sort(compareGridPositions).map(getCellKey).join("|");
-  return `${state.keyCollected ? 1 : 0}||${bombSignature}||${disarmSignature}`;
+  const warpSignature = clonePositions(state.warps).sort(compareGridPositions).map(getCellKey).join("|");
+  const lateWarpSignature = clonePositions(state.lateWarps).sort(compareGridPositions).map(getCellKey).join("|");
+  return `${playerSignature}||${state.keyCollected ? 1 : 0}||${bombSignature}||${disarmSignature}||${warpSignature}||${lateWarpSignature}`;
 }
 
 function createInitialState(stage) {
   return {
+    playerPosition: clonePosition(stage.playerStart),
     keyCollected: Boolean(stage.keyInitiallyCollected),
     bombs: clonePositions(stage.bombs),
     disarmItems: clonePositions(stage.disarmItems),
+    warps: clonePositions(stage.warps),
+    lateWarps: clonePositions(stage.lateWarps),
     history: [],
     clear: false,
   };
@@ -325,12 +338,61 @@ function groupPositionsBySpace(positions, loop) {
   return grouped;
 }
 
+function getLoopSpaceId(loop, position) {
+  if (!position) {
+    return undefined;
+  }
+  if (loop.lineCellKeys.has(getCellKey(position))) {
+    return undefined;
+  }
+  return loop.spaceByCellKey.get(getCellKey(position));
+}
+
+function applyWarpEffect(loop, playerPosition, warps) {
+  let nextPlayerPosition = clonePosition(playerPosition);
+  let playerSpaceId = getLoopSpaceId(loop, nextPlayerPosition);
+  let nextWarps = clonePositions(warps);
+
+  if (playerSpaceId === undefined || nextWarps.length !== 2) {
+    return { playerPosition: nextPlayerPosition, playerSpaceId, warps: nextWarps };
+  }
+
+  const warpsInPlayerSpace = nextWarps.filter(
+    (warp) => getLoopSpaceId(loop, warp) === playerSpaceId
+  );
+
+  if (warpsInPlayerSpace.length !== 1) {
+    return { playerPosition: nextPlayerPosition, playerSpaceId, warps: nextWarps };
+  }
+
+  const sourceWarpKey = getCellKey(warpsInPlayerSpace[0]);
+  const destinationWarp = nextWarps.find((warp) => getCellKey(warp) !== sourceWarpKey);
+  if (!destinationWarp) {
+    return { playerPosition: nextPlayerPosition, playerSpaceId, warps: nextWarps };
+  }
+
+  nextPlayerPosition = clonePosition(destinationWarp);
+  nextWarps = [];
+  playerSpaceId = getLoopSpaceId(loop, nextPlayerPosition);
+  return { playerPosition: nextPlayerPosition, playerSpaceId, warps: nextWarps };
+}
+
 function applyLoop(state, loop, stage) {
-  const playerSpaceId = loop.spaceByCellKey.get(getCellKey(stage.playerStart));
+  let playerPosition = clonePosition(state.playerPosition ?? stage.playerStart);
+  let playerSpaceId = getLoopSpaceId(loop, playerPosition);
   if (playerSpaceId === undefined) {
     return null;
   }
 
+  const earlyWarpResult = applyWarpEffect(loop, playerPosition, state.warps);
+  playerPosition = earlyWarpResult.playerPosition;
+  playerSpaceId = earlyWarpResult.playerSpaceId;
+  if (playerSpaceId === undefined) {
+    return null;
+  }
+
+  const nextWarps = earlyWarpResult.warps;
+  let nextLateWarps = clonePositions(state.lateWarps);
   const bombsBySpace = groupPositionsBySpace(state.bombs, loop);
   const disarmBySpace = groupPositionsBySpace(state.disarmItems, loop);
   const bombsInPlayerSpace = bombsBySpace.get(playerSpaceId) ?? [];
@@ -366,12 +428,29 @@ function applyLoop(state, loop, stage) {
   const nextKeyCollected = state.keyCollected || keySpaceId === playerSpaceId;
 
   const goalSpaceId = loop.spaceByCellKey.get(getCellKey(stage.goalPosition));
-  const clear = Boolean(nextKeyCollected && goalSpaceId === playerSpaceId);
+  const goalSharesPlayerSpace = goalSpaceId === playerSpaceId;
+
+  const lateWarpResult = applyWarpEffect(loop, playerPosition, nextLateWarps);
+  playerPosition = lateWarpResult.playerPosition;
+  nextLateWarps = lateWarpResult.warps;
+
+  const clear = Boolean(nextKeyCollected && goalSharesPlayerSpace);
+  const playerMoved = !positionsMatch(
+    playerPosition,
+    state.playerPosition ?? stage.playerStart
+  );
+  const warpChanged =
+    clonePositions(nextWarps).sort(compareGridPositions).map(getCellKey).join("|") !==
+      clonePositions(state.warps).sort(compareGridPositions).map(getCellKey).join("|") ||
+    clonePositions(nextLateWarps).sort(compareGridPositions).map(getCellKey).join("|") !==
+      clonePositions(state.lateWarps).sort(compareGridPositions).map(getCellKey).join("|");
 
   const changed =
+    playerMoved ||
     nextKeyCollected !== state.keyCollected ||
     nextBombs.length !== state.bombs.length ||
     nextDisarmItems.length !== state.disarmItems.length ||
+    warpChanged ||
     clear;
 
   if (!changed) {
@@ -379,9 +458,12 @@ function applyLoop(state, loop, stage) {
   }
 
   return {
+    playerPosition,
     keyCollected: nextKeyCollected,
     bombs: nextBombs,
     disarmItems: nextDisarmItems,
+    warps: nextWarps,
+    lateWarps: nextLateWarps,
     history: state.history,
     clear,
   };
@@ -389,11 +471,13 @@ function applyLoop(state, loop, stage) {
 
 function buildBlockedDrawnCellSet(stage, state) {
   const blocked = new Set([
-    getCellKey(stage.playerStart),
+    getCellKey(state.playerPosition ?? stage.playerStart),
     getCellKey(stage.goalPosition),
     ...clonePositions(stage.wallBlocks).map(getCellKey),
     ...clonePositions(state.bombs).map(getCellKey),
     ...clonePositions(state.disarmItems).map(getCellKey),
+    ...clonePositions(state.warps).map(getCellKey),
+    ...clonePositions(state.lateWarps).map(getCellKey),
   ]);
 
   if (!state.keyCollected) {
@@ -405,10 +489,12 @@ function buildBlockedDrawnCellSet(stage, state) {
 
 function lineTouchesImportantObjects(loop, stage, state) {
   const importantKeys = new Set([
-    getCellKey(stage.playerStart),
+    getCellKey(state.playerPosition ?? stage.playerStart),
     getCellKey(stage.goalPosition),
     ...state.bombs.map(getCellKey),
     ...state.disarmItems.map(getCellKey),
+    ...state.warps.map(getCellKey),
+    ...state.lateWarps.map(getCellKey),
   ]);
 
   if (!state.keyCollected) {
@@ -427,10 +513,12 @@ function lineTouchesImportantObjects(loop, stage, state) {
 function createObjectivePoints(stage, state) {
   const target = state.keyCollected ? stage.goalPosition : stage.keyPosition;
   return [
-    stage.playerStart,
+    state.playerPosition ?? stage.playerStart,
     target,
     ...state.bombs,
     ...state.disarmItems,
+    ...state.warps,
+    ...state.lateWarps,
     ...(stage.wallBlocks ?? []),
   ];
 }
@@ -612,7 +700,7 @@ function buildLoopCandidateFromCells(drawnCells, stage, state) {
   }
 
   const targetPosition = state.keyCollected ? stage.goalPosition : stage.keyPosition;
-  const playerSpaceId = loop.spaceByCellKey.get(getCellKey(stage.playerStart));
+  const playerSpaceId = getLoopSpaceId(loop, state.playerPosition ?? stage.playerStart);
   const targetSpaceId = loop.spaceByCellKey.get(getCellKey(targetPosition));
   const removedObjectCount =
     state.bombs.length - nextState.bombs.length + (state.disarmItems.length - nextState.disarmItems.length);

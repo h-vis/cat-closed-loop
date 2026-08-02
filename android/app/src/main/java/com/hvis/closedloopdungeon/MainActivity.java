@@ -57,14 +57,16 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
         settings.setAllowFileAccessFromFileURLs(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new BillingBridge(), "ClosedLoopBilling");
+        webView.clearCache(true);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         webView.setVerticalScrollBarEnabled(false);
         webView.setHorizontalScrollBarEnabled(false);
-        webView.loadUrl("file:///android_asset/index.html?android=1");
+        webView.loadUrl("file:///android_asset/index.html?android=1&v=0.1.3");
 
         setupBillingClient();
     }

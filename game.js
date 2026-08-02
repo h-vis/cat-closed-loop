@@ -3503,6 +3503,7 @@ function getStageJsonUi() {
     premiumStageOverlay: document.getElementById("premiumStageOverlay"),
     premiumStageOverlayNote: document.getElementById("premiumStageOverlayNote"),
     unlockPremiumButton: document.getElementById("unlockPremiumButton"),
+    premiumOverlayHomeButton: document.getElementById("premiumOverlayHomeButton"),
   };
 }
 
@@ -3541,6 +3542,8 @@ const UI_TRANSLATIONS = {
     clearLoop: "Clear Loop",
     premiumPackLocked: "This stage belongs to premium content.",
     premiumPackUnlock: "Unlock Premium",
+    premiumOverlayHome: "Back to Title",
+    premiumOverlayHome: "Back to Title",
     premiumUnlockSuccess: "Premium content unlocked for this device.",
     reviewUnlockEnabled: "Review access enabled.",
     premiumPurchaseStarted: "Opening purchase screen...",
@@ -3814,6 +3817,7 @@ function applyUiLanguage() {
   setElementText("resetButton", getUiText("reset"));
   setElementText("clearLoopButton", getUiText("clearLoop"));
   setElementText("unlockPremiumButton", getUiText("premiumPackUnlock"));
+  setElementText("premiumOverlayHomeButton", getUiText("premiumOverlayHome"));
 
   const { homeHowtoButton, gameHowtoButton } = getScreenUi();
   if (homeHowtoButton) {
@@ -3847,6 +3851,11 @@ function setUiLanguage(nextLanguage) {
 
 function showHomeScreen() {
   const { homeScreen, gameScreen, rulesScreen } = getScreenUi();
+  const { premiumStageOverlay } = getStageJsonUi();
+  console.info("[premium] showHomeScreen");
+  if (premiumStageOverlay) {
+    premiumStageOverlay.hidden = true;
+  }
   if (homeScreen) {
     homeScreen.hidden = false;
   }
@@ -4030,17 +4039,25 @@ function unlockPremiumPack(packId) {
 
 function requestNativePremiumPurchase(packId) {
   const nativeBilling = globalThis.ClosedLoopBilling;
-  if (!isAndroidWebViewPage || !nativeBilling?.purchasePremiumPack) {
-    return false;
+  if (nativeBilling?.purchasePremiumPack) {
+    try {
+      nativeBilling.purchasePremiumPack(packId);
+      return "started";
+    } catch (_error) {
+      return "failed";
+    }
   }
 
-  nativeBilling.purchasePremiumPack(packId);
-  return true;
+  if (isAndroidWebViewPage || globalThis.location?.protocol === "file:") {
+    return "unavailable";
+  }
+
+  return "not-native";
 }
 
 function restoreNativePurchases() {
   const nativeBilling = globalThis.ClosedLoopBilling;
-  if (!isAndroidWebViewPage || !nativeBilling?.restorePurchases) {
+  if (!nativeBilling?.restorePurchases) {
     return;
   }
 
@@ -5498,6 +5515,24 @@ getStageJsonUi().stageNumberInput?.addEventListener("change", () => {
   updatePremiumStageControls();
   void playStageByNumber();
 });
+function returnPremiumOverlayToHome(event = null) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  console.info("[premium] premiumOverlayHomeButton click");
+  const params = new URLSearchParams();
+  if (isAndroidWebViewPage) {
+    params.set("android", "1");
+  }
+  params.set("lang", uiLanguage);
+  params.set("v", "0.1.3");
+  globalThis.location.replace(`index.html?${params.toString()}`);
+}
+
+getStageJsonUi().premiumOverlayHomeButton?.addEventListener("click", returnPremiumOverlayToHome);
+getStageJsonUi().premiumOverlayHomeButton?.addEventListener("touchend", returnPremiumOverlayToHome, {
+  passive: false,
+});
+getStageJsonUi().premiumOverlayHomeButton?.addEventListener("pointerup", returnPremiumOverlayToHome);
 getStageJsonUi().unlockPremiumButton?.addEventListener("click", () => {
   const { stageNumberInput } = getStageJsonUi();
   if (!stageNumberInput) {
@@ -5511,8 +5546,14 @@ getStageJsonUi().unlockPremiumButton?.addEventListener("click", () => {
     return;
   }
 
-  if (requestNativePremiumPurchase(premiumPack.id)) {
+  const purchaseRequestState = requestNativePremiumPurchase(premiumPack.id);
+  if (purchaseRequestState === "started") {
     setStageLoaderStatus(getUiText("premiumPurchaseStarted"));
+    return;
+  }
+
+  if (purchaseRequestState === "failed" || purchaseRequestState === "unavailable") {
+    setStageLoaderStatus(getUiText("premiumBillingUnavailable"), true);
     return;
   }
 
