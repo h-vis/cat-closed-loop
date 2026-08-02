@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 public class MainActivity extends Activity implements PurchasesUpdatedListener {
+    private static final String TAG = "ClosedLoopBilling";
     private static final String PREMIUM_PRODUCT_ID = "premium_stage_pack";
     private static final String PURCHASE_PREFS_NAME = "closed_loop_purchases";
     private static final String PURCHASED_PRODUCTS_KEY = "purchased_products";
@@ -66,7 +68,7 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         webView.setVerticalScrollBarEnabled(false);
         webView.setHorizontalScrollBarEnabled(false);
-        webView.loadUrl("file:///android_asset/index.html?android=1&v=0.1.3");
+        webView.loadUrl("file:///android_asset/index.html?android=1&v=0.1.4");
 
         setupBillingClient();
     }
@@ -92,6 +94,7 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
 
     @Override
     public void onPurchasesUpdated(BillingResult billingResult, List<Purchase> purchases) {
+        logBillingResult("onPurchasesUpdated", billingResult);
         if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && purchases != null) {
             handlePurchases(purchases);
             return;
@@ -131,6 +134,7 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
         billingClient.startConnection(new BillingClientStateListener() {
             @Override
             public void onBillingSetupFinished(BillingResult billingResult) {
+                logBillingResult("onBillingSetupFinished", billingResult);
                 if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                     billingReady = false;
                     notifyBillingStatus("billingUnavailable");
@@ -160,12 +164,14 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
             .build();
 
         billingClient.queryProductDetailsAsync(params, (billingResult, queryProductDetailsResult) -> {
+            logBillingResult("queryProductDetailsAsync", billingResult);
             if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                 notifyBillingStatus("productUnavailable");
                 return;
             }
 
             List<ProductDetails> productDetailsList = queryProductDetailsResult.getProductDetailsList();
+            Log.i(TAG, "premium product details count=" + productDetailsList.size());
             premiumProductDetails = productDetailsList.isEmpty() ? null : productDetailsList.get(0);
             notifyBillingStatus(premiumProductDetails == null ? "productUnavailable" : "billingReady");
         });
@@ -177,6 +183,7 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
             .build();
 
         billingClient.queryPurchasesAsync(params, (billingResult, purchases) -> {
+            logBillingResult("queryPurchasesAsync", billingResult);
             if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
                 handlePurchases(purchases);
             }
@@ -216,7 +223,11 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
             .setProductDetailsParamsList(Collections.singletonList(productParamsBuilder.build()))
             .build();
 
-        billingClient.launchBillingFlow(this, billingFlowParams);
+        BillingResult billingResult = billingClient.launchBillingFlow(this, billingFlowParams);
+        logBillingResult("launchBillingFlow", billingResult);
+        if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+            notifyBillingStatus("purchaseFailed");
+        }
     }
 
     private void handlePurchases(List<Purchase> purchases) {
@@ -236,6 +247,7 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
                     .setPurchaseToken(purchase.getPurchaseToken())
                     .build();
                 billingClient.acknowledgePurchase(acknowledgeParams, billingResult -> {
+                    logBillingResult("acknowledgePurchase", billingResult);
                     notifyPurchasedProducts();
                     notifyBillingStatus(
                         billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
@@ -281,6 +293,17 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
 
     private void notifyBillingStatus(String status) {
         runJavascript("window.closedLoopBilling?.setBillingStatus('" + status + "');");
+    }
+
+    private void logBillingResult(String operation, BillingResult billingResult) {
+        Log.i(
+            TAG,
+            operation
+                + " responseCode="
+                + billingResult.getResponseCode()
+                + " debugMessage="
+                + billingResult.getDebugMessage()
+        );
     }
 
     private void runJavascript(String script) {

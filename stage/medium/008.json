@@ -6,11 +6,11 @@
   },
   "playerStart": {
     "x": 1,
-    "y": 9
+    "y": 1
   },
   "keyPosition": {
-    "x": 2,
-    "y": 3
+    "x": 3,
+    "y": 5
   },
   "goalPosition": {
     "x": 8,
@@ -18,52 +18,76 @@
   },
   "bombs": [
     {
-      "x": 3,
+      "x": 4,
+      "y": 3
+    },
+    {
+      "x": 0,
+      "y": 8
+    },
+    {
+      "x": 1,
       "y": 8
     },
     {
       "x": 6,
-      "y": 3
+      "y": 1
     },
     {
       "x": 4,
-      "y": 5
+      "y": 1
     }
   ],
   "disarmItems": [
     {
-      "x": 9,
-      "y": 2
+      "x": 5,
+      "y": 5
+    },
+    {
+      "x": 5,
+      "y": 0
     },
     {
       "x": 3,
-      "y": 3
+      "y": 0
     }
   ],
   "wallBlocks": [
     {
       "x": 9,
+      "y": 3
+    },
+    {
+      "x": 0,
+      "y": 5
+    },
+    {
+      "x": 0,
       "y": 4
     },
     {
+      "x": 0,
+      "y": 6
+    },
+    {
+      "x": 1,
+      "y": 6
+    },
+    {
       "x": 9,
-      "y": 3
+      "y": 2
     },
     {
       "x": 8,
-      "y": 3
-    },
-    {
-      "x": 5,
-      "y": 3
+      "y": 2
     },
     {
       "x": 7,
-      "y": 8
+      "y": 2
     }
   ],
-  "designLabel": "Normal 008 - pinpoint-relay / 左右反転",
-  "designNote": "Hard pack / family=pinpoint-relay / style=needle / minSteps=3 / forcedSteps=1 / winningFirstMoves=1 / optimalEstimate=8",
+  "designLabel": "Normal 004",
+  "designNote": "Stage metadata repaired for release.",
   "instructionText": "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
   "keyInitiallyCollected": false
 }

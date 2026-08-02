@@ -3541,8 +3541,7 @@ const UI_TRANSLATIONS = {
     reset: "Reset",
     clearLoop: "Clear Loop",
     premiumPackLocked: "This stage belongs to premium content.",
-    premiumPackUnlock: "Unlock Premium",
-    premiumOverlayHome: "Back to Title",
+    premiumPackUnlock: "Unlock ALL stages",
     premiumOverlayHome: "Back to Title",
     premiumUnlockSuccess: "Premium content unlocked for this device.",
     reviewUnlockEnabled: "Review access enabled.",
@@ -3568,7 +3567,8 @@ const UI_TRANSLATIONS = {
     reset: "リセット",
     clearLoop: "線を消す",
     premiumPackLocked: "このステージは有料コンテンツに含まれています。",
-    premiumPackUnlock: "有料ステージを解放",
+    premiumPackUnlock: "プレミアムパス購入で全ステージ開放",
+    premiumOverlayHome: "タイトル画面へ戻る",
     premiumUnlockSuccess: "この端末で有料コンテンツを解放しました。",
     reviewUnlockEnabled: "レビュー用アクセスを有効にしました。",
     premiumPurchaseStarted: "購入画面を開いています...",
@@ -3583,7 +3583,7 @@ const UI_TRANSLATIONS = {
 };
 
 UI_TRANSLATIONS.en.premiumOverlayLocked = "This stage is locked. Unlock it by purchasing the premium stage pack.";
-UI_TRANSLATIONS.ja.premiumOverlayLocked = "有料プラン限定ステージです。";
+UI_TRANSLATIONS.ja.premiumOverlayLocked = "本ステージはプレミアムステージです。プレミアムパス購入で全ステージが解放されます";
 UI_TRANSLATIONS.en.webStorePromoText = "You cleared every free web stage. Find more stages in the App.";
 UI_TRANSLATIONS.ja.webStorePromoText = "おめでとう！Web版のステージをすべてクリアしました。アプリ版ではでもっとたくさんのステージが遊べるようになります。";
 UI_TRANSLATIONS.en.webStorePromoButton = "Get the App";
@@ -4150,7 +4150,7 @@ function updatePremiumStageControls() {
   }
 
   premiumStageOverlay.hidden = false;
-  premiumStageOverlayNote.textContent = `${getUiText("premiumOverlayLocked")} ${getStageDifficultyLabel(stageDifficulty)} ${formatStageNumber(stageNumber)}`;
+  premiumStageOverlayNote.textContent = `${getUiText("premiumOverlayLocked")} `;
 }
 
 function isCurrentStageLocked() {
@@ -5533,7 +5533,19 @@ getStageJsonUi().premiumOverlayHomeButton?.addEventListener("touchend", returnPr
   passive: false,
 });
 getStageJsonUi().premiumOverlayHomeButton?.addEventListener("pointerup", returnPremiumOverlayToHome);
-getStageJsonUi().unlockPremiumButton?.addEventListener("click", () => {
+
+let lastPremiumUnlockRequestMs = 0;
+
+function handlePremiumUnlockRequest(event = null) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+
+  const now = Date.now();
+  if (now - lastPremiumUnlockRequestMs < 600) {
+    return;
+  }
+  lastPremiumUnlockRequestMs = now;
+
   const { stageNumberInput } = getStageJsonUi();
   if (!stageNumberInput) {
     return;
@@ -5562,7 +5574,13 @@ getStageJsonUi().unlockPremiumButton?.addEventListener("click", () => {
   updatePremiumStageControls();
   setStageLoaderStatus(getUiText("premiumUnlockSuccess"));
   void playStageByNumber(stageNumber, stageDifficulty);
+}
+
+getStageJsonUi().unlockPremiumButton?.addEventListener("click", handlePremiumUnlockRequest);
+getStageJsonUi().unlockPremiumButton?.addEventListener("touchend", handlePremiumUnlockRequest, {
+  passive: false,
 });
+getStageJsonUi().unlockPremiumButton?.addEventListener("pointerup", handlePremiumUnlockRequest);
 getStageJsonUi().makerExportJsonButton?.addEventListener("click", () => {
   void exportMakerStageJson();
 });
