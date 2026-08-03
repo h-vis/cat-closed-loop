@@ -10,14 +10,14 @@ if (signingPropertiesFile.exists()) {
 
 android {
     namespace "com.hvis.closedloopdungeon"
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.hvis.closedloopdungeon"
         minSdk 23
-        targetSdk 35
-        versionCode 5
-        versionName "0.1.4"
+        targetSdk 36
+        versionCode 10
+        versionName "0.1.9"
     }
 
     signingConfigs {

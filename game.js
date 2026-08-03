@@ -1429,10 +1429,11 @@ const initialRandomStage = cloneStageDefinition(DEFAULT_RANDOM_STAGE);
 let rememberedRandomStage = initialRandomStage;
 let rememberedTutorialIndex = 0;
 let rememberedMakerStage = createMakerStage();
-const APP_VERSION = "0.1.1";
+const APP_VERSION = "1.0";
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
 const CLEARED_STAGES_STORAGE_KEY = "closedLoopClearedStages";
 const PURCHASED_PREMIUM_PACKS_STORAGE_KEY = "closedLoopPurchasedPremiumPacks";
+const PREMIUM_STAGE_PACK_ID = "premium_stage_pack";
 const REVIEW_UNLOCK_STORAGE_KEY = "closedLoopReviewUnlockEnabled";
 const REVIEW_UNLOCK_TAP_TARGET = 7;
 const REVIEW_UNLOCK_RESET_MS = 1800;
@@ -3513,6 +3514,7 @@ function getScreenUi() {
     gameScreen: document.getElementById("gameScreen"),
     rulesScreen: document.getElementById("rulesScreen"),
     startGameButton: document.getElementById("startGameButton"),
+    homePremiumButton: document.getElementById("homePremiumButton"),
     homeVersionButton: document.getElementById("homeVersionButton"),
     languageSelect: document.getElementById("languageSelect"),
     languageMenuButton: document.getElementById("languageMenuButton"),
@@ -3839,6 +3841,8 @@ function applyUiLanguage() {
   }
   updateLanguageDialogOptions();
   updateHowtoLinks();
+  syncHomePremiumButton();
+  syncWebStoreBadgeLinks();
   updatePremiumStageControls();
 }
 
@@ -3953,6 +3957,14 @@ function setReviewUnlockEnabled() {
   }
 }
 
+function clearReviewUnlockEnabled() {
+  try {
+    globalThis.localStorage?.removeItem(REVIEW_UNLOCK_STORAGE_KEY);
+  } catch (_error) {
+    // Review access is a convenience for store reviewers; storage failure should not block play.
+  }
+}
+
 function mergePurchasedPremiumPackIds(packIds) {
   const purchasedPackIds = loadPurchasedPremiumPackIds();
   let didChange = false;
@@ -3971,6 +3983,21 @@ function mergePurchasedPremiumPackIds(packIds) {
   }
 
   return didChange;
+}
+
+function replacePurchasedPremiumPackIds(packIds) {
+  const normalizedPackIds = Array.isArray(packIds)
+    ? packIds.filter((packId) => typeof packId === "string")
+    : [];
+  savePurchasedPremiumPackIds(normalizedPackIds);
+}
+
+function clearReviewUnlockAndPremiumPacks() {
+  clearReviewUnlockEnabled();
+  replacePurchasedPremiumPackIds([]);
+  refreshStageNumberInputs();
+  syncHomePremiumButton();
+  updatePremiumStageControls();
 }
 
 function getAllPremiumPackIds() {
@@ -4055,6 +4082,29 @@ function requestNativePremiumPurchase(packId) {
   return "not-native";
 }
 
+function requestHomePremiumPurchase() {
+  if (isPremiumPackPurchased(PREMIUM_STAGE_PACK_ID)) {
+    return;
+  }
+
+  const purchaseRequestState = requestNativePremiumPurchase(PREMIUM_STAGE_PACK_ID);
+  if (purchaseRequestState === "started") {
+    setStageLoaderStatus(getUiText("premiumPurchaseStarted"));
+    return;
+  }
+
+  if (purchaseRequestState === "failed" || purchaseRequestState === "unavailable") {
+    setStageLoaderStatus(getUiText("premiumBillingUnavailable"), true);
+    return;
+  }
+
+  unlockPremiumPack(PREMIUM_STAGE_PACK_ID);
+  syncHomePremiumButton();
+  refreshStageNumberInputs();
+  updatePremiumStageControls();
+  setStageLoaderStatus(getUiText("premiumUnlockSuccess"));
+}
+
 function restoreNativePurchases() {
   const nativeBilling = globalThis.ClosedLoopBilling;
   if (!nativeBilling?.restorePurchases) {
@@ -4070,9 +4120,13 @@ globalThis.closedLoopBilling = {
       return;
     }
 
-    mergePurchasedPremiumPackIds(packIds);
+    replacePurchasedPremiumPackIds(packIds);
     refreshStageNumberInputs();
+    syncHomePremiumButton();
     updatePremiumStageControls();
+  },
+  clearReviewUnlockAndPremiumPacks() {
+    clearReviewUnlockAndPremiumPacks();
   },
   setBillingStatus(status) {
     const statusTextByCode = {
@@ -4098,8 +4152,17 @@ function enableReviewUnlock() {
   setReviewUnlockEnabled();
   mergePurchasedPremiumPackIds(getAllPremiumPackIds());
   refreshStageNumberInputs();
+  syncHomePremiumButton();
   updatePremiumStageControls();
   setStageLoaderStatus(getUiText("reviewUnlockEnabled"));
+}
+
+function disableReviewUnlock() {
+  clearReviewUnlockEnabled();
+  refreshStageNumberInputs();
+  syncHomePremiumButton();
+  updatePremiumStageControls();
+  setStageLoaderStatus("Review access disabled.");
 }
 
 function resetReviewUnlockTapCounter() {
@@ -4118,13 +4181,41 @@ function handleHomeVersionTap() {
 
   if (reviewUnlockTapCount >= REVIEW_UNLOCK_TAP_TARGET) {
     resetReviewUnlockTapCounter();
-    enableReviewUnlock();
+    if (isReviewUnlockEnabled()) {
+      disableReviewUnlock();
+    } else {
+      enableReviewUnlock();
+    }
     return;
   }
 
   reviewUnlockResetTimerId = globalThis.setTimeout(() => {
     resetReviewUnlockTapCounter();
   }, REVIEW_UNLOCK_RESET_MS);
+}
+
+function syncHomePremiumButton() {
+  const { homePremiumButton } = getScreenUi();
+  if (!homePremiumButton) {
+    return;
+  }
+
+  homePremiumButton.hidden = !isAndroidWebViewPage;
+  if (!isAndroidWebViewPage) {
+    return;
+  }
+
+  const isPurchased = isPremiumPackPurchased(PREMIUM_STAGE_PACK_ID);
+  homePremiumButton.classList.toggle("is-purchased", isPurchased);
+  homePremiumButton.classList.toggle("is-locked", !isPurchased);
+  homePremiumButton.setAttribute("aria-pressed", isPurchased ? "true" : "false");
+  homePremiumButton.disabled = isPurchased;
+}
+
+function syncWebStoreBadgeLinks() {
+  for (const link of document.querySelectorAll(".web-store-badge-link")) {
+    link.hidden = isAndroidWebViewPage;
+  }
 }
 
 function updatePremiumStageControls() {
@@ -5443,6 +5534,7 @@ async function handleStageNumberEnter(event) {
 
 getStageModeKey();
 applyUiLanguage();
+syncWebStoreBadgeLinks();
 if (isReviewUnlockEnabled()) {
   mergePurchasedPremiumPackIds(getAllPremiumPackIds());
 }
@@ -5453,6 +5545,7 @@ void Promise.all([
   loadPremiumPackConfig(),
 ]).then(([loaded]) => {
   refreshStageNumberInputs();
+  syncHomePremiumButton();
   if (loaded) {
     setStageLoaderStatus(`Built-in stages loaded: ${buildStageImportSummary(getStageJsonState())}`);
   }
@@ -5494,9 +5587,8 @@ getScreenUi().startGameButton?.addEventListener("click", () => {
   showGameScreen();
   void playStageByNumber();
 });
-getScreenUi().homeVersionButton?.addEventListener("click", () => {
-  handleHomeVersionTap();
-});
+getScreenUi().homePremiumButton?.addEventListener("click", requestHomePremiumPurchase);
+getScreenUi().homeVersionButton?.addEventListener("pointerup", handleHomeVersionTap);
 getScreenUi().gameHowtoButton?.addEventListener("click", () => {
   saveHowtoReturnState();
 });

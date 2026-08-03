@@ -68,7 +68,7 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         webView.setVerticalScrollBarEnabled(false);
         webView.setHorizontalScrollBarEnabled(false);
-        webView.loadUrl("file:///android_asset/index.html?android=1&v=0.1.4");
+        webView.loadUrl("file:///android_asset/index.html?android=1&v=0.1.9");
 
         setupBillingClient();
     }
@@ -185,7 +185,7 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
         billingClient.queryPurchasesAsync(params, (billingResult, purchases) -> {
             logBillingResult("queryPurchasesAsync", billingResult);
             if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-                handlePurchases(purchases);
+                syncPurchasesFromGooglePlay(purchases);
             }
         });
     }
@@ -262,6 +262,39 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
         }
     }
 
+    private void syncPurchasesFromGooglePlay(List<Purchase> purchases) {
+        Set<String> verifiedProducts = new HashSet<>();
+
+        for (Purchase purchase : purchases) {
+            if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED) {
+                continue;
+            }
+
+            if (!purchase.getProducts().contains(PREMIUM_PRODUCT_ID)) {
+                continue;
+            }
+
+            verifiedProducts.add(PREMIUM_PRODUCT_ID);
+
+            if (!purchase.isAcknowledged()) {
+                AcknowledgePurchaseParams acknowledgeParams = AcknowledgePurchaseParams.newBuilder()
+                    .setPurchaseToken(purchase.getPurchaseToken())
+                    .build();
+                billingClient.acknowledgePurchase(acknowledgeParams, billingResult -> {
+                    logBillingResult("acknowledgePurchaseFromSync", billingResult);
+                    notifyBillingStatus(
+                        billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
+                            ? "purchaseComplete"
+                            : "acknowledgeFailed"
+                    );
+                });
+            }
+        }
+
+        replacePurchasedProducts(verifiedProducts);
+        notifyPurchasedProducts();
+    }
+
     private void rememberPurchasedProduct(String productId) {
         Set<String> purchasedProducts = new HashSet<>(
             purchasePreferences.getStringSet(PURCHASED_PRODUCTS_KEY, Collections.emptySet())
@@ -269,6 +302,12 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
         purchasedProducts.add(productId);
         purchasePreferences.edit()
             .putStringSet(PURCHASED_PRODUCTS_KEY, purchasedProducts)
+            .apply();
+    }
+
+    private void replacePurchasedProducts(Set<String> productIds) {
+        purchasePreferences.edit()
+            .putStringSet(PURCHASED_PRODUCTS_KEY, new HashSet<>(productIds))
             .apply();
     }
 
@@ -293,6 +332,10 @@ public class MainActivity extends Activity implements PurchasesUpdatedListener {
 
     private void notifyBillingStatus(String status) {
         runJavascript("window.closedLoopBilling?.setBillingStatus('" + status + "');");
+    }
+
+    private void clearReviewUnlockAndNotifyPurchasedProducts() {
+        runJavascript("window.closedLoopBilling?.clearReviewUnlockAndPremiumPacks();");
     }
 
     private void logBillingResult(String operation, BillingResult billingResult) {

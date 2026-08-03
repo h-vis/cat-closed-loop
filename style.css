@@ -277,21 +277,13 @@ body {
   align-self: center;
   margin-top: 4px;
   padding: 4px 8px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
   color: rgba(243, 223, 177, 0.72);
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-shadow: none;
-}
-
-.home-version-button:hover,
-.home-version-button:active {
-  filter: none;
-  transform: none;
-  color: rgba(247, 215, 119, 0.92);
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .language-field {
@@ -313,6 +305,103 @@ body {
   align-items: stretch;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.home-premium-button {
+  justify-self: center;
+  width: 72px;
+  height: 72px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  line-height: 0;
+}
+
+.home-premium-button:disabled {
+  background: transparent;
+  cursor: default;
+}
+
+.home-premium-button:hover,
+.home-premium-button:active {
+  filter: none;
+  transform: none;
+}
+
+.home-premium-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: filter 0.18s ease, opacity 0.18s ease;
+}
+
+.home-premium-button.is-locked .home-premium-icon {
+  filter: grayscale(1) saturate(0.2);
+  opacity: 0.38;
+}
+
+.home-premium-button.is-purchased .home-premium-icon {
+  filter: none;
+  opacity: 1;
+}
+
+.web-store-badge-link {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 7px 13px 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 7px;
+  background: #050505;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.24);
+}
+
+.web-store-badge-link[hidden] {
+  display: none;
+}
+
+.web-store-badge-link:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.web-store-badge-link:active {
+  transform: translateY(0);
+}
+
+.web-store-badge-link-game {
+  margin: 18px auto 0;
+}
+
+.web-store-badge-mark {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
+.web-store-badge-copy {
+  display: grid;
+  gap: 1px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.web-store-badge-copy span {
+  font-size: 0.58rem;
+  font-weight: 600;
+}
+
+.web-store-badge-copy strong {
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .icon-button {
