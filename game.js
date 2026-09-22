@@ -21,11 +21,11 @@ const CONFIG = {
   warpStrokeStyle: "#3b1a75",
   lateWarpFillStyle: "#22d3ee",
   lateWarpStrokeStyle: "#0e7490",
-  loopCellFillStyle: "rgba(22, 94, 171, 0.92)",
-  loopCellStrokeStyle: "#0f447e",
-  drawingCellFillStyle: "rgba(22, 94, 171, 0.56)",
-  drawingCellStrokeStyle: "rgba(15, 68, 126, 0.78)",
-  gridLineStyle: "rgba(39, 61, 87, 0.16)",
+  loopCellFillStyle: "rgba(40, 171, 235, 0.58)",
+  loopCellStrokeStyle: "#a3efff",
+  drawingCellFillStyle: "rgba(88, 204, 255, 0.42)",
+  drawingCellStrokeStyle: "#dcfaff",
+  gridLineStyle: "rgba(35, 32, 29, 0.36)",
   overlayFillStyle: "rgba(12, 25, 42, 0.62)",
   touchDrawingCommitRatio: 0.68,
 };
@@ -2656,6 +2656,95 @@ function finishDrawing(event) {
 
 function clearCanvas() {
   context.clearRect(0, 0, canvas.width, canvas.height);
+  drawDungeonFloor();
+}
+
+// 床の細部はサイズ変更時だけ生成し、操作中はキャッシュを転写する。
+function drawDungeonFloor() {
+  let floor = drawDungeonFloor.cache;
+  if (!floor || floor.width !== canvas.width || floor.height !== canvas.height) {
+    floor = document.createElement("canvas");
+    floor.width = canvas.width;
+    floor.height = canvas.height;
+    const brush = floor.getContext("2d");
+    const size = CONFIG.cellSize;
+    let seed = 173;
+    const random = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+    brush.fillStyle = "#373b3b";
+    brush.fillRect(0, 0, floor.width, floor.height);
+    for (let y = 0; y < floor.height; y += size) {
+      for (let x = 0; x < floor.width; x += size) {
+        const tone = Math.floor(random() * 19);
+        const shade = brush.createLinearGradient(x, y, x + size, y + size);
+        shade.addColorStop(0, `rgb(${150 + tone},${146 + tone},${131 + tone})`);
+        shade.addColorStop(1, `rgb(${117 + tone},${117 + tone},${108 + tone})`);
+        brush.fillStyle = shade;
+        brush.fillRect(x + 1, y + 1, size - 2, size - 2);
+        brush.strokeStyle = "rgba(236,224,194,0.38)";
+        brush.beginPath();
+        brush.moveTo(x + 1.5, y + size - 2);
+        brush.lineTo(x + 1.5, y + 1.5);
+        brush.lineTo(x + size - 2, y + 1.5);
+        brush.stroke();
+        // 小さな斑点と短いひびで、アイコンを邪魔しない石の質感を作る。
+        for (let n = 0; n < 95; n += 1) {
+          brush.fillStyle = random() > 0.5 ? "rgba(240,224,185,0.10)" : "rgba(39,43,40,0.10)";
+          brush.fillRect(x + 2 + random() * (size - 5), y + 2 + random() * (size - 5), 1 + random() * 3, 1 + random() * 2);
+        }
+        if (random() < 0.58) {
+          let crackX = x + 7 + random() * (size - 14);
+          let crackY = y + 2;
+          brush.strokeStyle = "rgba(50,54,51,0.3)";
+          brush.beginPath();
+          brush.moveTo(crackX, crackY);
+          for (let n = 0; n < 4; n += 1) {
+            crackX += (random() - 0.5) * 9;
+            crackY += 3 + random() * 4;
+            brush.lineTo(crackX, crackY);
+          }
+          brush.stroke();
+        }
+        const edge = x === 0 || y === 0 || x + size >= floor.width || y + size >= floor.height;
+        if (edge && random() < 0.6) {
+          for (let n = 0; n < 17; n += 1) {
+            brush.fillStyle = ["#647344", "#74804a", "#4a5c3d"][n % 3];
+            brush.fillRect(x + random() * 19, y + random() * 9, 2 + random() * 3, 2);
+          }
+        }
+      }
+    }
+    const light = brush.createRadialGradient(floor.width * 0.5, floor.height * 0.4, 0, floor.width * 0.5, floor.height * 0.4, Math.max(floor.width, floor.height) * 0.75);
+    light.addColorStop(0, "rgba(255,226,158,0.09)");
+    light.addColorStop(1, "rgba(11,24,35,0.32)");
+    brush.fillStyle = light;
+    brush.fillRect(0, 0, floor.width, floor.height);
+    drawDungeonFloor.cache = floor;
+  }
+  context.drawImage(floor, 0, 0);
+}
+
+function drawLuminousCells(cells, isDrawing = false) {
+  context.save();
+  const size = CONFIG.cellSize;
+  for (const cell of cells) {
+    const x = cell.x * size;
+    const y = cell.y * size;
+    const light = context.createLinearGradient(x, y, x + size, y + size);
+    light.addColorStop(0, isDrawing ? "rgba(160,238,255,0.7)" : "rgba(132,227,255,0.72)");
+    light.addColorStop(1, "rgba(23,135,211,0.52)");
+    context.fillStyle = light;
+    context.fillRect(x + 1, y + 1, size - 2, size - 2);
+    context.shadowColor = "#37caff";
+    context.shadowBlur = 8;
+    context.strokeStyle = isDrawing ? CONFIG.drawingCellStrokeStyle : CONFIG.loopCellStrokeStyle;
+    context.lineWidth = 1.5;
+    context.strokeRect(x + 1.5, y + 1.5, size - 3, size - 3);
+    context.shadowBlur = 0;
+  }
+  context.restore();
 }
 
 function drawCells(cells, fillStyle, strokeStyle) {
@@ -2707,11 +2796,7 @@ function drawLoopCells() {
     return;
   }
 
-  drawCells(
-    gameState.loop.drawnLineCells,
-    CONFIG.loopCellFillStyle,
-    CONFIG.loopCellStrokeStyle
-  );
+  drawLuminousCells(gameState.loop.drawnLineCells);
 }
 
 drawWallBlocks = function drawWallBlocksWithIcons() {
@@ -2719,11 +2804,35 @@ drawWallBlocks = function drawWallBlocksWithIcons() {
     return;
   }
 
-  drawCells(
-    gameState.wallBlocks,
-    CONFIG.wallBlockFillStyle,
-    CONFIG.wallBlockStrokeStyle
-  );
+  context.save();
+  const size = CONFIG.cellSize;
+  for (const cell of gameState.wallBlocks) {
+    const x = cell.x * size;
+    const y = cell.y * size;
+    const stone = context.createLinearGradient(x, y, x + size, y + size);
+    stone.addColorStop(0, "#123451");
+    stone.addColorStop(0.45, "#194f76");
+    stone.addColorStop(1, "#28658a");
+    context.fillStyle = stone;
+    context.fillRect(x + 1, y + 1, size - 2, size - 2);
+    context.strokeStyle = "#0d263d";
+    context.lineWidth = 3;
+    context.strokeRect(x + 2, y + 2, size - 4, size - 4);
+    context.strokeStyle = "#4783a2";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(x + 4, y + size - 4);
+    context.lineTo(x + size - 4, y + size - 4);
+    context.lineTo(x + size - 4, y + 4);
+    context.stroke();
+    context.strokeStyle = "rgba(9,30,52,0.55)";
+    context.beginPath();
+    context.moveTo(x + 10, y + 3);
+    context.lineTo(x + 15, y + 11);
+    context.lineTo(x + 12, y + 17);
+    context.stroke();
+  }
+  context.restore();
 }
 
 function drawCurrentStroke() {
@@ -2731,11 +2840,7 @@ function drawCurrentStroke() {
     return;
   }
 
-  drawCells(
-    getUniqueCells(gameState.drawing.cells),
-    CONFIG.drawingCellFillStyle,
-    CONFIG.drawingCellStrokeStyle
-  );
+  drawLuminousCells(getUniqueCells(gameState.drawing.cells), true);
 }
 
 function drawGrid() {
@@ -8580,6 +8685,9 @@ function drawSpriteAtCell(spriteKey, cell, fallbackDraw) {
 
   context.save();
   context.imageSmoothingEnabled = false;
+  context.shadowColor = "rgba(12,17,22,0.65)";
+  context.shadowBlur = 3;
+  context.shadowOffsetY = 2;
   context.drawImage(
     spriteState.image,
     sprite.x,
@@ -8676,6 +8784,8 @@ function drawWarpIconCollection(warps, iconState) {
 
     context.save();
     context.imageSmoothingEnabled = false;
+    context.shadowColor = warps === gameState.lateWarps ? "#26d9ff" : "#bb55ff";
+    context.shadowBlur = 12;
     context.drawImage(iconState.image, pixelX, pixelY, size, size);
     context.restore();
   }
