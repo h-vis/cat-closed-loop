@@ -1,9 +1,9 @@
 :root {
   --bg: #101820;
   --panel: #1a2530;
-  --panel-border: #6f6249;
+  --panel-border: #dba647;
   --text: #f5ead1;
-  --muted: #d8c79f;
+  --muted: #ddceb0;
   --accent: #d8a83e;
   --accent-soft: rgba(216, 168, 62, 0.2);
   --button: #183b61;
@@ -15,6 +15,12 @@
   --gold-dark: #8e6420;
   --parchment: #f3dfb1;
   --parchment-edge: #a57b31;
+  --surface: linear-gradient(145deg, #28343b, #111b22 65%, #0c1319);
+  --gold-frame: linear-gradient(135deg, #fff0ae, #dfa337 18%, #76501e 36%, #ffdc76 55%, #bd7b22 78%, #fff0ae);
+  --blue-face: linear-gradient(180deg, #3297c2, #15618e 46%, #114971 50%, #093557);
+  --green-face: linear-gradient(180deg, #77c74b, #339632 46%, #177333 50%, #10522c);
+  --cream-face: linear-gradient(180deg, #fff5d5, #f5d99d 52%, #e6bd71);
+  --frame-shadow: inset 0 0 0 2px #382a19, inset 0 0 0 4px #ffe7a066, 0 5px 0 #080e13, 0 12px 28px #0006;
 }
 
 * {
@@ -24,14 +30,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    radial-gradient(circle at top, rgba(216, 168, 62, 0.14), transparent 32%),
-    linear-gradient(180deg, #1d2833 0%, var(--bg) 100%);
-  background-size: 34px 34px, 34px 34px, auto, auto;
+  background: #121b24 url("sozai/dungeon-ui-background.png") center top / cover fixed;
   color: var(--text);
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family: "Trebuchet MS", "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
 }
 
 .page {
@@ -54,17 +55,13 @@ body {
 }
 
 .game-panel {
+  position: relative;
   width: min(100%, 980px);
-  padding: 24px;
-  border: 4px solid var(--panel-border);
+  padding: 28px;
+  border: 4px solid transparent;
   border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 12px, transparent 12px 26px),
-    linear-gradient(180deg, #25313d 0%, var(--panel) 100%);
-  box-shadow:
-    inset 0 0 0 2px rgba(0, 0, 0, 0.42),
-    inset 0 0 0 6px rgba(255, 235, 168, 0.06),
-    0 18px 48px var(--shadow);
+  background: var(--surface) padding-box, var(--gold-frame) border-box;
+  box-shadow: var(--frame-shadow), 0 24px 60px #0007;
 }
 
 .home-panel {
@@ -171,9 +168,10 @@ body {
   gap: 14px;
   align-items: center;
   padding: 12px;
-  border: 2px solid rgba(255, 240, 199, 0.15);
-  border-radius: 8px;
-  background: rgba(13, 23, 35, 0.34);
+  border: 1px solid #ae864b;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 3px #ffffff05;
 }
 
 .stage-manager-thumb {
@@ -430,16 +428,12 @@ body {
 }
 
 .language-dialog {
-  width: min(100%, 320px);
-  padding: 14px;
-  border: 4px solid var(--panel-border);
-  border-radius: 14px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 12px, transparent 12px 26px),
-    linear-gradient(180deg, #25313d 0%, var(--panel) 100%);
-  box-shadow:
-    inset 0 0 0 2px rgba(0, 0, 0, 0.42),
-    0 18px 48px rgba(0, 0, 0, 0.45);
+  width: min(100%, 360px);
+  padding: 22px;
+  border: 4px solid transparent;
+  border-radius: 18px;
+  background: var(--surface) padding-box, var(--gold-frame) border-box;
+  box-shadow: var(--frame-shadow), 0 24px 80px #000a;
 }
 
 .language-option-list {
@@ -448,12 +442,12 @@ body {
 }
 
 .language-option {
+  background: var(--cream-face) padding-box, var(--gold-frame) border-box;
+  color: #39270f;
+  text-shadow: 0 1px #fff2cd;
   width: 100%;
   justify-content: space-between;
-  color: #2d2415;
-  background: linear-gradient(180deg, #fff0c7 0%, var(--parchment) 100%);
   text-align: left;
-  text-shadow: none;
 }
 
 .language-option.is-selected {
@@ -526,9 +520,10 @@ body {
   gap: 12px;
   margin: 0;
   padding: 12px 14px;
-  border: 1px solid rgba(29, 49, 77, 0.12);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #ae864b;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 3px #ffffff05;
 }
 
 .label {
@@ -551,16 +546,15 @@ body {
 
 .game-canvas-shell {
   position: relative;
-  width: min(100%, 720px);
-  margin: 0 auto;
-  padding: clamp(9px, 2.5vw, 20px);
-  border: 2px solid #9b7c3e;
-  border-radius: 5px;
+  width: min(100%, 820px);
+  margin: 24px auto 0;
+  padding: clamp(12px, 2.5vw, 22px);
+  border: 5px solid transparent;
+  border-radius: 15px;
   background:
-    repeating-linear-gradient(0deg, transparent 0 23px, #0c1520 24px 27px),
-    repeating-linear-gradient(90deg, #34404b 0 27px, #152330 28px 31px, #26343e 32px 61px);
-  box-shadow: inset 0 0 0 3px #131c25, inset 0 0 14px 5px #080f18,
-    0 0 0 3px #121b26, 0 14px 30px #0008;
+    repeating-linear-gradient(0deg, #1c2b32 0 23px, #0b141b 24px 27px) padding-box,
+    var(--gold-frame) border-box;
+  box-shadow: var(--frame-shadow), inset 0 0 18px 8px #0009;
 }
 
 /* 松明は盤面外に置き、マスの判定とタッチ領域を遮らない。 */
@@ -583,8 +577,7 @@ body {
 .game-canvas-shell::after { right: 2px; }
 
 #gameScreen {
-  background: radial-gradient(ellipse at top, #35424c 0%, #18242e 55%, #111a24 100%);
-  border-color: #756342;
+  background: var(--surface) padding-box, var(--gold-frame) border-box;
 }
 
 @media (max-width: 420px) {
@@ -649,25 +642,31 @@ body {
   margin: 16px 0 0;
   padding: 12px 14px;
   border: 2px solid var(--parchment-edge);
-  border-radius: 8px;
-  background: linear-gradient(180deg, #fff0c7 0%, var(--parchment) 100%);
-  color: var(--muted);
+  border-radius: 10px;
+  background: var(--cream-face);
+  color: #39270f;
   line-height: 1.6;
   white-space: pre-line;
 }
 
-button {
+button,
+.button-link {
   appearance: none;
-  border: 2px solid var(--gold-dark);
-  border-radius: 8px;
-  padding: 12px 20px;
-  background: linear-gradient(180deg, #224c76 0%, var(--button) 58%, #0f2740 100%);
-  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  border: 3px solid transparent;
+  border-radius: 13px;
+  padding: 12px 22px;
+  background: var(--blue-face) padding-box, var(--gold-frame) border-box;
+  color: #fff8e4;
   font: inherit;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.38);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 4px 0 #071624;
+  text-shadow: 0 2px 2px #061725;
+  box-shadow: var(--frame-shadow);
   transition: filter 0.16s ease, transform 0.16s ease;
 }
 
@@ -687,16 +686,11 @@ button.is-active {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
-button:disabled {
-  background: #97a3b3;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.secondary-button {
-  background: linear-gradient(180deg, #fff0c7 0%, var(--parchment) 100%);
-  color: #2d2415;
-  text-shadow: none;
+.secondary-button,
+.button-link.secondary-button {
+  background: var(--cream-face) padding-box, var(--gold-frame) border-box;
+  color: #39270f;
+  text-shadow: 0 1px #fff2cd;
 }
 
 .secondary-button:hover {
@@ -704,28 +698,7 @@ button:disabled {
 }
 
 .button-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  border: 2px solid var(--gold-dark);
-  border-radius: 8px;
-  padding: 12px 20px;
-  background: linear-gradient(180deg, #224c76 0%, var(--button) 58%, #0f2740 100%);
-  color: #fff;
-  font: inherit;
-  font-weight: 700;
   text-decoration: none;
-  cursor: pointer;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.38);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 4px 0 #071624;
-  transition: filter 0.16s ease, transform 0.16s ease;
-}
-
-.button-link.secondary-button {
-  background: linear-gradient(180deg, #fff0c7 0%, var(--parchment) 100%);
-  color: #2d2415;
-  text-shadow: none;
 }
 
 .button-link.secondary-button:hover {
@@ -777,26 +750,25 @@ button:disabled {
 }
 
 .stage-loader {
-  margin-bottom: 14px;
-  padding: 14px;
-  border: 2px solid var(--parchment-edge);
-  border-radius: 10px;
-  background: linear-gradient(180deg, #fff0c7 0%, var(--parchment) 100%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), 0 4px 0 #5b421b;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 3px solid transparent;
+  border-radius: 13px;
+  background: var(--surface) padding-box, var(--gold-frame) border-box;
+  box-shadow: var(--frame-shadow);
 }
 
 .top-stage-loader {
-  margin-top: 0;
-  margin-bottom: 0;
-  padding: 6px 8px;
+  margin: 0 0 8px;
+  padding: 12px 16px;
 }
 
 .top-stage-loader-row {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   justify-content: flex-start;
-  gap: 4px;
+  gap: 14px;
   align-items: center;
-  font-size: 0.78rem;
+  font-size: 1rem;
 }
 
 .stage-loader-row,
@@ -818,32 +790,34 @@ button:disabled {
 
 .stage-row-label {
   flex: 0 0 auto;
-  font-weight: 700;
-  color: #2d2415;
+  font-weight: 800;
+  color: var(--text);
   white-space: nowrap;
-  font-size: 0.78rem;
+  font-size: 1rem;
+  text-shadow: 0 2px #000;
 }
 
 .stage-field input,
 .stage-field select {
-  width: 68px;
+  width: 100px;
   min-width: 0;
-  padding: 5px 6px;
-  border: 2px solid #8a6a2f;
-  border-radius: 7px;
-  background: linear-gradient(180deg, #fffaf0 0%, #f6e7c4 100%);
-  color: #2d2415;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 3px solid #d6a247;
+  border-radius: 10px;
+  background: var(--cream-face);
+  color: #39270f;
+  box-shadow: inset 0 0 0 2px #fff4cf, 0 3px 0 #090e13;
   font: inherit;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 #stageDifficultySelect {
-  width: 92px;
+  width: 142px;
 }
 
 #stageNumberInput {
-  width: 72px;
+  width: 112px;
 }
 
 .top-stage-loader-row .stage-field {
@@ -906,9 +880,10 @@ button:disabled {
 .rules-lead {
   margin-bottom: 18px;
   padding: 16px 18px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(227, 239, 251, 0.9), rgba(255, 255, 255, 0.95));
-  border: 1px solid rgba(29, 49, 77, 0.1);
+  border: 1px solid #ae864b;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 3px #ffffff05;
 }
 
 .rules-lead p {
@@ -924,9 +899,10 @@ button:disabled {
 
 .rule-card {
   padding: 16px;
-  border: 1px solid rgba(29, 49, 77, 0.12);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ae864b;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 3px #ffffff05;
 }
 
 .rule-card h3 {
@@ -981,9 +957,10 @@ button:disabled {
 .rules-notes {
   margin-top: 18px;
   padding: 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(29, 49, 77, 0.12);
+  border: 1px solid #ae864b;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 3px #ffffff05;
 }
 
 .rules-notes h3 {
@@ -1000,9 +977,10 @@ button:disabled {
 .maker-panel {
   margin-top: 12px;
   padding: 16px;
-  border: 1px solid rgba(29, 49, 77, 0.12);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #ae864b;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 3px #ffffff05;
 }
 
 .maker-size-row,
@@ -1032,26 +1010,28 @@ button:disabled {
 
 .maker-field input {
   width: 88px;
+  min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid rgba(29, 49, 77, 0.2);
-  border-radius: 12px;
-  background: #ffffff;
-  color: var(--text);
+  border: 2px solid var(--parchment-edge);
+  border-radius: 9px;
+  background: var(--cream-face);
+  color: #39270f;
   font: inherit;
 }
 
 .maker-tool {
-  background: #e6eef7;
+  background: var(--surface) padding-box, var(--gold-frame) border-box;
   color: var(--text);
 }
 
 .maker-tool:hover {
-  background: #d7e5f4;
+  filter: brightness(1.2);
 }
 
 .maker-tool.is-active {
-  background: var(--accent);
-  color: #ffffff;
+  background: var(--cream-face) padding-box, var(--gold-frame) border-box;
+  color: #39270f;
+  text-shadow: none;
 }
 
 .maker-hint {
@@ -1065,22 +1045,147 @@ button:disabled {
   min-height: 180px;
   margin-top: 12px;
   padding: 12px 14px;
-  border: 1px solid rgba(29, 49, 77, 0.2);
-  border-radius: 14px;
-  background: #f7fafc;
-  color: var(--text);
+  border: 2px solid var(--parchment-edge);
+  border-radius: 9px;
+  background: var(--cream-face);
+  color: #39270f;
   font: 0.92rem/1.5 "Consolas", "SFMono-Regular", monospace;
   resize: vertical;
 }
 
+/* Shared dungeon UI: green actions, blue controls, parchment navigation. */
+#startGameButton,
+#loadStageButton,
+#makerTestButton,
+#makerExportJsonButton,
+#tutorialNextButton,
+#unlockPremiumButton {
+  background: var(--green-face) padding-box, var(--gold-frame) border-box;
+  color: #fffce9;
+  text-shadow: 0 2px 2px #103717;
+}
+
+#startGameButton {
+  flex: 1 1 220px;
+  min-height: 62px;
+  font-size: 1.15rem;
+}
+
+#startGameButton::before,
+#makerTestButton::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 14px solid #fff8df;
+  filter: drop-shadow(0 2px 1px #163819);
+}
+
+#resetButton {
+  min-width: 180px;
+}
+
+.panel-action-row {
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.game-panel::before,
+.game-panel::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #fff0b1;
+  background: var(--gold-frame);
+  box-shadow: 0 0 10px #ffba4766;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.game-panel::before { left: 10px; }
+.game-panel::after { right: 10px; }
+
+.home-layout { gap: 28px; }
+.home-hero-image { max-width: none; }
+.home-copy h2 { line-height: 1.2; }
+.home-copy p { max-width: none; }
+.home-secondary-actions { flex: 1 1 auto; }
+.home-secondary-actions .button-link { flex: 1; }
+
+.hud { margin-top: 24px; }
+.web-store-badge-link { border-color: #d6bd82; }
+.status-grid p span:last-child { color: #ffe29a; }
+.stage-field { color: var(--text); }
+.rule-icon { background-color: #d4c296; }
+
+.premium-stage-overlay,
+.modal-backdrop { background: #060d17c9; }
+
+.premium-stage-overlay-card {
+  border: 3px solid transparent;
+  border-radius: 14px;
+  background: var(--surface) padding-box, var(--gold-frame) border-box;
+  box-shadow: var(--frame-shadow);
+}
+
+.howto-step {
+  padding: 20px;
+  border: 1px solid #ae864b;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.howto-step p { margin-top: 20px; color: var(--text); }
+
+button.is-active,
+.language-option.is-selected {
+  border-color: #ffdf86;
+  background: var(--cream-face) padding-box, var(--gold-frame) border-box;
+  color: #39270f;
+  text-shadow: none;
+  box-shadow: inset 0 0 0 2px #755321, 0 0 0 2px #090f16, 0 4px 0 #090f16;
+}
+
+button:disabled {
+  background: linear-gradient(#424e53, #253139) padding-box, linear-gradient(#a69573, #68583e) border-box;
+  color: #bdc1be;
+  filter: saturate(0.4);
+  text-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Preserve the image-only premium badge's existing locked/purchased states. */
+.home-premium-button,
+.home-premium-button:disabled { background: transparent; box-shadow: none; }
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #fff0ac;
+  outline-offset: 5px;
+}
+
+button:not(:disabled):active,
+.button-link:active { transform: translateY(2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  button, .button-link, .home-premium-icon { transition: none; }
+}
+
+/* Layout styles must not reveal controls hidden by game state. */
+[hidden] { display: none !important; }
+
 @media (max-width: 560px) {
   .game-panel {
-    padding: 8px;
+    padding: 14px 10px;
     border-radius: 14px;
   }
 
   .page {
-    padding: 44px 4px 12px;
+    padding: 20px 8px;
   }
 
   .page-title {
@@ -1122,8 +1227,9 @@ button:disabled {
 
   .top-stage-loader-row {
     flex-direction: row;
-    gap: 3px;
-    font-size: 0.7rem;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.85rem;
   }
 
   .panel-action-row {
@@ -1171,26 +1277,36 @@ button:disabled {
   .maker-field input,
   .stage-field input,
   .stage-field select {
-    width: 56px;
-    padding: 4px 5px;
-    font-size: 0.7rem;
+    width: 72px;
+    min-height: 44px;
+    padding: 6px;
+    font-size: 0.85rem;
   }
 
   #stageDifficultySelect {
-    width: 76px;
+    width: 104px;
   }
 
   #stageNumberInput {
-    width: 58px;
+    width: 80px;
   }
 
   .stage-row-label {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
   }
 
   .top-stage-loader {
-    padding: 5px 6px;
+    padding: 10px 8px;
   }
+
+  .home-layout { gap: 22px; }
+  .home-copy h2 { font-size: clamp(1.7rem, 7vw, 2.4rem); }
+  .home-actions { gap: 16px; }
+  .maker-palette { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .maker-palette button { padding-inline: 8px; }
+  .home-secondary-actions .button-link { padding-inline: 12px; }
+  .howto-step { padding: 12px; }
+  .game-canvas-shell { margin-top: 18px; }
 
   .rules-header {
     flex-direction: column;

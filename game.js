@@ -3178,10 +3178,28 @@ function drawOverlay() {
   context.fillStyle = CONFIG.overlayFillStyle;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  context.fillStyle = "#ffffff";
+  const plaqueWidth = Math.min(canvas.width - 32, 390);
+  const plaqueHeight = Math.min(canvas.height - 24, 104);
+  const plaqueX = (canvas.width - plaqueWidth) / 2;
+  const plaqueY = (canvas.height - plaqueHeight) / 2;
+  const plaqueFill = context.createLinearGradient(0, plaqueY, 0, plaqueY + plaqueHeight);
+  plaqueFill.addColorStop(0, "#29363d");
+  plaqueFill.addColorStop(1, "#101a22");
+  context.fillStyle = plaqueFill;
+  context.fillRect(plaqueX, plaqueY, plaqueWidth, plaqueHeight);
+  context.strokeStyle = "#e6b853";
+  context.lineWidth = 3;
+  context.strokeRect(plaqueX, plaqueY, plaqueWidth, plaqueHeight);
+  context.strokeStyle = "#86612b";
+  context.lineWidth = 1;
+  context.strokeRect(plaqueX + 6, plaqueY + 6, plaqueWidth - 12, plaqueHeight - 12);
+  context.fillStyle = gameState.gameOver ? "#f4d6b3" : "#ffe69a";
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.font = "bold 44px Trebuchet MS, Segoe UI, sans-serif";
+  context.shadowColor = "#000000";
+  context.shadowOffsetY = 3;
+  context.shadowBlur = 3;
+  context.font = `bold ${Math.min(40, plaqueWidth / 7)}px Trebuchet MS, Segoe UI, sans-serif`;
   context.fillText(
     gameState.gameOver ? "GAME OVER" : "CLEAR",
     canvas.width / 2,
