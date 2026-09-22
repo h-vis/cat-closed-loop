@@ -56,6 +56,7 @@ tasks.register("syncWebAssets", Copy) {
         include "index.html"
         include "howto.html"
         include "game.js"
+        include "spotlight-tutorial.js"
         include "style.css"
         include "sozai/**"
         include "stage/**"

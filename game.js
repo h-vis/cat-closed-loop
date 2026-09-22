@@ -1442,6 +1442,15 @@ const gameState = createInitialState(cloneStageDefinition(DEFAULT_START_STAGE));
 const isMakerOnlyPage = document.body?.dataset?.appMode === "maker";
 const isAndroidWebViewPage =
   new URLSearchParams(globalThis.location?.search ?? "").get("android") === "1";
+const spotlightTutorial = !isMakerOnlyPage && globalThis.DungeonSpotlight
+  ? globalThis.DungeonSpotlight.create({
+      canvas,
+      main: document.querySelector("main"),
+      getLanguage: () => uiLanguage,
+      canShow: () => gameState.mode === getStageModeKey()
+        && !getScreenUi().gameScreen?.hidden && !isCurrentStageLocked(),
+    })
+  : null;
 
 function applyStage(stage) {
   const stageJsonState = getStageJsonState();
@@ -2563,6 +2572,7 @@ function appendDrawingPath(rawCell) {
 }
 
 function startDrawing(event) {
+  if (spotlightTutorial?.active) return;
   preventTouchBrowserAction(event);
 
   if (isCurrentStageLocked()) {
@@ -3200,11 +3210,21 @@ function drawOverlay() {
   context.shadowOffsetY = 3;
   context.shadowBlur = 3;
   context.font = `bold ${Math.min(40, plaqueWidth / 7)}px Trebuchet MS, Segoe UI, sans-serif`;
+  const canContinue = gameState.clear
+    && (gameState.mode === GAME_MODE.random || gameState.mode === getStageModeKey());
   context.fillText(
     gameState.gameOver ? "GAME OVER" : "CLEAR",
     canvas.width / 2,
-    canvas.height / 2
+    canvas.height / 2 - (canContinue ? 12 : 0)
   );
+  if (canContinue) {
+    context.font = `bold ${Math.min(16, plaqueWidth / 22)}px Trebuchet MS, Segoe UI, sans-serif`;
+    context.fillText(
+      uiLanguage === "ja" ? "クリック／タップで次のステージへ" : "Click / tap to continue",
+      canvas.width / 2,
+      canvas.height / 2 + 28
+    );
+  }
   context.restore();
 }
 
@@ -3314,6 +3334,7 @@ function render() {
 }
 
 function handleKeyDown(event) {
+  if (spotlightTutorial?.active) return;
   const key = event.key.toLowerCase();
 
   if (key === "r") {
@@ -3940,6 +3961,7 @@ function applyUiLanguage() {
   setElementText("homeVersionButton", APP_VERSION_LABEL);
   setElementText("stageRowLabel", getUiText("stage"));
   setElementText("resetButton", getUiText("reset"));
+  setElementText("mechanicHelpButton", uiLanguage === "ja" ? "ギミック説明" : "Mechanic guide");
   setElementText("clearLoopButton", getUiText("clearLoop"));
   setElementText("unlockPremiumButton", getUiText("premiumPackUnlock"));
   setElementText("premiumOverlayHomeButton", getUiText("premiumOverlayHome"));
@@ -3977,6 +3999,7 @@ function setUiLanguage(nextLanguage) {
 }
 
 function showHomeScreen() {
+  spotlightTutorial?.close();
   const { homeScreen, gameScreen, rulesScreen } = getScreenUi();
   const { premiumStageOverlay } = getStageJsonUi();
   console.info("[premium] showHomeScreen");
@@ -4009,6 +4032,7 @@ function showGameScreen() {
 }
 
 function showRulesScreen() {
+  spotlightTutorial?.close();
   const { gameScreen, rulesScreen } = getScreenUi();
   if (gameScreen) {
     gameScreen.hidden = true;
@@ -5197,6 +5221,7 @@ async function resolveStageByNumber(stageNumber, stageDifficulty) {
 }
 
 async function playStageByNumber(stageNumberOverride = null, stageDifficultyOverride = null) {
+  spotlightTutorial?.close();
   const stageJsonState = getStageJsonState();
   const { stageDifficultySelect, stageNumberInput } = getStageJsonUi();
 
@@ -5236,6 +5261,7 @@ async function playStageByNumber(stageNumberOverride = null, stageDifficultyOver
         : getUiText("premiumLockedStatus"),
       !isStageUnlocked(stageDifficulty, stageNumber)
     );
+    spotlightTutorial?.show(loadedStage);
   } catch (error) {
     setStageLoaderStatus(error.message, true);
   }
@@ -5399,6 +5425,7 @@ function createMakerCaptureDataUrl() {
 }
 
 function applyStage(stage) {
+  spotlightTutorial?.close();
   const stageJsonState = getStageJsonState();
   const nextStage = cloneStageDefinition(stage);
 
@@ -5709,6 +5736,9 @@ document.addEventListener("keydown", (event) => {
 getScreenUi().startGameButton?.addEventListener("click", () => {
   showGameScreen();
   void playStageByNumber();
+});
+document.getElementById("mechanicHelpButton")?.addEventListener("click", () => {
+  spotlightTutorial?.show(gameState.stage, true);
 });
 getScreenUi().homePremiumButton?.addEventListener("click", requestHomePremiumPurchase);
 getScreenUi().homeVersionButton?.addEventListener("pointerup", handleHomeVersionTap);
@@ -8464,7 +8494,8 @@ function getNextKnownStageNumber(currentStageNumber, stageDifficulty) {
   return stageNumbers[currentIndex + 1];
 }
 
-let lastCanvasClearTouchTime = 0;
+let clearAdvanceGesture = null;
+let clearAdvancePending = false;
 
 // ?????????????????????????
 async function handleCanvasClickAfterClear() {
@@ -8491,28 +8522,41 @@ async function handleCanvasClickAfterClear() {
   await playStageByNumber(nextStageNumber, stageDifficulty);
 }
 
-function handleCanvasTouchEndAfterClear(event) {
-  if (!gameState.clear || gameState.drawing.active) {
-    return;
-  }
-
-  lastCanvasClearTouchTime = Date.now();
-  preventTouchBrowserAction(event);
-  void handleCanvasClickAfterClear();
-}
-
-canvas.addEventListener("click", (event) => {
-  if (isCurrentStageLocked()) {
-    return;
-  }
-
-  if (Date.now() - lastCanvasClearTouchTime < 700) {
-    return;
-  }
-
-  void handleCanvasClickAfterClear(event);
+// Only a fresh press that starts on CLEAR may advance. The pointer-up from
+// drawing the winning line happens before CLEAR, and must never count.
+canvas.addEventListener("pointerdown", (event) => {
+  clearAdvanceGesture = null;
+  if (!gameState.clear || clearAdvancePending || isCurrentStageLocked()
+      || spotlightTutorial?.active || !event.isPrimary || event.button !== 0) return;
+  clearAdvanceGesture = {
+    pointerId: event.pointerId,
+    stage: gameState.stage,
+    x: event.clientX,
+    y: event.clientY,
+  };
+  // Suppress the compatibility mouse events produced by a touch tap.
+  event.preventDefault();
 });
-canvas.addEventListener("touchend", handleCanvasTouchEndAfterClear, { passive: false });
+
+window.addEventListener("pointerup", async (event) => {
+  const gesture = clearAdvanceGesture;
+  if (!gesture || event.pointerId !== gesture.pointerId) return;
+  clearAdvanceGesture = null;
+  if (event.target !== canvas || gesture.stage !== gameState.stage
+      || !gameState.clear || clearAdvancePending || spotlightTutorial?.active
+      || isCurrentStageLocked()
+      || Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 12) return;
+  event.preventDefault();
+  clearAdvancePending = true;
+  try {
+    await handleCanvasClickAfterClear();
+  } finally {
+    clearAdvancePending = false;
+  }
+});
+
+window.addEventListener("pointercancel", () => { clearAdvanceGesture = null; });
+window.addEventListener("blur", () => { clearAdvanceGesture = null; });
 
 const ICON_SPRITE_SHEET_PATH = "sozai/icons-transparent.png";
 const WARP_ICON_PATH = "sozai/warp-transparent.png";

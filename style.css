@@ -1178,6 +1178,68 @@ button:not(:disabled):active,
 /* Layout styles must not reveal controls hidden by game state. */
 [hidden] { display: none !important; }
 
+/* Modal guide: the SVG mask leaves the actual canvas cells visible underneath. */
+.spotlight-tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  isolation: isolate;
+}
+
+.spotlight-shade { position: absolute; inset: 0; pointer-events: none; }
+.spotlight-rings { filter: drop-shadow(0 0 7px #ffca5270); }
+.spotlight-is-open #gameCanvas { width: auto; max-height: var(--spotlight-canvas-height); }
+
+.spotlight-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  position: absolute;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(540px, calc(100% - 32px));
+  max-height: 48vh;
+  max-height: 48dvh;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  padding: 22px 24px 16px;
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: var(--surface) padding-box, var(--gold-frame) border-box;
+  box-shadow: var(--frame-shadow), 0 18px 60px #0009;
+  color: var(--text);
+}
+
+.spotlight-copy { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.spotlight-copy:focus-visible { outline: 2px solid #ffdf86; outline-offset: 2px; }
+.spotlight-card.is-side {
+  left: auto;
+  right: 12px;
+  bottom: 12px;
+  transform: none;
+  width: min(360px, 43vw);
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 16px;
+}
+.spotlight-card.is-side.is-left { left: 12px; right: auto; }
+
+.spotlight-heading { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.spotlight-kicker { color: #ffdf86; font-size: .75rem; font-weight: 800; letter-spacing: .12em; }
+.spotlight-counter { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.spotlight-card h2 { margin: 12px 0 10px; font-size: clamp(1.05rem, 3vw, 1.35rem); line-height: 1.5; }
+.spotlight-card #spotlightText { margin: 0; font-size: .95rem; line-height: 1.8; }
+.spotlight-actions { display: flex; gap: 14px; margin-top: 20px; }
+.spotlight-actions button { flex: 1; min-width: 0; padding: 10px 12px; }
+.spotlight-next { background: var(--green-face) padding-box, var(--gold-frame) border-box; }
+.spotlight-card .spotlight-note { margin: 16px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.6; text-align: center; }
+
+@media (max-width: 560px) {
+  .spotlight-card { width: calc(100% - 20px); padding: 16px; bottom: max(10px, env(safe-area-inset-bottom)); }
+  .spotlight-card #spotlightText { font-size: .87rem; line-height: 1.7; }
+  .spotlight-actions { margin-top: 14px; gap: 10px; }
+}
+
 @media (max-width: 560px) {
   .game-panel {
     padding: 14px 10px;
