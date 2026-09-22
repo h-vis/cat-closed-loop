@@ -8496,9 +8496,9 @@ canvas.addEventListener("click", (event) => {
 });
 canvas.addEventListener("touchend", handleCanvasTouchEndAfterClear, { passive: false });
 
-const ICON_SPRITE_SHEET_PATH = "sozai/icons.png";
-const WARP_ICON_PATH = "sozai/warp.png";
-const BLUE_WARP_ICON_PATH = "sozai/blue_warp.png";
+const ICON_SPRITE_SHEET_PATH = "sozai/icons-transparent.png";
+const WARP_ICON_PATH = "sozai/warp-transparent.png";
+const BLUE_WARP_ICON_PATH = "sozai/blue_warp-transparent.png";
 const ICON_SPRITE_DEFINITIONS = {
   player: { x: 107, y: 339, width: 216, height: 222, padding: 3 },
   goalOpen: { x: 383, y: 339, width: 220, height: 222, padding: 3 },
