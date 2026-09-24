@@ -3155,6 +3155,10 @@ function drawWarps() {
 
 function drawOverlay() {
   if (eventMotion.active) return;
+  if (gameState.clear && catSpritesReady) {
+    drawCatHomeCelebration();
+    return;
+  }
   if (!gameState.gameOver && !gameState.clear) {
     return;
   }
@@ -8818,6 +8822,10 @@ drawKey = function drawKeyWithIcon() {
 };
 
 drawGoal = function drawGoalWithIcon() {
+  if (gameState.clear) {
+    drawCatInBox(gameState.goal.position);
+    return;
+  }
   drawSpriteAtCell(
     gameState.key.collected ? "goalOpen" : "goalClosed",
     gameState.goal.position,
@@ -8826,6 +8834,62 @@ drawGoal = function drawGoalWithIcon() {
     }
   );
 };
+
+// Layer the original cat between the back and front of the original box.
+// The same stage appearance is used in the board and the clear illustration.
+function drawCatInBox(cell) {
+  const size = CONFIG.cellSize;
+  const center = getCellCenter(cell);
+  drawSpriteAtCell("goalOpen", cell, () => {});
+  context.save();
+  context.translate(center.x, center.y - size * .13);
+  context.scale(.65, .65);
+  drawSpriteAtCell("player", {x:-.5, y:-.5}, () => {});
+  context.restore();
+  context.save();
+  const x = cell.x * size, y = cell.y * size;
+  context.beginPath();
+  context.moveTo(x + size * .15, y + size * .47);
+  context.lineTo(x + size * .66, y + size * .51);
+  context.lineTo(x + size * .84, y + size * .42);
+  context.lineTo(x + size, y + size);
+  context.lineTo(x, y + size);
+  context.closePath();
+  context.clip();
+  drawSpriteAtCell("goalOpen", cell, () => {});
+  context.restore();
+}
+
+function drawCatHomeCelebration() {
+  const width = getBoardPixelWidth(), height = getBoardPixelHeight();
+  const cardWidth = Math.min(width - 24, 330), cardHeight = Math.min(height - 16, 230);
+  const cx = width / 2, top = (height - cardHeight) / 2;
+  context.save();
+  context.fillStyle = "rgba(246,240,230,.78)";
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = "#fffaf2";
+  context.strokeStyle = "#d8c3ab";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.roundRect(cx - cardWidth / 2, top, cardWidth, cardHeight, 16);
+  context.fill(); context.stroke();
+  const illustrationSize = Math.min(cardHeight * .60, 138);
+  context.save();
+  context.translate(cx, top + cardHeight * .35);
+  context.scale(illustrationSize / CONFIG.cellSize, illustrationSize / CONFIG.cellSize);
+  drawCatInBox({x:-.5, y:-.5});
+  context.restore();
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillStyle = "#674b39";
+  context.font = `${Math.min(26, cardWidth / 12)}px Yomogi, sans-serif`;
+  context.fillText(uiLanguage === "ja" ? "おかえり、ねこさん。" : "Home, sweet home.", cx, top + cardHeight * .72, cardWidth - 24);
+  if (gameState.mode === GAME_MODE.random || gameState.mode === getStageModeKey()) {
+    context.font = `${Math.min(13, cardWidth / 24)}px Yomogi, sans-serif`;
+    context.fillText(uiLanguage === "ja" ? "タップして、次のおへやへ" : "Tap to visit the next room", cx, top + cardHeight * .89, cardWidth - 24);
+  }
+  context.restore();
+}
 
 drawBombs = function drawBombsWithIcons() {
   const explodedBombKeys = buildCellKeySet(gameState.explodedBombs);
