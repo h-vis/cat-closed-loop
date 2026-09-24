@@ -2804,40 +2804,49 @@ function drawLoopCells() {
   drawLuminousCells(gameState.loop.drawnLineCells);
 }
 
-drawWallBlocks = function drawWallBlocksWithIcons() {
-  if (gameState.wallBlocks.length === 0) {
-    return;
+// A small wooden divider: warm edges and quiet grain, distinct from the floor.
+function drawWoodenWallCell(brush, cell, size) {
+  const x = cell.x * size;
+  const y = cell.y * size;
+  brush.save();
+  brush.translate(x, y);
+  const wood = brush.createLinearGradient(0, 0, size, size);
+  wood.addColorStop(0, "#dac1a0");
+  wood.addColorStop(.55, "#c7a17b");
+  wood.addColorStop(1, "#bb946e");
+  brush.fillStyle = wood;
+  brush.strokeStyle = "#957459";
+  brush.lineWidth = 1.4;
+  brush.beginPath();
+  brush.roundRect(1.5, 1.5, size - 3, size - 3, 5);
+  brush.fill();
+  brush.stroke();
+  brush.strokeStyle = "#f5e4c9";
+  brush.lineWidth = 1.2;
+  brush.beginPath();
+  brush.moveTo(5, size - 6);
+  brush.lineTo(5, 7);
+  brush.quadraticCurveTo(5, 5, 7, 5);
+  brush.lineTo(size - 6, 5);
+  brush.stroke();
+  brush.strokeStyle = "rgba(117, 82, 52, .18)";
+  brush.lineWidth = 1;
+  const bend = (cell.x + cell.y) % 2 === 0 ? 2 : -2;
+  for (const fraction of [.32, .56, .78]) {
+    const gy = size * fraction;
+    brush.beginPath();
+    brush.moveTo(9, gy);
+    brush.bezierCurveTo(size * .35, gy + bend, size * .65, gy - bend, size - 8, gy);
+    brush.stroke();
   }
-
-  context.save();
-  const size = CONFIG.cellSize;
-  for (const cell of gameState.wallBlocks) {
-    const x = cell.x * size;
-    const y = cell.y * size;
-    const stone = context.createLinearGradient(x, y, x + size, y + size);
-    stone.addColorStop(0, "#123451");
-    stone.addColorStop(0.45, "#194f76");
-    stone.addColorStop(1, "#28658a");
-    context.fillStyle = stone;
-    context.fillRect(x + 1, y + 1, size - 2, size - 2);
-    context.strokeStyle = "#0d263d";
-    context.lineWidth = 3;
-    context.strokeRect(x + 2, y + 2, size - 4, size - 4);
-    context.strokeStyle = "#4783a2";
-    context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(x + 4, y + size - 4);
-    context.lineTo(x + size - 4, y + size - 4);
-    context.lineTo(x + size - 4, y + 4);
-    context.stroke();
-    context.strokeStyle = "rgba(9,30,52,0.55)";
-    context.beginPath();
-    context.moveTo(x + 10, y + 3);
-    context.lineTo(x + 15, y + 11);
-    context.lineTo(x + 12, y + 17);
-    context.stroke();
-  }
-  context.restore();
+  brush.strokeStyle = "rgba(109, 78, 51, .2)";
+  brush.beginPath();
+  brush.moveTo(7, size - 5);
+  brush.lineTo(size - 7, size - 5);
+  brush.quadraticCurveTo(size - 5, size - 5, size - 5, size - 7);
+  brush.lineTo(size - 5, 8);
+  brush.stroke();
+  brush.restore();
 }
 
 function drawCurrentStroke() {
@@ -8636,6 +8645,14 @@ function renderRuleSpriteIcons() {
   const canvases = document.querySelectorAll(".rule-sprite-icon[data-rule-sprite]");
   for (const canvas of canvases) {
     const spriteKey = canvas.dataset.ruleSprite;
+    if (spriteKey === "wall") {
+      const brush = canvas.getContext("2d");
+      if (brush) {
+        brush.clearRect(0, 0, canvas.width, canvas.height);
+        drawWoodenWallCell(brush, { x: 0, y: 0 }, Math.min(canvas.width, canvas.height));
+      }
+      continue;
+    }
     const sprite = ICON_SPRITE_DEFINITIONS[spriteKey];
     if (!sprite) {
       continue;
@@ -8723,20 +8740,8 @@ function drawSpriteAtCell(spriteKey, cell, fallbackDraw) {
 }
 
 function drawWallBlocks() {
-  if (gameState.wallBlocks.length === 0) {
-    return;
-  }
-
-  for (const wallBlock of gameState.wallBlocks) {
-    drawSpriteAtCell("wall", wallBlock, () => {
-      drawCells(
-        [wallBlock],
-        CONFIG.wallBlockFillStyle,
-        CONFIG.wallBlockStrokeStyle
-      );
-    });
-  }
-};
+  for (const cell of gameState.wallBlocks) drawWoodenWallCell(context, cell, CONFIG.cellSize);
+}
 
 drawPlayer = function drawPlayerWithIcon() {
   drawSpriteAtCell("player", gameState.player, () => {
