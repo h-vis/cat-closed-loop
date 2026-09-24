@@ -2374,7 +2374,7 @@ function updateStatus() {
 }
 
 function motionActor(sprite, id, from, to, extra = {}) {
-  return {sprite, id, path: CatMotion.findPath(from, to, gameState.loop.spaceByCellKey), ...extra};
+  return {sprite, id, ...CatMotion.approach(CatMotion.findPath(from, to, gameState.loop.spaceByCellKey)), ...extra};
 }
 
 async function animateWarp(sequence, collectionKey) {
@@ -2418,7 +2418,8 @@ async function applyLoopEffects() {
       const actors = chasingDogs.map(dog => motionActor("bomb", `dog:${getCellKey(dog)}`, dog, gameState.player));
       if (!await sequence.play(actors, "startled", uiLanguage === "ja" ? "わんっ！ ねこがびっくり。" : "Woof! A startled little cat.") || !sequence.alive()) return false;
       const moved = buildCellKeySet(chasingDogs);
-      gameState.bombs = gameState.bombs.map(dog => moved.has(getCellKey(dog)) ? clonePosition(gameState.player) : dog);
+      gameState.bombs = gameState.bombs.map(dog => moved.has(getCellKey(dog))
+        ? clonePosition(actors.find(actor => actor.id === `dog:${getCellKey(dog)}`).path.at(-1)) : dog);
       gameState.gameOver = true;
       return true;
     }
@@ -2432,7 +2433,7 @@ async function applyLoopEffects() {
         const routes = bones.map(bone => CatMotion.findPath(dog, bone, gameState.loop.spaceByCellKey));
         const nearest = routes.reduce((best, path, index) => path && (!routes[best] || path.length < routes[best].length) ? index : best, 0);
         const [bone] = bones.splice(nearest, 1);
-        actors.push({sprite:"bomb", id:`dog:${getCellKey(dog)}`, path:routes[nearest], exit:true});
+        actors.push({sprite:"bomb", id:`dog:${getCellKey(dog)}`, ...CatMotion.approach(routes[nearest]), exit:true});
         sleepyDogs.push(dog);
         eatenBones.push(bone);
       }
@@ -2447,10 +2448,10 @@ async function applyLoopEffects() {
     if (!gameState.key.collected && isGridPositionInPlayerSpace(gameState.key.position)) {
       // Visiting the fish is visual only: the next split must still use the
       // original anchor (or the warp destination if a warp happened first).
-      const returnPosition = clonePosition(gameState.player);
-      if (!await sequence.play([motionActor("player", "cat", gameState.player, gameState.key.position)], "fish", uiLanguage === "ja" ? "おさかな、いただきます。" : "A fish for me. Yummy!") || !sequence.alive()) return false;
+      const visit = motionActor("player", "cat", gameState.player, gameState.key.position);
+      if (!await sequence.play([visit], "fish", uiLanguage === "ja" ? "おさかな、いただきます。" : "A fish for me. Yummy!") || !sequence.alive()) return false;
       gameState.key.collected = true;
-      if (!await sequence.play([motionActor("player", "cat", gameState.key.position, returnPosition)], "return", uiLanguage === "ja" ? "ごちそうさま。元の場所へ、とことこ。" : "Yummy. Back to my cozy spot.") || !sequence.alive()) return false;
+      if (!await sequence.play([{sprite:"player", id:"cat", path:visit.path.slice().reverse()}], "return", uiLanguage === "ja" ? "ごちそうさま。元の場所へ、とことこ。" : "Yummy. Back to my cozy spot.") || !sequence.alive()) return false;
       refreshPlayerSpaceFlags();
     }
     if (gameState.key.collected && isGridPositionInPlayerSpace(gameState.goal.position)) {
@@ -8790,6 +8791,8 @@ function drawStartCushion() {
 }
 
 drawPlayer = function drawPlayerWithIcon() {
+  // The cat has settled into the box; do not redraw it on top of the box.
+  if (gameState.clear) return;
   if (eventMotion.actors.some(actor => actor.id === "cat")) return;
   context.save();
   if (positionsMatch(gameState.player, gameState.stage.playerStart)) {

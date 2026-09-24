@@ -32,7 +32,7 @@ test('timeline finishes only after arrival and cancellation cannot run an old ca
   const promise=run.play([{id:'cat',path:[{x:0,y:0},{x:1,y:0}]}],'fish','fish').then(v=>result=v);
   now=350; queued(now); await flush();
   assert.equal(result,undefined,'arrival flourish must finish before resolving');
-  now=650; queued(now); await promise;
+  now=1520; queued(now); await promise;
   assert.equal(result,true);
   run.finish(); assert.equal(player.active,false);
   const next=player.begin();
@@ -50,7 +50,7 @@ test('reduced motion removes bouncing; full travel ends exactly at its destinati
   const actor={path:[{x:0,y:0},{x:1,y:0}]};
   assert.equal(CatMotion.sample(actor,.5,0,true).y,0);
   assert.equal(CatMotion.sample(actor,.5,0,true).tilt,0);
-  assert.ok(CatMotion.sample(actor,.5,0,false).y<0);
+  assert.ok(CatMotion.sample(actor,.25,0,false).y<0);
   const end=CatMotion.sample(actor,1,1,false);
   assert.equal(end.x,1);
   assert.ok(Math.abs(end.y)<1e-8);
@@ -103,7 +103,8 @@ test('fish then box: state, clear overlay and saved progress wait for each arriv
 test('dog walks to cat before game over; fish and bones cannot save a shared cat space', async () => {
   const h=harness({bombs:[{x:2,y:2}],disarmItems:[{x:2,y:3}]});const {promise}=await h.start();
   assert.equal(h.clips[0].cue,'startled');assert.equal(h.state.gameOver,false);
-  assert.equal(key(h.clips[0].actors[0].path.at(-1)),key(h.state.player));
+  const end=h.clips[0].actors[0].path.at(-1);
+  assert.equal(Math.abs(end.x-h.state.player.x)+Math.abs(end.y-h.state.player.y),1);
   await h.finish();await promise;
   assert.equal(h.state.gameOver,true);assert.equal(h.state.key.collected,false);assert.equal(h.state.disarmItems.length,1);assert.equal(h.clips.length,1);
 });
@@ -176,7 +177,7 @@ test('fish-only visit returns home without changing the next split anchor', asyn
   const h=harness({goal:{position:{x:6,y:4}}});const {promise}=await h.start();
   await h.finish();assert.equal(h.state.key.collected,true);
   assert.equal(h.clips[1].cue,'return');
-  assert.equal(key(h.clips[1].actors[0].path[0]),'1,0');
+  assert.equal(key(h.clips[1].actors[0].path[0]),'0,0');
   await h.finish();await promise;
   assert.equal(key(h.state.player),'0,0');assert.equal(h.state.clear,false);
   assert.equal(h.eventMotion.active,false);
@@ -200,4 +201,25 @@ test('reset during the return cannot clear or move the replacement stage', async
   await promise;
   assert.equal(key(h.state.player),'2,4');assert.equal(h.state.key.collected,false);
   assert.equal(h.state.clear,false);assert.equal(h.saves.length,0);
+});
+
+
+test('approach stops one cell before contact, including adjacent and overlapping targets', () => {
+  for (const target of [{x:2,y:2},{x:0,y:1}]) {
+    const actor=CatMotion.approach(CatMotion.findPath({x:0,y:0},target,regions()));
+    const end=actor.path.at(-1);
+    assert.equal(Math.abs(end.x-target.x)+Math.abs(end.y-target.y),1);
+    assert.deepEqual(CatMotion.sample(actor,1,1,false).target,target);
+    assert.ok(!actor.path.some(p=>key(p)===key(target)));
+  }
+  assert.equal(CatMotion.approach([{x:0,y:0}]).path.length,1);
+});
+
+test('arrival visibly leans toward the target, then settles without entering its cell', () => {
+  const actor={...CatMotion.approach([{x:0,y:0},{x:1,y:0}]),cue:'fish'};
+  const contact=CatMotion.sample(actor,1,.5,false);
+  assert.ok(contact.x>0 && contact.x<.5);
+  const settled=CatMotion.sample(actor,1,1,false);
+  assert.ok(Math.abs(settled.x)<1e-8);
+  assert.equal(CatMotion.sample(actor,1,.5,true).x,0);
 });
