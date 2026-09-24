@@ -21,6 +21,7 @@ python -m http.server 8080 --bind 127.0.0.1
 - 鍵→魚、バケツ→骨、閉じた／開いたドア→閉じた／開いた段ボール。
 - 先に発動するワープ→紙袋、後に発動するワープ→猫トンネル。
 - クリーム色の画面、木の床、セージグリーンのボタンと手描きのキャラクター。
+- 盤面は表示サイズ×画面のピクセル密度で描画し、リサイズ・画面移動に追従。操作座標は描画解像度から独立。
 - 日本語・英語の遊び方とゲーム内チュートリアルを猫版に変更。
 - 元作品用のストア誘導・購入アイコンは猫版Web画面では非表示。
 
@@ -31,7 +32,7 @@ python -m http.server 8080 --bind 127.0.0.1
 ## 素材
 
 ユーザー提供の `image/` を元に、`assets/cats/` に透過切り抜き16枚とアトラスを生成しています。
-原画は変更していません。再生成する場合のみ以下の Python パッケージが必要です。
+原画は変更していません。単体画像は原寸の細部を保持し、盤面用アトラスのみ256pxに最適化しています。再生成する場合のみ以下の Python パッケージが必要です。
 
 ```powershell
 python -m pip install Pillow numpy scipy
@@ -41,11 +42,11 @@ python tools/cut-cat-assets.py
 ## 確認
 
 ```powershell
-node --test tests/cat-theme.test.js tests/clear-advance.test.js tests/spotlight-tutorial.test.js
+node --test tests/canvas-resolution.test.js tests/cat-theme.test.js tests/clear-advance.test.js tests/spotlight-tutorial.test.js
 node --test tests/*.test.js
 ```
 
-猫版追加・操作・チュートリアルの14テストは成功。
+猫版追加・描画解像度・操作・チュートリアルの18テストは成功。
 全体では元リポジトリの `medium/004 is solved in two moves` テストが失敗します。
 そのテスト・`solver.js`・対象ステージは元リポジトリから未変更です。
 猫版のブラウザ確認ではステージ001のドラッグ操作、魚取得、クリア、次ステージ移動を確認済みです。

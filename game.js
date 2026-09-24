@@ -1379,8 +1379,41 @@ const makerToolButtons = {
 
 function updateCanvasMetrics(stage) {
   activeBoardSize = cloneBoardSize(getStageBoardSize(stage));
-  canvas.width = getBoardPixelWidth(activeBoardSize);
-  canvas.height = getBoardPixelHeight(activeBoardSize);
+  drawDungeonFloor.cache = null;
+  // Keep CSS layout independent of the high-DPI backing bitmap.
+  canvas.style.aspectRatio = `${getBoardPixelWidth()} / ${getBoardPixelHeight()}`;
+  syncCanvasResolution();
+}
+
+function getCanvasContentRect() {
+  const rect = canvas.getBoundingClientRect();
+  const style = getComputedStyle(canvas);
+  const left = parseFloat(style.borderLeftWidth) || 0;
+  const top = parseFloat(style.borderTopWidth) || 0;
+  return {
+    left: rect.left + left,
+    top: rect.top + top,
+    width: Math.max(0, rect.width - left - (parseFloat(style.borderRightWidth) || 0)),
+    height: Math.max(0, rect.height - top - (parseFloat(style.borderBottomWidth) || 0)),
+  };
+}
+
+function syncCanvasResolution() {
+  const rect = getCanvasContentRect();
+  const logicalWidth = getBoardPixelWidth();
+  const logicalHeight = getBoardPixelHeight();
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.ceil((rect.width || logicalWidth) * dpr));
+  const height = Math.max(1, Math.ceil((rect.height || logicalHeight) * dpr));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+    drawDungeonFloor.cache = null;
+  }
+  // Puzzle geometry stays in 48-unit cells; only drawing gains more pixels.
+  context.setTransform(width / logicalWidth, 0, 0, height / logicalHeight, 0, 0);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
 }
 
 function createInitialState(stage = DEFAULT_START_STAGE) {
@@ -1723,9 +1756,9 @@ function getCanvasPoint(event) {
     event.touches?.[0] ??
     event.changedTouches?.[0] ??
     event;
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
+  const rect = getCanvasContentRect();
+  const scaleX = getBoardPixelWidth() / (rect.width || 1);
+  const scaleY = getBoardPixelHeight() / (rect.height || 1);
 
   return {
     x: (sourcePoint.clientX - rect.left) * scaleX,
@@ -2665,7 +2698,8 @@ function finishDrawing(event) {
 }
 
 function clearCanvas() {
-  context.clearRect(0, 0, canvas.width, canvas.height);
+  syncCanvasResolution();
+  context.clearRect(0, 0, getBoardPixelWidth(), getBoardPixelHeight());
   drawDungeonFloor();
 }
 
@@ -2677,9 +2711,10 @@ function drawDungeonFloor() {
     floor.width = canvas.width;
     floor.height = canvas.height;
     const brush = floor.getContext("2d");
+    brush.setTransform(canvas.width / getBoardPixelWidth(), 0, 0, canvas.height / getBoardPixelHeight(), 0, 0);
     const size = CONFIG.cellSize;
-    for (let y = 0; y < floor.height; y += size) {
-      for (let x = 0; x < floor.width; x += size) {
+    for (let y = 0; y < getBoardPixelHeight(); y += size) {
+      for (let x = 0; x < getBoardPixelWidth(); x += size) {
         brush.fillStyle = ["#f4e5cf", "#efddc2", "#f7ead7", "#eedbc1"][(x / size + y / size * 3) % 4];
         brush.fillRect(x, y, size, size);
         brush.fillStyle = "#ffffff50";
@@ -2693,7 +2728,7 @@ function drawDungeonFloor() {
     }
     drawDungeonFloor.cache = floor;
   }
-  context.drawImage(floor, 0, 0);
+  context.drawImage(floor, 0, 0, getBoardPixelWidth(), getBoardPixelHeight());
 }
 
 function drawLuminousCells(cells, isDrawing = false) {
@@ -2823,7 +2858,7 @@ function drawGrid() {
 
     context.beginPath();
     context.moveTo(offset, 0);
-    context.lineTo(offset, canvas.height);
+    context.lineTo(offset, getBoardPixelHeight());
     context.stroke();
   }
 
@@ -2832,7 +2867,7 @@ function drawGrid() {
 
     context.beginPath();
     context.moveTo(0, offset);
-    context.lineTo(canvas.width, offset);
+    context.lineTo(getBoardPixelWidth(), offset);
     context.stroke();
   }
 
@@ -3088,12 +3123,12 @@ function drawOverlay() {
 
   context.save();
   context.fillStyle = CONFIG.overlayFillStyle;
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, getBoardPixelWidth(), getBoardPixelHeight());
 
-  const plaqueWidth = Math.min(canvas.width - 32, 390);
-  const plaqueHeight = Math.min(canvas.height - 24, 104);
-  const plaqueX = (canvas.width - plaqueWidth) / 2;
-  const plaqueY = (canvas.height - plaqueHeight) / 2;
+  const plaqueWidth = Math.min(getBoardPixelWidth() - 32, 390);
+  const plaqueHeight = Math.min(getBoardPixelHeight() - 24, 104);
+  const plaqueX = (getBoardPixelWidth() - plaqueWidth) / 2;
+  const plaqueY = (getBoardPixelHeight() - plaqueHeight) / 2;
   const plaqueFill = context.createLinearGradient(0, plaqueY, 0, plaqueY + plaqueHeight);
   plaqueFill.addColorStop(0, "#97765e");
   plaqueFill.addColorStop(1, "#6b5142");
@@ -3116,15 +3151,15 @@ function drawOverlay() {
     && (gameState.mode === GAME_MODE.random || gameState.mode === getStageModeKey());
   context.fillText(
     gameState.gameOver ? (uiLanguage === "ja" ? "もういちど" : "TRY AGAIN") : (uiLanguage === "ja" ? "おかえり！" : "WELCOME HOME"),
-    canvas.width / 2,
-    canvas.height / 2 - (canContinue ? 12 : 0)
+    getBoardPixelWidth() / 2,
+    getBoardPixelHeight() / 2 - (canContinue ? 12 : 0)
   );
   if (canContinue) {
     context.font = `bold ${Math.min(16, plaqueWidth / 22)}px Trebuchet MS, Segoe UI, sans-serif`;
     context.fillText(
       uiLanguage === "ja" ? "クリック／タップで次のステージへ" : "Click / tap to continue",
-      canvas.width / 2,
-      canvas.height / 2 + 28
+      getBoardPixelWidth() / 2,
+      getBoardPixelHeight() / 2 + 28
     );
   }
   context.restore();
@@ -9425,3 +9460,25 @@ async function playAutoSolveSolution(stage, solution, runId) {
 
   return gameState.clear;
 }
+
+// Resize without changing game state; coalesce layout and monitor-DPI events.
+(function observeCanvasResolution() {
+  let pendingFrame = 0;
+  const redraw = () => {
+    if (pendingFrame) return;
+    pendingFrame = requestAnimationFrame(() => {
+      pendingFrame = 0;
+      if (canvas.getBoundingClientRect().width > 0) render();
+    });
+  };
+  if (typeof ResizeObserver === "function") new ResizeObserver(redraw).observe(canvas);
+  window.addEventListener("resize", redraw);
+  let densityQuery;
+  const watchDensity = () => {
+    densityQuery?.removeEventListener("change", watchDensity);
+    densityQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    densityQuery.addEventListener("change", watchDensity);
+    redraw();
+  };
+  if (typeof window.matchMedia === "function") watchDensity();
+})();

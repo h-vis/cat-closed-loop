@@ -27,10 +27,15 @@ def cut(source, box, name):
     mask = Image.fromarray((ink * 255).astype('uint8'))
     im.putalpha(mask)
     im = im.crop(im.getbbox())
+    # Standalone images (home/how-to) retain original detail, without upscaling.
+    # Keep the same relative padding as the compact board atlas.
+    side = round(max(im.size) * 272 / 256)
+    original = Image.new('RGBA', (side, side))
+    original.alpha_composite(im, ((side-im.width)//2, (side-im.height)//2))
+    original.save(OUT / f'{name}.png')
     im.thumbnail((256, 256), Image.Resampling.LANCZOS)
     tile = Image.new('RGBA', (272, 272))
     tile.alpha_composite(im, ((272-im.width)//2, (272-im.height)//2))
-    tile.save(OUT / f'{name}.png')
     return tile
 
 cats = [(25,170,303,451),(309,247,625,442),(616,173,904,460),
