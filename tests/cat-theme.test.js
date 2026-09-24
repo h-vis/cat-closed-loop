@@ -32,10 +32,13 @@ test('all five cats and dogs are reachable; appearance stays stable during play 
     assert.ok(h.scope.sprites[dog]);
   }
 });
-test('dogs at separate positions can get different appearances', () => {
+test('all dogs share one appearance per stage, and a new stage can select another', () => {
   const h = appearanceHarness();
   assert.equal(h.scope.getAnimalSpriteKey('bomb', {x:1,y:1}), 'bomb');
   h.random(.8);
+  assert.equal(h.scope.getAnimalSpriteKey('bomb', {x:2,y:1}), 'bomb');
+  assert.equal(h.scope.getAnimalSpriteKey('bomb', {x:8,y:5}), 'bomb');
+  h.gameState.stage = {};
   assert.equal(h.scope.getAnimalSpriteKey('bomb', {x:2,y:1}), 'dog4');
 });
 test('every themed asset is shipped and the atlas fits all sprite rectangles', () => {

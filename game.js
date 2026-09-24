@@ -8505,18 +8505,16 @@ const ICON_SPRITE_DEFINITIONS = Object.fromEntries(
       width: 272, height: 272, padding: 1 }])
 );
 const catAppearance = new WeakMap();
-// A stage owns its appearance: redraws and teleporting never reroll a cat.
-// Weak keys let discarded stages (and their dog maps) be garbage collected.
-function getAnimalSpriteKey(kind, cell) {
+// A stage owns one cat and one dog appearance, stable across redraws and warps.
+// Weak keys let discarded stages be garbage collected.
+function getAnimalSpriteKey(kind) {
   let appearance = catAppearance.get(gameState.stage);
   if (!appearance) {
-    appearance = { cat: Math.floor(Math.random() * 5), dogs: new Map() };
+    appearance = { cat: Math.floor(Math.random() * 5), dog: Math.floor(Math.random() * 5) };
     catAppearance.set(gameState.stage, appearance);
   }
   if (kind === "player") return appearance.cat === 0 ? "player" : `cat${appearance.cat}`;
-  const position = getCellKey(cell);
-  if (!appearance.dogs.has(position)) appearance.dogs.set(position, Math.floor(Math.random() * 5));
-  const index = appearance.dogs.get(position);
+  const index = appearance.dog;
   return index === 0 ? "bomb" : `dog${index}`;
 }
 
@@ -8677,7 +8675,7 @@ function renderRuleSpriteIcons() {
 
 function drawSpriteAtCell(spriteKey, cell, fallbackDraw) {
   const spriteState = ensureIconSpriteSheet();
-  const actualKey = spriteKey === "player" || spriteKey === "bomb" ? getAnimalSpriteKey(spriteKey, cell) : spriteKey;
+  const actualKey = spriteKey === "player" || spriteKey === "bomb" ? getAnimalSpriteKey(spriteKey) : spriteKey;
   const sprite = ICON_SPRITE_DEFINITIONS[actualKey];
 
   if (!spriteState.loaded || !spriteState.image || !sprite) {
