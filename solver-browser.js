@@ -378,7 +378,7 @@
     }
 
     return {
-      playerPosition: clonePosition(clear ? stage.goalPosition : !state.keyCollected && nextKeyCollected ? stage.keyPosition : state.playerPosition || stage.playerStart),
+      playerPosition: clonePosition(clear ? stage.goalPosition : state.playerPosition || stage.playerStart),
       keyCollected: nextKeyCollected,
       bombs: nextBombs,
       disarmItems: nextDisarmItems,

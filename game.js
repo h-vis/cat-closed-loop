@@ -2445,9 +2445,12 @@ async function applyLoopEffects() {
     }
 
     if (!gameState.key.collected && isGridPositionInPlayerSpace(gameState.key.position)) {
+      // Visiting the fish is visual only: the next split must still use the
+      // original anchor (or the warp destination if a warp happened first).
+      const returnPosition = clonePosition(gameState.player);
       if (!await sequence.play([motionActor("player", "cat", gameState.player, gameState.key.position)], "fish", uiLanguage === "ja" ? "おさかな、いただきます。" : "A fish for me. Yummy!") || !sequence.alive()) return false;
-      gameState.player = clonePosition(gameState.key.position);
       gameState.key.collected = true;
+      if (!await sequence.play([motionActor("player", "cat", gameState.key.position, returnPosition)], "return", uiLanguage === "ja" ? "ごちそうさま。元の場所へ、とことこ。" : "Yummy. Back to my cozy spot.") || !sequence.alive()) return false;
       refreshPlayerSpaceFlags();
     }
     if (gameState.key.collected && isGridPositionInPlayerSpace(gameState.goal.position)) {
@@ -3293,6 +3296,7 @@ function render() {
   drawLoopCells();
   drawCurrentStroke();
   drawGrid();
+  drawStartCushion();
   drawGoal();
   drawBombs();
   drawExplodedBombs();
@@ -5636,6 +5640,7 @@ function render() {
   drawLoopCells();
   drawCurrentStroke();
   drawGrid();
+  drawStartCushion();
   drawGoal();
   drawBombs();
   drawExplodedBombs();
@@ -8534,16 +8539,18 @@ window.addEventListener("pointerup", async (event) => {
 window.addEventListener("pointercancel", () => { clearAdvanceGesture = null; });
 window.addEventListener("blur", () => { clearAdvanceGesture = null; });
 
-const ICON_SPRITE_SHEET_PATH = "assets/cats/sprites.png";
+const ICON_SPRITE_SHEET_PATH = "assets/cats/sprites.png?v=cushion-2";
 const WARP_ICON_PATH = "assets/cats/bag.png";
 const BLUE_WARP_ICON_PATH = "assets/cats/tunnel.png";
 const ICON_SPRITE_DEFINITIONS = Object.fromEntries(
   ["player", "cat1", "cat2", "cat3", "cat4", "bomb", "dog1", "dog2", "dog3", "dog4",
-    "key", "waterBucket", "goalClosed", "goalOpen", "bag", "tunnel"]
+    "key", "waterBucket", "goalClosed", "goalOpen", "bag", "tunnel", "cushion"]
     .map((key, index) => [key, { x: (index % 5) * 272, y: Math.floor(index / 5) * 272,
       width: 272, height: 272, padding: 1 }])
 );
 const catAppearance = new WeakMap();
+// Initial legacy render runs before the atlas definitions are initialized.
+var catSpritesReady = true;
 // A stage owns one cat and one dog appearance, stable across redraws and warps.
 // Weak keys let discarded stages be garbage collected.
 function getAnimalSpriteKey(kind) {
@@ -8773,11 +8780,28 @@ function drawWallBlocks() {
   for (const cell of gameState.wallBlocks) drawWoodenWallCell(context, cell, CONFIG.cellSize);
 }
 
+function drawStartCushion() {
+  if (!catSpritesReady) return;
+  const start = gameState.stage.playerStart;
+  context.save();
+  context.translate(0, CONFIG.cellSize * .14);
+  drawSpriteAtCell("cushion", start, () => {});
+  context.restore();
+}
+
 drawPlayer = function drawPlayerWithIcon() {
   if (eventMotion.actors.some(actor => actor.id === "cat")) return;
+  context.save();
+  if (positionsMatch(gameState.player, gameState.stage.playerStart)) {
+    const center = getCellCenter(gameState.player);
+    context.translate(center.x, center.y - CONFIG.cellSize * .08);
+    context.scale(.84, .84);
+    context.translate(-center.x, -center.y);
+  }
   drawSpriteAtCell("player", gameState.player, () => {
     drawPlayerFallback();
   });
+  context.restore();
 };
 
 drawKey = function drawKeyWithIcon() {
@@ -9338,7 +9362,6 @@ function buildAutoSolveNextState(stage, currentState, loopCandidate) {
   const goalSharesPlayerSpace =
     getLoopSpaceIdFromPosition(loopCandidate, stage.goalPosition) === playerSpaceId;
 
-  if (!currentState.keyCollected && nextKeyCollected) playerPosition = clonePosition(stage.keyPosition);
   const lateWarpResult = nextKeyCollected && goalSharesPlayerSpace
     ? { playerPosition: clonePosition(stage.goalPosition), warps: nextLateWarps }
     : applyAutoSolveWarpEffect(loopCandidate, playerPosition, nextLateWarps);

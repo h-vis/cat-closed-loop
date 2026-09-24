@@ -4,7 +4,7 @@ Requires Pillow, NumPy and SciPy. Remove paper outside closed outlines,
 preserving the cream-colored fur and bone inside the hand-drawn outlines.
 """
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageDraw
 import numpy as np
 from scipy import ndimage
 
@@ -16,9 +16,24 @@ def cut(source, box, name):
     im = Image.open(ROOT / 'image' / source).convert('RGBA').crop(box)
     # Close tiny watercolor gaps before flooding, then fill enclosed pale fur.
     rgb = np.asarray(im)[:, :, :3].astype(int)
-    ink = (rgb.min(axis=2) < (195 if name == "tunnel" else 160)) | ((rgb.max(axis=2)-rgb.min(axis=2)) > 52)
-    ink = ndimage.binary_closing(ink, iterations=7 if name == "tunnel" else 4)
+    threshold = {"tunnel": 195, "cushion": 180}.get(name, 160)
+    ink = (rgb.min(axis=2) < threshold) | ((rgb.max(axis=2)-rgb.min(axis=2)) > 52)
+    ink = ndimage.binary_closing(ink, iterations={"tunnel": 7, "cushion": 16}.get(name, 4))
     ink = ndimage.binary_fill_holes(ink)
+    if name == 'cushion':
+        # The pale pillow has a broken watercolor outline. Fill its traced
+        # interior while retaining the supplied pixels and surrounding ink.
+        outline = [(431,567),(475,527),(538,485),(586,445),(630,414),
+                   (647,373),(674,323),(688,313),(704,314),(737,339),
+                   (821,355),(905,385),(982,425),(1067,454),(1102,453),
+                   (1120,459),(1123,472),(1080,520),(1050,541),(1043,568),
+                   (1023,598),(983,633),(974,660),(961,688),(955,730),
+                   (945,734),(920,719),(893,706),(831,696),(773,675),
+                   (705,668),(647,640),(583,607),(524,586),(499,586),
+                   (474,591),(451,585),(435,578)]
+        interior = Image.new('L', im.size)
+        ImageDraw.Draw(interior).polygon([(x-box[0], y-box[1]) for x,y in outline], fill=255)
+        ink |= np.asarray(interior) > 0
     labels, count = ndimage.label(ink)
     sizes = np.bincount(labels.ravel())
     sizes[0] = 0
@@ -51,6 +66,7 @@ for source, box, name in [
     ('box.png',(949,275,1520,643),'box-open'),
     ('bag.png',(458,327,1114,747),'bag'),
     ('tunnel.png',(360,274,1258,785),'tunnel'),
+    ('start.png',(410,290,1150,755),'cushion'),
 ]:
     tiles.append(cut(source, box, name))
 atlas = Image.new('RGBA', (272*5,272*4))

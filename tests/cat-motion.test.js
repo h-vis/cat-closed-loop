@@ -90,8 +90,12 @@ test('fish then box: state, clear overlay and saved progress wait for each arriv
   const h=harness();const {promise}=await h.start();
   assert.equal(h.clips[0].cue,'fish');assert.equal(h.state.key.collected,false);assert.equal(h.state.clear,false);
   await h.finish();
-  assert.equal(h.state.key.collected,true);assert.equal(key(h.state.player),'1,0');
-  assert.equal(h.clips[1].cue,'home');assert.equal(h.state.clear,false);assert.equal(h.saves.length,0);
+  assert.equal(h.state.key.collected,true);assert.equal(key(h.state.player),'0,0');
+  assert.equal(h.clips[1].cue,'return');
+  assert.equal(key(h.clips[1].actors[0].path.at(-1)),'0,0');
+  await h.finish();
+  assert.equal(h.clips[2].cue,'home');
+  assert.equal(key(h.clips[2].actors[0].path[0]),'0,0');assert.equal(h.state.clear,false);assert.equal(h.saves.length,0);
   await h.finish();await promise;
   assert.equal(key(h.state.player),'2,0');assert.equal(h.state.clear,true);assert.equal(h.saves.length,1);assert.equal(h.eventMotion.active,false);
 });
@@ -110,12 +114,12 @@ test('dogs in other rooms approach distinct bones together and disappear only on
   const destinations=h.clips[0].actors.map(a=>key(a.path.at(-1)));
   assert.equal(new Set(destinations).size,2);
   await h.finish();assert.equal(h.state.bombs.length,0);assert.equal(h.state.disarmItems.length,0);
-  await h.finish();await h.finish();await promise;
+  await h.finish();await h.finish();await h.finish();await promise;
 });
 
 test('unequal dogs and bones stay put', async () => {
   const h=harness({bombs:[{x:4,y:0},{x:6,y:0}],disarmItems:[{x:4,y:2}]});const {promise}=await h.start();
-  assert.equal(h.clips[0].cue,'fish');await h.finish();await h.finish();await promise;
+  assert.equal(h.clips[0].cue,'fish');await h.finish();await h.finish();await h.finish();await promise;
   assert.equal(h.state.bombs.length,2);assert.equal(h.state.disarmItems.length,1);
 });
 
@@ -129,10 +133,10 @@ test('paper bag entry and exit precede destination hazards', async () => {
 
 test('tunnels wait until after fish, and clear takes priority over tunnels', async () => {
   const h=harness({goal:{position:{x:6,y:4}},lateWarps:[{x:2,y:1},{x:4,y:1}]});const {promise}=await h.start();
-  assert.equal(h.clips[0].cue,'fish');await h.finish();assert.equal(h.clips[1].cue,'warp');
-  await h.finish();await h.finish();await promise;assert.equal(key(h.state.player),'4,1');assert.equal(h.state.lateWarps.length,0);
-  const winner=harness({lateWarps:[{x:2,y:1},{x:4,y:1}]});const run=await winner.start();await winner.finish();await winner.finish();await run.promise;
-  assert.equal(winner.clips.length,2);assert.equal(winner.state.clear,true);assert.equal(key(winner.state.player),'2,0');
+  assert.equal(h.clips[0].cue,'fish');await h.finish();assert.equal(h.clips[1].cue,'return');
+  await h.finish();await h.finish();await h.finish();await promise;assert.equal(key(h.state.player),'4,1');assert.equal(h.state.lateWarps.length,0);
+  const winner=harness({lateWarps:[{x:2,y:1},{x:4,y:1}]});const run=await winner.start();await winner.finish();await winner.finish();await winner.finish();await run.promise;
+  assert.equal(winner.clips.length,3);assert.equal(winner.state.clear,true);assert.equal(key(winner.state.player),'2,0');
 });
 
 test('cancel/reset during movement cannot award a fish or clear the replacement stage', async () => {
@@ -147,7 +151,7 @@ test('cancelling immediately after starting also stops no-op warp awaits', async
   assert.equal(h.clips.length,0);assert.equal(h.state.key.collected,false);
 });
 
-test('node and browser solvers keep the cat at the fish for the next split', () => {
+test('node and browser solvers keep the original cat position for the next split', () => {
   const nodeSolver=require('../solver');
   const browser={};vm.createContext(browser);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../solver-browser.js'),'utf8'),browser);
@@ -156,7 +160,7 @@ test('node and browser solvers keep the cat at the fish for the next split', () 
   for (const solver of [nodeSolver,browser.closedLoopRegionSolver]) {
     const result=solver.applyLoop(solver.createInitialState(stage),loop,stage);
     assert.equal(result.keyCollected,true);
-    assert.equal(key(result.playerPosition),'1,0');
+    assert.equal(key(result.playerPosition),'0,0');
     assert.equal(result.clear,false);
   }
 });
@@ -166,4 +170,34 @@ test('node solver reaches the box before any late tunnel, matching the animation
   const stage={boardSize:{width:7,height:5},playerStart:{x:0,y:0},keyPosition:{x:1,y:0},goalPosition:{x:2,y:0},bombs:[],disarmItems:[],warps:[],lateWarps:[{x:2,y:1},{x:4,y:1}],wallBlocks:[]};
   const result=solver.applyLoop(solver.createInitialState(stage),{spaceByCellKey:regions(),lineCellKeys:new Set()},stage);
   assert.equal(result.clear,true);assert.equal(key(result.playerPosition),'2,0');assert.equal(result.lateWarps.length,2);
+});
+
+test('fish-only visit returns home without changing the next split anchor', async () => {
+  const h=harness({goal:{position:{x:6,y:4}}});const {promise}=await h.start();
+  await h.finish();assert.equal(h.state.key.collected,true);
+  assert.equal(h.clips[1].cue,'return');
+  assert.equal(key(h.clips[1].actors[0].path[0]),'1,0');
+  await h.finish();await promise;
+  assert.equal(key(h.state.player),'0,0');assert.equal(h.state.clear,false);
+  assert.equal(h.eventMotion.active,false);
+});
+
+test('fish visit after a paper bag returns to the warp destination', async () => {
+  const h=harness({warps:[{x:2,y:1},{x:4,y:1}],key:{position:{x:5,y:1},collected:false}});
+  const {promise}=await h.start();await h.finish();await h.finish();
+  assert.equal(h.clips[2].cue,'fish');await h.finish();
+  const back=h.clips[3];assert.equal(back.cue,'return');
+  assert.equal(key(back.actors[0].path.at(-1)),'4,1');
+  assert.ok(back.actors[0].path.every(p=>regions().get(key(p))===1));
+  await h.finish();await promise;
+  assert.equal(key(h.state.player),'4,1');assert.equal(h.state.clear,false);
+});
+
+test('reset during the return cannot clear or move the replacement stage', async () => {
+  const h=harness();const {promise}=await h.start();await h.finish();
+  assert.equal(h.clips[1].cue,'return');
+  h.eventMotion.cancel();h.state.stage={stageNumber:2};h.state.player={x:2,y:4};h.state.key.collected=false;
+  await promise;
+  assert.equal(key(h.state.player),'2,4');assert.equal(h.state.key.collected,false);
+  assert.equal(h.state.clear,false);assert.equal(h.saves.length,0);
 });
