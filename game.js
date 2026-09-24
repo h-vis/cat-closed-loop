@@ -2445,17 +2445,24 @@ async function applyLoopEffects() {
       gameState.disarmItems = gameState.disarmItems.filter(bone => !boneKeys.has(getCellKey(bone)));
     }
 
+    let homeFrom = gameState.player;
     if (!gameState.key.collected && isGridPositionInPlayerSpace(gameState.key.position)) {
       // Visiting the fish is visual only: the next split must still use the
       // original anchor (or the warp destination if a warp happened first).
       const visit = motionActor("player", "cat", gameState.player, gameState.key.position);
       if (!await sequence.play([visit], "fish", uiLanguage === "ja" ? "おさかな、いただきます。" : "A fish for me. Yummy!") || !sequence.alive()) return false;
       gameState.key.collected = true;
-      if (!await sequence.play([{sprite:"player", id:"cat", path:visit.path.slice().reverse()}], "return", uiLanguage === "ja" ? "ごちそうさま。元の場所へ、とことこ。" : "Yummy. Back to my cozy spot.") || !sequence.alive()) return false;
+      if (isGridPositionInPlayerSpace(gameState.goal.position)) {
+        // Continue from the fish's contact cell, keeping the logical anchor
+        // unchanged until the cat has actually finished reaching the box.
+        homeFrom = visit.path.at(-1);
+      } else {
+        if (!await sequence.play([{sprite:"player", id:"cat", path:visit.path.slice().reverse()}], "return", uiLanguage === "ja" ? "ごちそうさま。元の場所へ、とことこ。" : "Yummy. Back to my cozy spot.") || !sequence.alive()) return false;
+      }
       refreshPlayerSpaceFlags();
     }
     if (gameState.key.collected && isGridPositionInPlayerSpace(gameState.goal.position)) {
-      if (!await sequence.play([motionActor("player", "cat", gameState.player, gameState.goal.position, {exit:true})], "home", uiLanguage === "ja" ? "お気に入りの箱へ、ただいま。" : "My favorite box. Home sweet home.") || !sequence.alive()) return false;
+      if (!await sequence.play([motionActor("player", "cat", homeFrom, gameState.goal.position, {exit:true})], "home", uiLanguage === "ja" ? "お気に入りの箱へ、ただいま。" : "My favorite box. Home sweet home.") || !sequence.alive()) return false;
       gameState.player = clonePosition(gameState.goal.position);
       gameState.clear = true;
       if (gameState.mode === getStageModeKey()) {
