@@ -1,4 +1,12 @@
+@font-face {
+  font-family: "Yomogi";
+  src: url("assets/fonts/yomogi/Yomogi-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 :root {
+  --cat-font: "Yomogi", "Yu Gothic", "Meiryo", sans-serif;
   color-scheme: light;
   --bg: #f6f0e6; --panel: #fffaf2; --panel-border: #d8c3ab;
   --text: #594738; --muted: #87705d; --accent: #86a18b;
@@ -12,20 +20,20 @@
   --cream-face: linear-gradient(#fffdf7, #f4e8d5);
   --frame-shadow: 0 3px 0 #bba18425, 0 10px 30px #96775610;
 }
-body { background: radial-gradient(ellipse at 12% 0%, #e3e9d1 0, transparent 35%), radial-gradient(ellipse at 95% 85%, #f3ddc7 0, transparent 40%), #f6f0e6; font-family: "Yu Gothic", "Meiryo", sans-serif; }
+body { background: radial-gradient(ellipse at 12% 0%, #e3e9d1 0, transparent 35%), radial-gradient(ellipse at 95% 85%, #f3ddc7 0, transparent 40%), #f6f0e6; font-family: var(--cat-font); }
 .page { padding: 36px 20px; }
 .game-panel { border-width: 1px; border-radius: 26px; box-shadow: 0 18px 65px #76553312; padding: 30px; }
 .game-panel::before, .game-panel::after, .game-canvas-shell::before, .game-canvas-shell::after { display: none; }
 .home-panel { max-width: 850px; }
 .home-layout { gap: 22px; }
 .home-copy { text-align: center; padding: 12px 0 0; }
-.home-copy h2, .page-title, .manager-title { color: #674b39; text-shadow: none; font-family: "Yu Gothic", "Meiryo", sans-serif; letter-spacing: .04em; font-weight: 800; }
+.home-copy h2, .page-title, .manager-title { color: #674b39; text-shadow: none; font-family: var(--cat-font); letter-spacing: .04em; font-weight: 800; }
 .home-copy h2 { font-size: clamp(1.9rem, 5.8vw, 3.25rem); }
 .home-copy .home-kicker { color: #8f9c7c; font-size: .7rem; letter-spacing: .23em; text-shadow: none; margin: 0 0 14px; }
 .home-copy p { font-size: .9rem; }
 .cat-room { position: relative; height: 300px; overflow: hidden; border: 1px solid #d8c6ac; border-radius: 18px; background: linear-gradient(0deg, transparent 65%, #f4ead9 65%), repeating-linear-gradient(90deg, #a98a6230 0 1px, transparent 1px 80px), repeating-linear-gradient(0deg, #ead5b7 0 58px, #cfb58d 59px, #e9d6b9 60px); }
 .room-window { position: absolute; top: 16px; left: 9%; width: 100px; height: 89px; background: linear-gradient(90deg, transparent 47%, #d1b394 47% 53%, transparent 53%), linear-gradient(0deg, #c7d6be 47%, #d1b394 47% 53%, #e3ebda 53%); border: 7px solid #c9ab8b; border-radius: 48px 48px 3px 3px; box-shadow: 20px 12px 40px #fffbe5; }
-.room-note { position: absolute; top: 22px; right: 10%; transform: rotate(4deg); color: #8e735c; background: #fff7e5; border: 1px solid #dfc8a6; padding: 13px 19px; font-family: Georgia, serif; font-size: 14px; line-height: 1.5; text-align: center; box-shadow: 3px 4px 0 #ae86651a; }
+.room-note { position: absolute; top: 22px; right: 10%; transform: rotate(4deg); color: #8e735c; background: #fff7e5; border: 1px solid #dfc8a6; padding: 13px 19px; font-family: var(--cat-font); font-size: 14px; line-height: 1.5; text-align: center; box-shadow: 3px 4px 0 #ae86651a; }
 .room-rug { position: absolute; width: 60%; height: 115px; bottom: 21px; left: 17%; border-radius: 50%; background: #d0d4b5; border: 7px double #f1ecd8; box-shadow: 0 6px 10px #95795720; }
 .room-loop { position: absolute; width: 62%; height: 134px; bottom: 24px; left: 12%; border: 4px solid #fffaf1; border-radius: 42px 28px 37px 22px; transform: rotate(-4deg); box-shadow: 0 0 0 3px #88b4ab, 0 0 18px #bde3d4; }
 .room-cat { position: absolute; width: 160px; height: 160px; bottom: 30px; left: 14%; object-fit: contain; transform: rotate(-5deg); }
@@ -58,7 +66,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .cat-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px 20px; padding: 15px 0 0; font-size: .72rem; color: #8b735e; }
 .cat-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .cat-legend img { width: 30px; height: 30px; object-fit: contain; }
-.cat-game-brand { margin: 0 0 15px; text-align: center; font-family: Georgia, serif; color: #876a52; font-size: 1.15rem; letter-spacing: .05em; }
+.cat-game-brand { margin: 0 0 15px; text-align: center; font-family: var(--cat-font); color: #876a52; font-size: 1.15rem; letter-spacing: .05em; }
 .cat-howto { display: grid; gap: 15px; margin: 24px 0; }
 .cat-howto article { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 20px; border-bottom: 1px dashed #d9c7b1; padding-bottom: 16px; }
 .cat-howto img { width: 90px; height: 90px; object-fit: contain; }
@@ -82,3 +90,14 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 
 .motion-caption { min-height: 1.5em; margin: 14px 0 0; text-align: center; font-size: .82rem; color: #8c705c; }
+
+/* Keep handwritten labels readable at small sizes; JSON stays monospaced. */
+button, input, select, .button-link,
+.manager-output-block h2, .manager-difficulty-header h2 { font-family: var(--cat-font); }
+.home-copy h2, .page-title, .manager-title { font-weight: 400; line-height: 1.35; }
+.home-copy p, .cat-howto p { font-size: 1rem; line-height: 1.9; }
+.cat-legend { font-size: .9rem; }
+.cat-caption { font-size: .85rem; }
+.room-note { font-size: 16px; }
+button, .button-link, .cat-howto h2 { font-weight: 400; }
+#startGameButton { font-size: 1.15rem; }

@@ -64,3 +64,7 @@ node --test tests/*.test.js
 猫版のブラウザ確認ではステージ001のドラッグ操作、魚取得、クリア、次ステージ移動を確認済みです。
 
 `android/` は元ゲームのプロジェクトを保持していますが、猫版APKは未ビルドです。
+
+## フォント
+
+手書き風の [Yomogi（satsuyako）](https://github.com/satsuyako/YomogiFont) をタイトル・本文・操作ボタン・盤面メッセージに使用しています。未改変の WOFF2 を `assets/fonts/yomogi/` に同梱し、SIL Open Font License 1.1 の本文・著作者表記・取得元リビジョンも保存しています。JSON編集欄は読みやすい等幅書体を維持しています。

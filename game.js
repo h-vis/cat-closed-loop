@@ -2491,7 +2491,7 @@ function drawEventMotion() {
     context.restore();
     if (actor.arrival > 0) {
       context.save();
-      context.font = `bold ${size * .28}px sans-serif`;
+      context.font = `bold ${size * .28}px Yomogi, sans-serif`;
       context.textAlign = "center";
       context.fillStyle = eventMotion.cue === "startled" ? "#ba8060" : "#c98d8f";
       context.globalAlpha = Math.sin(actor.arrival * Math.PI);
@@ -3184,7 +3184,7 @@ function drawOverlay() {
   context.shadowColor = "#000000";
   context.shadowOffsetY = 3;
   context.shadowBlur = 3;
-  context.font = `bold ${Math.min(40, plaqueWidth / 7)}px Trebuchet MS, Segoe UI, sans-serif`;
+  context.font = `bold ${Math.min(40, plaqueWidth / 7)}px Yomogi, sans-serif`;
   const canContinue = gameState.clear
     && (gameState.mode === GAME_MODE.random || gameState.mode === getStageModeKey());
   context.fillText(
@@ -3193,7 +3193,7 @@ function drawOverlay() {
     getBoardPixelHeight() / 2 - (canContinue ? 12 : 0)
   );
   if (canContinue) {
-    context.font = `bold ${Math.min(16, plaqueWidth / 22)}px Trebuchet MS, Segoe UI, sans-serif`;
+    context.font = `bold ${Math.min(16, plaqueWidth / 22)}px Yomogi, sans-serif`;
     context.fillText(
       uiLanguage === "ja" ? "クリック／タップで次のステージへ" : "Click / tap to continue",
       getBoardPixelWidth() / 2,
@@ -9548,4 +9548,9 @@ for (const id of ["gameHowtoButton", "mechanicHelpButton", "openRulesButton", "m
     event.preventDefault();
     event.stopImmediatePropagation();
   }, true);
+}
+
+// Canvas text needs a redraw when the bundled handwritten font finishes loading.
+if (document.fonts) {
+  document.fonts.load('16px Yomogi').then(() => render()).catch(() => {});
 }
