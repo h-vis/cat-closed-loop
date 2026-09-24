@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>How to Play - Closed Loop Dungeon</title>
-  <link rel="stylesheet" href="style.css">
+  <title>How to Play - Closed-Loop Cat</title>
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="cat-theme.css">
 </head>
 <body>
   <main class="page howto-page">
@@ -15,166 +15,10 @@
         <a id="backToGameLink" class="button-link secondary-button" href="index.html">Back to Game</a>
       </header>
 
-      <div id="howtoSteps" class="howto-steps" aria-live="polite"></div>
+      <div id="howtoSteps" class="cat-howto" aria-live="polite"></div>
     </section>
   </main>
 
-  <script>
-    const HOWTO_ENGLISH_TEXT = [
-      "Closed Loop Dungeon is a puzzle about drawing one continuous line to divide the dungeon into separate areas.",
-      "Draw a line like this to enclose the hero and the key in the same area.",
-      "You made a continuous line.",
-      "When the hero and the key are in the same area, the hero automatically collects the key. The goal opens, so head there next.",
-      "Next, put the hero and the goal in the same area. A simple one-line shape like this is fine.",
-      "The hero and the goal are in the same area, so the stage is cleared.",
-      "Next, let's look at bombs.",
-      "If the hero and a bomb are in the same area, it is game over.",
-      "Bombs can be removed with water buckets.",
-      "Put the same number of bombs and buckets in one area to remove them.",
-      "Other objects can also be in that area, as long as the hero is not there.",
-      "Only the bomb and the bucket disappear.",
-      "However, if the hero is in the same area, the bomb explodes first.",
-      "Even if there is a bucket, it is still game over.",
-      "Bombs and buckets disappear only when their numbers are equal. If there are more bombs, they do not disappear.",
-      "If there are more buckets, they do not disappear either.",
-      "The line must form one continuous stroke. If line blocks touch other line blocks in four or more directions like this, it is not counted as one stroke.",
-      "However, a shape connected to the edge of the stage can still be judged as closed.",
-      "This kind of shape is not counted as one continuous loop.",
-      "Keep separate lines apart from each other.",
-      "Next, let's look at wall objects. Walls are the dark blue blocks.",
-      "A wall can work as part of your line.",
-      "Because of that, walls are also included when the game checks whether the line is one continuous stroke. This kind of drawing is not allowed.",
-      "However, there is no problem if the wall is not touching the line.",
-      "This case is also not allowed because the wall block is touching the drawn line.",
-      "Next, let's look at warp gates.",
-      "If the hero enters the same area as a warp gate...",
-      "The hero moves to the other warp gate.",
-      "However, if both warp gates are in the same area as the hero...",
-      "The warp does not activate.",
-      "Next, let's look at warp timing.",
-      "Purple warp gates activate before bombs, goals, and other stage effects are checked.",
-      "If there is no bomb in the area after warping, it is not game over.",
-      "On the other hand, if there is a bomb in the area after warping...",
-      "It is game over.",
-      "Cyan warp gates activate after bombs, goals, and other stage effects are checked.",
-      "If there is a bomb in the area before warping, it is game over.",
-      "On the other hand, even if there is a bomb in the area after warping...",
-      "It is not game over."
-    ];
-
-    function getInitialLanguage() {
-      const queryLanguage = new URLSearchParams(location.search).get("lang");
-      const savedLanguage = localStorage.getItem("closedLoopLanguage");
-      const language = queryLanguage || savedLanguage || navigator.language;
-      return String(language).toLowerCase().startsWith("ja") ? "ja" : "en";
-    }
-
-    const howtoLanguage = getInitialLanguage();
-
-    function applyHowtoLanguage() {
-      document.documentElement.lang = howtoLanguage;
-      localStorage.setItem("closedLoopLanguage", howtoLanguage);
-      document.title =
-        howtoLanguage === "ja"
-          ? "遊び方 - きりわけダンジョン"
-          : "How to Play - Closed Loop Dungeon";
-      document.querySelector(".page-title").textContent =
-        howtoLanguage === "ja" ? "遊び方" : "How to Play";
-      document.getElementById("backToGameLink").textContent =
-        howtoLanguage === "ja" ? "ゲームに戻る" : "Back to Game";
-      const currentParams = new URLSearchParams(location.search);
-      const shouldReturnToGame = currentParams.get("return") === "game";
-      const backParams = new URLSearchParams({ lang: howtoLanguage });
-      if (currentParams.get("android") === "1") {
-        backParams.set("android", "1");
-      }
-      if (shouldReturnToGame) {
-        backParams.set("resume", "1");
-      }
-      document.getElementById("backToGameLink").href = shouldReturnToGame
-        ? `index.html?${backParams.toString()}`
-        : `index.html?${backParams.toString()}`;
-    }
-
-    function getStepText(step) {
-      if (Array.isArray(step.text)) {
-        return step.text.join("\n");
-      }
-
-      return step.text || "";
-    }
-
-    function readJsonWithXhr(path) {
-      return new Promise((resolve, reject) => {
-        if (typeof XMLHttpRequest !== "function") {
-          reject(new Error("XMLHttpRequest is unavailable."));
-          return;
-        }
-
-        const request = new XMLHttpRequest();
-        request.overrideMimeType?.("application/json");
-        request.open("GET", path, true);
-        request.onload = () => {
-          if (request.status !== 0 && (request.status < 200 || request.status >= 300)) {
-            reject(new Error(`${path} could not be loaded.`));
-            return;
-          }
-
-          try {
-            resolve(JSON.parse(request.responseText));
-          } catch (error) {
-            reject(error);
-          }
-        };
-        request.onerror = () => reject(new Error(`${path} could not be loaded.`));
-        request.send();
-      });
-    }
-
-    async function readJsonResource(path) {
-      const response = await fetch(path).catch(() => null);
-      if (response?.ok) {
-        return response.json();
-      }
-
-      return readJsonWithXhr(path);
-    }
-
-    async function loadHowToSteps() {
-      const stepsContainer = document.getElementById("howtoSteps");
-
-      try {
-        const data = await readJsonResource("tutorial/howto.json");
-        const steps = Array.isArray(data.steps) ? data.steps : [];
-        stepsContainer.replaceChildren(
-          ...steps.map((step, index) => {
-            const originalText = getStepText(step);
-            const localizedText =
-              howtoLanguage === "en" ? HOWTO_ENGLISH_TEXT[index] || originalText : originalText;
-            const article = document.createElement("article");
-            article.className = "howto-step";
-
-            const image = document.createElement("img");
-            image.src = `tutorial/${step.image}`;
-            image.alt = localizedText || `How to Play ${index + 1}`;
-            image.loading = "lazy";
-
-            const caption = document.createElement("p");
-            caption.textContent =
-              localizedText ||
-              (howtoLanguage === "ja" ? "ここに説明文を書いてください。" : "Add an explanation here.");
-
-            article.append(image, caption);
-            return article;
-          })
-        );
-      } catch (error) {
-        stepsContainer.textContent = error.message;
-      }
-    }
-
-    applyHowtoLanguage();
-    void loadHowToSteps();
-  </script>
+  <script src="cat-howto.js"></script>
 </body>
 </html>

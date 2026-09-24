@@ -15,8 +15,8 @@ const CONFIG = {
     "rgba(8, 145, 178, 0.17)",
     "rgba(124, 58, 237, 0.16)",
   ],
-  wallBlockFillStyle: "#174a8b",
-  wallBlockStrokeStyle: "#082f63",
+  wallBlockFillStyle: "#b38b6b",
+  wallBlockStrokeStyle: "#826349",
   warpFillStyle: "#7c3aed",
   warpStrokeStyle: "#3b1a75",
   lateWarpFillStyle: "#22d3ee",
@@ -25,8 +25,8 @@ const CONFIG = {
   loopCellStrokeStyle: "#a3efff",
   drawingCellFillStyle: "rgba(88, 204, 255, 0.42)",
   drawingCellStrokeStyle: "#dcfaff",
-  gridLineStyle: "rgba(35, 32, 29, 0.36)",
-  overlayFillStyle: "rgba(12, 25, 42, 0.62)",
+  gridLineStyle: "rgba(137, 104, 69, 0.24)",
+  overlayFillStyle: "rgba(84, 64, 49, 0.66)",
   touchDrawingCommitRatio: 0.68,
 };
 
@@ -84,7 +84,7 @@ const DEFAULT_START_STAGE = {
   designLabel: "Low 001",
   designNote: "Startup stage placeholder for Low 001.",
   instructionText:
-    "Fixed stage pack. Include the key, then include the goal. Bombs disappear only when the same space contains the same number of water buckets. Click after CLEAR to move to the next stage.",
+    "Fixed stage pack. Include the fish, then include the goal. dogs disappear only when the same space contains the same number of bones. Click after CLEAR to move to the next stage.",
   keyInitiallyCollected: false,
   mode: GAME_MODE.stage,
   tutorialIndex: null,
@@ -130,11 +130,11 @@ const MAKER_TOOL = {
 
 const MAKER_TOOL_LABELS = {
   [MAKER_TOOL.wall]: "螢ｹ繝悶Ο繝・け",
-  [MAKER_TOOL.player]: "プレイヤー",
-  [MAKER_TOOL.key]: "鍵",
+  [MAKER_TOOL.player]: "猫",
+  [MAKER_TOOL.key]: "魚",
   [MAKER_TOOL.goal]: "ゴール",
-  [MAKER_TOOL.bomb]: "爆弾",
-  [MAKER_TOOL.disarm]: "水入りバケツ",
+  [MAKER_TOOL.bomb]: "犬",
+  [MAKER_TOOL.disarm]: "骨",
   [MAKER_TOOL.erase]: "消しゴム",
 };
 
@@ -142,14 +142,14 @@ const CONTROL_HINT_TEXT =
   "操作: マウスドラッグでマスを塗って閉ループを作ります。Rでリセット、Shift+Rでランダム再生成です。";
 
 const RANDOM_STAGE_INSTRUCTION_TEXT =
-  "ランダムモードです。オブジェクトのあるマスを避けて閉ループを作り、プレイヤーを含む空間に鍵とゴールをそろえます。プレイヤーのいない空間では、爆弾と水入りバケツが同数で対消滅します。"
+  "ランダムモードです。オブジェクトのあるマスを避けて閉ループを作り、猫を含む空間に魚とゴールをそろえます。猫のいない空間では、犬と骨が同数でおやすみします。"
   + CONTROL_HINT_TEXT;
 
 const MAKER_EDIT_INSTRUCTION_TEXT =
-  "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。プレイヤー・鍵・ゴールは1つずつ、爆弾・水入りバケツは複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。";
+  "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。猫・魚・ゴールは1つずつ、犬・骨は複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。";
 
 const MAKER_TEST_INSTRUCTION_TEXT =
-  "ステージメーカーのテストプレイ中です。プレイヤーは移動せず、ループで空間の分かれ方だけを調整します。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。";
+  "ステージメーカーのテストプレイ中です。猫は移動せず、ループで空間の分かれ方だけを調整します。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。";
 
 // ルールを一つずつ確認できるチュートリアルステージ
 const TUTORIAL_STAGES = [
@@ -158,7 +158,7 @@ const TUTORIAL_STAGES = [
     tutorialText:
       "まずは閉ループを1本作る基本です。塗ったマスそのものは壁なので、線の上は空間に含まれません。",
     designNote:
-      "プレイヤーと鍵を同じ空間に入れてから、新しいループでプレイヤーとゴールも同じ空間にしてみましょう。",
+      "猫と魚を同じ空間に入れてから、新しいループで猫とゴールも同じ空間にしてみましょう。",
     playerStart: { x: 1, y: 1 },
     keyPosition: { x: 3, y: 1 },
     goalPosition: { x: 7, y: 2 },
@@ -166,11 +166,11 @@ const TUTORIAL_STAGES = [
     disarmItems: [],
   },
   {
-    title: "鍵は歩かず取得",
+    title: "魚は歩かず取得",
     tutorialText:
-      "鍵は同じ空間に入った瞬間に取得されます。鍵のマスまで歩く必要はありません。",
+      "魚は同じ空間に入った瞬間に取得されます。魚のマスまで歩く必要はありません。",
     designNote:
-      "鍵を直接踏まずに取得し、そのあと別のループでゴールとも同じ空間を作ってみてください。",
+      "魚を直接踏まずに取得し、そのあと別のループでゴールとも同じ空間を作ってみてください。",
     playerStart: { x: 1, y: 2 },
     keyPosition: { x: 4, y: 3 },
     goalPosition: { x: 8, y: 1 },
@@ -180,9 +180,9 @@ const TUTORIAL_STAGES = [
   {
     title: "外側の空間も有効",
     tutorialText:
-      "ループの外側も、完全に分断されていなければ1つの空間として扱われます。プレイヤーもゴールも囲まない小さなループでも判定が働きます。",
+      "ループの外側も、完全に分断されていなければ1つの空間として扱われます。猫もゴールも囲まない小さなループでも判定が働きます。",
     designNote:
-      "このステージは鍵取得済みです。プレイヤーとゴールから離れた場所に小さなループを作り、外側空間でつながることを確かめてみましょう。",
+      "このステージは魚取得済みです。猫とゴールから離れた場所に小さなループを作り、外側空間でつながることを確かめてみましょう。",
     playerStart: { x: 2, y: 2 },
     keyPosition: { x: 1, y: 1 },
     goalPosition: { x: 8, y: 8 },
@@ -191,11 +191,11 @@ const TUTORIAL_STAGES = [
     keyInitiallyCollected: true,
   },
   {
-    title: "爆弾は即爆発",
+    title: "犬はびっくり",
     tutorialText:
-      "プレイヤーと同じ空間に爆弾が入ると、その瞬間にゲームオーバーです。同数の水入りバケツがあっても、プレイヤー空間では助かりません。",
+      "猫と同じ空間に犬が入ると、その瞬間にゲームオーバーです。同数の骨があっても、猫空間では助かりません。",
     designNote:
-      "このステージは鍵取得済みです。爆弾だけを別空間に閉じ込め、プレイヤーは外側空間でゴールとつながる形を狙ってみましょう。",
+      "このステージは魚取得済みです。犬だけを別空間に閉じ込め、猫は外側空間でゴールとつながる形を狙ってみましょう。",
     playerStart: { x: 1, y: 1 },
     keyPosition: { x: 1, y: 1 },
     goalPosition: { x: 8, y: 8 },
@@ -204,11 +204,11 @@ const TUTORIAL_STAGES = [
     keyInitiallyCollected: true,
   },
   {
-    title: "同数で対消滅",
+    title: "同数でおやすみ",
     tutorialText:
-      "プレイヤーを含まない空間では、爆弾と水入りバケツが同数だけ入ったときに対消滅します。数が合わないと残ります。",
+      "猫を含まない空間では、犬と骨が同数だけ入ったときにおやすみします。数が合わないと残ります。",
     designNote:
-      "このステージは鍵取得済みです。爆弾2個と水入りバケツ2個をまとめて別空間へ入れて消し、そのあとゴールと同じ空間を作ってみましょう。",
+      "このステージは魚取得済みです。犬2個と骨2個をまとめて別空間へ入れて消し、そのあとゴールと同じ空間を作ってみましょう。",
     playerStart: { x: 1, y: 1 },
     keyPosition: { x: 1, y: 1 },
     goalPosition: { x: 6, y: 5 },
@@ -225,9 +225,9 @@ const TUTORIAL_STAGES = [
   {
     title: "総合演習",
     tutorialText:
-      "最後は総合問題です。鍵取得、外側空間、爆弾の危険、水入りバケツの対消滅をまとめて考えます。",
+      "最後は総合問題です。魚取得、外側空間、犬の危険、骨のおやすみをまとめて考えます。",
     designNote:
-      "まず安全な空間で鍵を取り、その後に爆弾を孤立させるか、プレイヤーのいない空間で水入りバケツと同数にそろえるかを考えてみましょう。",
+      "まず安全な空間で魚を取り、その後に犬を孤立させるか、猫のいない空間で骨と同数にそろえるかを考えてみましょう。",
     playerStart: { x: 2, y: 1 },
     keyPosition: { x: 1, y: 5 },
     goalPosition: { x: 8, y: 8 },
@@ -242,7 +242,7 @@ const TUTORIAL_STAGES = [
   },
 ];
 
-// 近接しすぎないよう、爆弾と水入りバケツを離したベースパターン
+// 近接しすぎないよう、犬と骨を離したベースパターン
 TUTORIAL_STAGES.length -= 1;
 
 const STAGE_PATTERNS = [
@@ -418,27 +418,27 @@ const STAGE_TRANSFORMS = [
   },
 ];
 
-// 同じ配置でも残す爆弾と水入りバケツを変え、勝ち筋の型を増やす
+// 同じ配置でも残す犬と骨を変え、勝ち筋の型を増やす
 const STAGE_VARIANTS = [
   {
     id: "mixed",
     label: "混成戦",
     style: "mixed",
-    strategyNote: "封鎖と対消滅の両方を見比べる",
+    strategyNote: "封鎖とおやすみの両方を見比べる",
     plannedLoopOffset: 0,
   },
   {
     id: "cleanup",
-    label: "対消滅型",
+    label: "おやすみ型",
     style: "cleanup",
-    strategyNote: "爆弾と水入りバケツを同数でまとめて消す",
+    strategyNote: "犬と骨を同数でまとめて消す",
     plannedLoopOffset: 0,
   },
   {
     id: "lockdown",
     label: "封鎖型",
     style: "isolation",
-    strategyNote: "爆弾を消せないので別空間へ封じる",
+    strategyNote: "犬を消せないので別空間へ封じる",
     plannedLoopOffset: -1,
   },
   {
@@ -867,10 +867,10 @@ function buildStageNote(layout) {
     `ランダム生成: ${layout.label}`,
     `系統:${layout.familyLabel ?? getStageFamilyLabel(layout.label)}`,
     `開始(${layout.playerStart.x},${layout.playerStart.y})`,
-    `鍵(${layout.keyPosition.x},${layout.keyPosition.y})`,
+    `魚(${layout.keyPosition.x},${layout.keyPosition.y})`,
     `ゴール(${layout.goalPosition.x},${layout.goalPosition.y})`,
-    `爆弾${layout.bombs.length}個`,
-    `水入りバケツ${layout.disarmItems.length}個`,
+    `犬${layout.bombs.length}個`,
+    `骨${layout.disarmItems.length}個`,
     `最短距離${minimumToolDistance}`,
     `狙い:${layout.strategyNote ?? "状況判断"}`,
     `目安: ${layout.plannedLoops}ループ前後`,
@@ -1046,7 +1046,7 @@ function createRandomDesignedStage() {
           familyLabel: "予備ステージ",
           variantLabel: "混成戦",
           solutionStyle: "mixed",
-          strategyNote: "封鎖と対消滅の両方を見比べる",
+          strategyNote: "封鎖とおやすみの両方を見比べる",
         },
       ];
 
@@ -1319,13 +1319,13 @@ function getStageUniqueObjectTypeAtCell(stage, cell) {
 
 function getMakerToolHint(tool) {
   const hints = {
-    [MAKER_TOOL.player]: "プレイヤーを置きます。1つだけ存在でき、クリックしたマスへ移動します。",
-    [MAKER_TOOL.key]: "鍵を置きます。1つだけ存在でき、プレイヤーと同じ空間に入ると取得されます。",
-    [MAKER_TOOL.goal]: "ゴールを置きます。1つだけ存在でき、鍵取得後に同じ空間へ入るとクリアです。",
-    [MAKER_TOOL.bomb]: "爆弾を置くか外します。プレイヤー空間に入ると即爆発します。",
-    [MAKER_TOOL.disarm]: "水入りバケツを置くか外します。プレイヤーのいない空間で爆弾と同数なら相殺します。",
+    [MAKER_TOOL.player]: "猫を置きます。1つだけ存在でき、クリックしたマスへ移動します。",
+    [MAKER_TOOL.key]: "魚を置きます。1つだけ存在でき、猫と同じ空間に入ると取得されます。",
+    [MAKER_TOOL.goal]: "ゴールを置きます。1つだけ存在でき、魚取得後に同じ空間へ入るとクリアです。",
+    [MAKER_TOOL.bomb]: "犬を置くか外します。猫空間に入るとびっくりします。",
+    [MAKER_TOOL.disarm]: "骨を置くか外します。猫のいない空間で犬と同数なら相殺します。",
     [MAKER_TOOL.wall]: "壁ブロックを置くか外します。描画したループに接続したときだけ、壁の一部として機能します。",
-    [MAKER_TOOL.erase]: "爆弾・水入りバケツ・壁ブロックを消します。プレイヤー・鍵・ゴールはそれぞれのツールで動かしてください。",
+    [MAKER_TOOL.erase]: "犬・骨・壁ブロックを消します。猫・魚・ゴールはそれぞれのツールで動かしてください。",
   };
 
   return hints[tool] ?? "";
@@ -2357,9 +2357,9 @@ function updateStatus() {
     : STATUS.outsideLoop;
 }
 
-// プレイヤー空間ではシールド回収後に爆弾判定を行い、
-// シールドがなければ即死、あれば1回だけ耐えて爆弾を消す。
-// それ以外の空間では同数の爆弾と水入りバケツを相殺する。
+// 猫空間ではシールド回収後に犬判定を行い、
+// シールドがなければ即死、あれば1回だけ耐えて犬を消す。
+// それ以外の空間では同数の犬と骨を相殺する。
 function applyLoopEffects() {
   gameState.explodedBombs = [];
   refreshPlayerSpaceFlags();
@@ -2678,59 +2678,19 @@ function drawDungeonFloor() {
     floor.height = canvas.height;
     const brush = floor.getContext("2d");
     const size = CONFIG.cellSize;
-    let seed = 173;
-    const random = () => {
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-      return seed / 4294967296;
-    };
-    brush.fillStyle = "#373b3b";
-    brush.fillRect(0, 0, floor.width, floor.height);
     for (let y = 0; y < floor.height; y += size) {
       for (let x = 0; x < floor.width; x += size) {
-        const tone = Math.floor(random() * 19);
-        const shade = brush.createLinearGradient(x, y, x + size, y + size);
-        shade.addColorStop(0, `rgb(${150 + tone},${146 + tone},${131 + tone})`);
-        shade.addColorStop(1, `rgb(${117 + tone},${117 + tone},${108 + tone})`);
-        brush.fillStyle = shade;
-        brush.fillRect(x + 1, y + 1, size - 2, size - 2);
-        brush.strokeStyle = "rgba(236,224,194,0.38)";
+        brush.fillStyle = ["#f4e5cf", "#efddc2", "#f7ead7", "#eedbc1"][(x / size + y / size * 3) % 4];
+        brush.fillRect(x, y, size, size);
+        brush.fillStyle = "#ffffff50";
+        brush.fillRect(x + 2, y + 2, size - 4, 2);
+        brush.strokeStyle = "#bd94621b";
         brush.beginPath();
-        brush.moveTo(x + 1.5, y + size - 2);
-        brush.lineTo(x + 1.5, y + 1.5);
-        brush.lineTo(x + size - 2, y + 1.5);
+        brush.moveTo(x + 5, y + size * .65);
+        brush.bezierCurveTo(x + size * .3, y + size * .6, x + size * .7, y + size * .75, x + size - 5, y + size * .68);
         brush.stroke();
-        // 小さな斑点と短いひびで、アイコンを邪魔しない石の質感を作る。
-        for (let n = 0; n < 95; n += 1) {
-          brush.fillStyle = random() > 0.5 ? "rgba(240,224,185,0.10)" : "rgba(39,43,40,0.10)";
-          brush.fillRect(x + 2 + random() * (size - 5), y + 2 + random() * (size - 5), 1 + random() * 3, 1 + random() * 2);
-        }
-        if (random() < 0.58) {
-          let crackX = x + 7 + random() * (size - 14);
-          let crackY = y + 2;
-          brush.strokeStyle = "rgba(50,54,51,0.3)";
-          brush.beginPath();
-          brush.moveTo(crackX, crackY);
-          for (let n = 0; n < 4; n += 1) {
-            crackX += (random() - 0.5) * 9;
-            crackY += 3 + random() * 4;
-            brush.lineTo(crackX, crackY);
-          }
-          brush.stroke();
-        }
-        const edge = x === 0 || y === 0 || x + size >= floor.width || y + size >= floor.height;
-        if (edge && random() < 0.6) {
-          for (let n = 0; n < 17; n += 1) {
-            brush.fillStyle = ["#647344", "#74804a", "#4a5c3d"][n % 3];
-            brush.fillRect(x + random() * 19, y + random() * 9, 2 + random() * 3, 2);
-          }
-        }
       }
     }
-    const light = brush.createRadialGradient(floor.width * 0.5, floor.height * 0.4, 0, floor.width * 0.5, floor.height * 0.4, Math.max(floor.width, floor.height) * 0.75);
-    light.addColorStop(0, "rgba(255,226,158,0.09)");
-    light.addColorStop(1, "rgba(11,24,35,0.32)");
-    brush.fillStyle = light;
-    brush.fillRect(0, 0, floor.width, floor.height);
     drawDungeonFloor.cache = floor;
   }
   context.drawImage(floor, 0, 0);
@@ -3020,65 +2980,7 @@ function drawBombs() {
 }
 
 function drawExplodedBombs() {
-  for (const bomb of gameState.explodedBombs) {
-    const center = getCellCenter(bomb);
-
-    context.save();
-    context.translate(center.x, center.y);
-
-    context.fillStyle = "rgba(255, 140, 0, 0.95)";
-    context.strokeStyle = "#7a1200";
-    context.lineWidth = 2;
-
-    context.beginPath();
-    context.moveTo(0, -22);
-    context.lineTo(6, -9);
-    context.lineTo(18, -18);
-    context.lineTo(12, -5);
-    context.lineTo(24, 0);
-    context.lineTo(11, 5);
-    context.lineTo(18, 18);
-    context.lineTo(5, 11);
-    context.lineTo(0, 24);
-    context.lineTo(-5, 11);
-    context.lineTo(-18, 18);
-    context.lineTo(-11, 5);
-    context.lineTo(-24, 0);
-    context.lineTo(-12, -5);
-    context.lineTo(-18, -18);
-    context.lineTo(-6, -9);
-    context.closePath();
-    context.fill();
-    context.stroke();
-
-    context.fillStyle = "#ffe18c";
-    context.beginPath();
-    context.moveTo(0, -13);
-    context.lineTo(4, -5);
-    context.lineTo(12, -9);
-    context.lineTo(7, -1);
-    context.lineTo(15, 3);
-    context.lineTo(6, 5);
-    context.lineTo(9, 13);
-    context.lineTo(1, 8);
-    context.lineTo(-3, 15);
-    context.lineTo(-5, 7);
-    context.lineTo(-14, 8);
-    context.lineTo(-8, 1);
-    context.lineTo(-15, -4);
-    context.lineTo(-6, -5);
-    context.lineTo(-10, -13);
-    context.lineTo(-1, -8);
-    context.closePath();
-    context.fill();
-
-    context.fillStyle = "#fff8d6";
-    context.beginPath();
-    context.arc(0, 1, 5, 0, Math.PI * 2);
-    context.fill();
-
-    context.restore();
-  }
+  for (const dog of gameState.explodedBombs) drawSpriteAtCell("bomb", dog, () => {});
 }
 
 function drawDisarmItems() {
@@ -3193,8 +3095,8 @@ function drawOverlay() {
   const plaqueX = (canvas.width - plaqueWidth) / 2;
   const plaqueY = (canvas.height - plaqueHeight) / 2;
   const plaqueFill = context.createLinearGradient(0, plaqueY, 0, plaqueY + plaqueHeight);
-  plaqueFill.addColorStop(0, "#29363d");
-  plaqueFill.addColorStop(1, "#101a22");
+  plaqueFill.addColorStop(0, "#97765e");
+  plaqueFill.addColorStop(1, "#6b5142");
   context.fillStyle = plaqueFill;
   context.fillRect(plaqueX, plaqueY, plaqueWidth, plaqueHeight);
   context.strokeStyle = "#e6b853";
@@ -3213,7 +3115,7 @@ function drawOverlay() {
   const canContinue = gameState.clear
     && (gameState.mode === GAME_MODE.random || gameState.mode === getStageModeKey());
   context.fillText(
-    gameState.gameOver ? "GAME OVER" : "CLEAR",
+    gameState.gameOver ? (uiLanguage === "ja" ? "もういちど" : "TRY AGAIN") : (uiLanguage === "ja" ? "おかえり！" : "WELCOME HOME"),
     canvas.width / 2,
     canvas.height / 2 - (canContinue ? 12 : 0)
   );
@@ -3230,8 +3132,8 @@ function drawOverlay() {
 
 function buildMakerObjectSummary() {
   return [
-    `爆弾${gameState.bombs.length}個`,
-    `水入りバケツ${gameState.disarmItems.length}個`,
+    `犬${gameState.bombs.length}個`,
+    `骨${gameState.disarmItems.length}個`,
     `壁${gameState.wallBlocks.length}個`,
   ].join(" / ");
 }
@@ -3374,13 +3276,13 @@ function handleMakerSizeInputChange() {
 
 function getMakerToolHint(tool) {
   const hints = {
-    [MAKER_TOOL.player]: "プレイヤー開始位置を置きます。同じ空間の中だけを移動できます。",
-    [MAKER_TOOL.key]: "鍵を置きます。プレイヤーと同じ空間に入ると取得されます。",
-    [MAKER_TOOL.goal]: "ゴールを置きます。鍵取得後に同じ空間へ入るとクリアです。",
-    [MAKER_TOOL.bomb]: "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
-    [MAKER_TOOL.disarm]: "水入りバケツを置きます。プレイヤーがいない空間で爆弾と同数なら相殺します。",
+    [MAKER_TOOL.player]: "猫開始位置を置きます。同じ空間の中だけを移動できます。",
+    [MAKER_TOOL.key]: "魚を置きます。猫と同じ空間に入ると取得されます。",
+    [MAKER_TOOL.goal]: "ゴールを置きます。魚取得後に同じ空間へ入るとクリアです。",
+    [MAKER_TOOL.bomb]: "犬を置きます。猫と同じ空間に入ると即ゲームオーバーです。",
+    [MAKER_TOOL.disarm]: "骨を置きます。猫がいない空間で犬と同数なら相殺します。",
     [MAKER_TOOL.wall]: "壁ブロックを置きます。描いた線に接続したときだけループ壁として使われます。",
-    [MAKER_TOOL.erase]: "爆弾・水入りバケツ・壁ブロックを消します。",
+    [MAKER_TOOL.erase]: "犬・骨・壁ブロックを消します。",
   };
 
   return hints[tool] ?? "";
@@ -3388,8 +3290,8 @@ function getMakerToolHint(tool) {
 
 function buildMakerObjectSummary() {
   return [
-    `爆弾${gameState.bombs.length}個`,
-    `水入りバケツ${gameState.disarmItems.length}個`,
+    `犬${gameState.bombs.length}個`,
+    `骨${gameState.disarmItems.length}個`,
     `壁${gameState.wallBlocks.length}個`,
   ].join(" / ");
 }
@@ -3397,7 +3299,7 @@ function buildMakerObjectSummary() {
 function buildStageInfoText() {
   if (gameState.mode === GAME_MODE.tutorial) {
     const currentNumber = (gameState.tutorialIndex ?? 0) + 1;
-    return `チュートリアル ${currentNumber}/${TUTORIAL_STAGES.length}\nループで空間を分け、危険物を避けながら鍵とゴールを同じ空間へ入れる練習です。`;
+    return `チュートリアル ${currentNumber}/${TUTORIAL_STAGES.length}\nループで空間を分け、危険物を避けながら魚とゴールを同じ空間へ入れる練習です。`;
   }
 
   if (gameState.mode === GAME_MODE.maker) {
@@ -3675,9 +3577,9 @@ function getScreenUi() {
 
 const UI_TRANSLATIONS = {
   en: {
-    homeKicker: "Draw One Line",
-    homeTitle: "Closed Loop Dungeon",
-    homeLead: "Carve the dungeon with a single loop. Key. Door. Escape.",
+    homeKicker: "SMALL PUZZLES, HAPPY CATS",
+    homeTitle: "Closed-Loop Cat",
+    homeLead: "A little puzzle. A quiet room. A happy cat.",
     languageLabel: "Language",
     languageButtonLabel: "Language",
     startGameButton: "Start Game",
@@ -3701,12 +3603,12 @@ const UI_TRANSLATIONS = {
     switched: "Switched to",
   },
   ja: {
-    homeKicker: "一筆書きパズル",
-    homeTitle: "きりわけダンジョン",
-    homeLead: "空間を一筆書きで斬り、ダンジョンを突破せよ",
+    homeKicker: "CLOSED-LOOP CAT / ひとふでパズル",
+    homeTitle: "ねこの、ひとふで。",
+    homeLead: "ひとふで描いて、猫のいるやさしい時間。",
     languageLabel: "言語",
     languageButtonLabel: "言語",
-    startGameButton: "ゲーム開始",
+    startGameButton: "猫とあそぶ",
     howTo: "遊び方",
     title: "タイトル",
     stage: "ステージ",
@@ -3741,7 +3643,7 @@ function getInitialUiLanguage() {
     return queryLanguage;
   }
 
-  const savedLanguage = globalThis.localStorage?.getItem("closedLoopLanguage");
+  const savedLanguage = globalThis.localStorage?.getItem("closedLoopCatLanguage");
   if (savedLanguage === "ja" || savedLanguage === "en") {
     return savedLanguage;
   }
@@ -3820,7 +3722,7 @@ function updateHowtoLinks() {
   }
 }
 
-const HOWTO_RETURN_STATE_KEY = "closedLoopHowtoReturnState";
+const HOWTO_RETURN_STATE_KEY = "closedLoopCatHowtoReturnState";
 
 function serializeHowtoReturnState() {
   const { stageDifficultySelect, stageNumberInput } = getStageJsonUi();
@@ -3947,7 +3849,7 @@ function restoreHowtoReturnState() {
 
 function applyUiLanguage() {
   document.documentElement.lang = uiLanguage;
-  document.title = uiLanguage === "ja" ? "きりわけダンジョン" : "Closed Loop Dungeon";
+  document.title = uiLanguage === "ja" ? "ねこの、ひとふで。 | Closed-Loop Cat" : "Closed-Loop Cat";
   const { languageSelect } = getScreenUi();
   if (languageSelect) {
     languageSelect.value = uiLanguage;
@@ -3993,7 +3895,7 @@ function applyUiLanguage() {
 
 function setUiLanguage(nextLanguage) {
   uiLanguage = nextLanguage === "ja" ? "ja" : "en";
-  globalThis.localStorage?.setItem("closedLoopLanguage", uiLanguage);
+  globalThis.localStorage?.setItem("closedLoopCatLanguage", uiLanguage);
   applyUiLanguage();
   closeLanguageDialog();
 }
@@ -5502,13 +5404,13 @@ function resetGame(regenerateStage = false) {
 
 function getMakerToolHint(tool) {
   const hints = {
-    [MAKER_TOOL.player]: "プレイヤーの開始位置を置きます。ループの中だけ移動できます。",
-    [MAKER_TOOL.key]: "鍵を置きます。プレイヤーと同じ空間に入ると取得されます。",
-    [MAKER_TOOL.goal]: "ゴールを置きます。鍵取得後に同じ空間へ入るとクリアです。",
-    [MAKER_TOOL.bomb]: "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
-    [MAKER_TOOL.disarm]: "水入りバケツを置きます。プレイヤーのいない空間で爆弾と同数なら対消滅します。",
+    [MAKER_TOOL.player]: "猫の開始位置を置きます。ループの中だけ移動できます。",
+    [MAKER_TOOL.key]: "魚を置きます。猫と同じ空間に入ると取得されます。",
+    [MAKER_TOOL.goal]: "ゴールを置きます。魚取得後に同じ空間へ入るとクリアです。",
+    [MAKER_TOOL.bomb]: "犬を置きます。猫と同じ空間に入ると即ゲームオーバーです。",
+    [MAKER_TOOL.disarm]: "骨を置きます。猫のいない空間で犬と同数ならおやすみします。",
     [MAKER_TOOL.wall]: "壁ブロックを置きます。線は通れず、ループの切り方も変わります。",
-    [MAKER_TOOL.erase]: "爆弾、水入りバケツ、壁ブロックを消します。",
+    [MAKER_TOOL.erase]: "犬、骨、壁ブロックを消します。",
   };
 
   return hints[tool] ?? "";
@@ -5516,8 +5418,8 @@ function getMakerToolHint(tool) {
 
 function buildMakerObjectSummary() {
   return [
-    `爆弾${gameState.bombs.length}個`,
-    `水入りバケツ${gameState.disarmItems.length}個`,
+    `犬${gameState.bombs.length}個`,
+    `骨${gameState.disarmItems.length}個`,
     `壁${gameState.wallBlocks.length}個`,
   ].join(" / ");
 }
@@ -7332,7 +7234,7 @@ const HARD_RANDOM_STAGE_PATTERNS = [
     ],
     plannedLoops: 4,
     solutionStyle: "gauntlet",
-    strategyNote: "鍵回収、爆弾処理、終盤の封鎖を三段階で揃えます。",
+    strategyNote: "魚回収、犬処理、終盤の封鎖を三段階で揃えます。",
     difficultySeedWeight: 1400,
   },
   {
@@ -7357,7 +7259,7 @@ const HARD_RANDOM_STAGE_PATTERNS = [
     ],
     plannedLoops: 4,
     solutionStyle: "relay",
-    strategyNote: "上側の鍵回収、下側の切り分け、最後の接続を順に通します。",
+    strategyNote: "上側の魚回収、下側の切り分け、最後の接続を順に通します。",
     difficultySeedWeight: 1360,
   },
   {
@@ -7384,7 +7286,7 @@ const HARD_RANDOM_STAGE_PATTERNS = [
     ],
     plannedLoops: 4,
     solutionStyle: "needle",
-    strategyNote: "One narrow route survives; side captures tend to collapse the key-goal order.",
+    strategyNote: "One narrow route survives; side captures tend to collapse the fish-goal order.",
     difficultySeedWeight: 2800,
   },
   {
@@ -8558,19 +8460,30 @@ window.addEventListener("pointerup", async (event) => {
 window.addEventListener("pointercancel", () => { clearAdvanceGesture = null; });
 window.addEventListener("blur", () => { clearAdvanceGesture = null; });
 
-const ICON_SPRITE_SHEET_PATH = "sozai/icons-transparent.png";
-const WARP_ICON_PATH = "sozai/warp-transparent.png";
-const BLUE_WARP_ICON_PATH = "sozai/blue_warp-transparent.png";
-const ICON_SPRITE_DEFINITIONS = {
-  player: { x: 107, y: 339, width: 216, height: 222, padding: 3 },
-  goalOpen: { x: 383, y: 339, width: 220, height: 222, padding: 3 },
-  goalClosed: { x: 669, y: 339, width: 218, height: 222, padding: 3 },
-  key: { x: 1001, y: 353, width: 125, height: 208, padding: 6 },
-  bomb: { x: 120, y: 661, width: 178, height: 221, padding: 4 },
-  waterBucket: { x: 400, y: 684, width: 183, height: 198, padding: 4 },
-  emptyBucket: { x: 685, y: 684, width: 184, height: 198, padding: 4 },
-  wall: { x: 954, y: 683, width: 203, height: 199, padding: 1 },
-};
+const ICON_SPRITE_SHEET_PATH = "assets/cats/sprites.png";
+const WARP_ICON_PATH = "assets/cats/bag.png";
+const BLUE_WARP_ICON_PATH = "assets/cats/tunnel.png";
+const ICON_SPRITE_DEFINITIONS = Object.fromEntries(
+  ["player", "cat1", "cat2", "cat3", "cat4", "bomb", "dog1", "dog2", "dog3", "dog4",
+    "key", "waterBucket", "goalClosed", "goalOpen", "bag", "tunnel"]
+    .map((key, index) => [key, { x: (index % 5) * 272, y: Math.floor(index / 5) * 272,
+      width: 272, height: 272, padding: 1 }])
+);
+const catAppearance = new WeakMap();
+// A stage owns its appearance: redraws and teleporting never reroll a cat.
+// Weak keys let discarded stages (and their dog maps) be garbage collected.
+function getAnimalSpriteKey(kind, cell) {
+  let appearance = catAppearance.get(gameState.stage);
+  if (!appearance) {
+    appearance = { cat: Math.floor(Math.random() * 5), dogs: new Map() };
+    catAppearance.set(gameState.stage, appearance);
+  }
+  if (kind === "player") return appearance.cat === 0 ? "player" : `cat${appearance.cat}`;
+  const position = getCellKey(cell);
+  if (!appearance.dogs.has(position)) appearance.dogs.set(position, Math.floor(Math.random() * 5));
+  const index = appearance.dogs.get(position);
+  return index === 0 ? "bomb" : `dog${index}`;
+}
 
 const drawWallBlocksFallback = drawWallBlocks;
 const drawPlayerFallback = drawPlayer;
@@ -8712,7 +8625,7 @@ function renderRuleSpriteIcons() {
     const drawY = Math.round((height - drawHeight) / 2);
 
     iconContext.clearRect(0, 0, width, height);
-    iconContext.imageSmoothingEnabled = false;
+    iconContext.imageSmoothingEnabled = true;
     iconContext.drawImage(
       spriteState.image,
       sprite.x,
@@ -8729,10 +8642,22 @@ function renderRuleSpriteIcons() {
 
 function drawSpriteAtCell(spriteKey, cell, fallbackDraw) {
   const spriteState = ensureIconSpriteSheet();
-  const sprite = ICON_SPRITE_DEFINITIONS[spriteKey];
+  const actualKey = spriteKey === "player" || spriteKey === "bomb" ? getAnimalSpriteKey(spriteKey, cell) : spriteKey;
+  const sprite = ICON_SPRITE_DEFINITIONS[actualKey];
 
   if (!spriteState.loaded || !spriteState.image || !sprite) {
-    fallbackDraw();
+    const symbol = { player: "🐈", bomb: "🐕", key: "🐟", waterBucket: "🦴", goalOpen: "📦", goalClosed: "📦" }[spriteKey];
+    if (symbol) {
+      const center = getCellCenter(cell);
+      context.save();
+      context.font = `${CONFIG.cellSize * .65}px sans-serif`;
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(symbol, center.x, center.y);
+      context.restore();
+    } else {
+      fallbackDraw();
+    }
     return;
   }
 
@@ -8746,8 +8671,8 @@ function drawSpriteAtCell(spriteKey, cell, fallbackDraw) {
   const drawY = pixelY + Math.round((CONFIG.cellSize - drawHeight) / 2);
 
   context.save();
-  context.imageSmoothingEnabled = false;
-  context.shadowColor = "rgba(12,17,22,0.65)";
+  context.imageSmoothingEnabled = true;
+  context.shadowColor = "rgba(100,70,40,0.12)";
   context.shadowBlur = 3;
   context.shadowOffsetY = 2;
   context.drawImage(
@@ -8807,12 +8732,6 @@ drawGoal = function drawGoalWithIcon() {
 };
 
 drawBombs = function drawBombsWithIcons() {
-  const spriteState = ensureIconSpriteSheet();
-  if (!spriteState.loaded || !spriteState.image) {
-    drawBombsFallback();
-    return;
-  }
-
   const explodedBombKeys = buildCellKeySet(gameState.explodedBombs);
 
   for (const bomb of gameState.bombs) {
@@ -8825,12 +8744,6 @@ drawBombs = function drawBombsWithIcons() {
 };
 
 drawDisarmItems = function drawDisarmItemsWithIcons() {
-  const spriteState = ensureIconSpriteSheet();
-  if (!spriteState.loaded || !spriteState.image) {
-    drawDisarmItemsFallback();
-    return;
-  }
-
   for (const item of gameState.disarmItems) {
     drawSpriteAtCell("waterBucket", item, drawDisarmItemsFallback);
   }
@@ -8845,8 +8758,8 @@ function drawWarpIconCollection(warps, iconState) {
     const pixelY = warp.y * CONFIG.cellSize + padding;
 
     context.save();
-    context.imageSmoothingEnabled = false;
-    context.shadowColor = warps === gameState.lateWarps ? "#26d9ff" : "#bb55ff";
+    context.imageSmoothingEnabled = true;
+    context.shadowColor = warps === gameState.lateWarps ? "#9bab80" : "#c89165";
     context.shadowBlur = 12;
     context.drawImage(iconState.image, pixelX, pixelY, size, size);
     context.restore();
@@ -8873,23 +8786,23 @@ drawWarps = function drawWarpsWithIcon() {
 getMakerToolHint = function getMakerToolHintWithBuckets(tool) {
   const hints = {
     [MAKER_TOOL.player]:
-      "プレイヤー開始位置を置きます。このマスを含む空間がプレイヤー側として判定されます。",
+      "猫開始位置を置きます。このマスを含む空間が猫側として判定されます。",
     [MAKER_TOOL.key]:
-      "鍵を置きます。プレイヤーと同じ空間に入った瞬間に取得されます。",
+      "魚を置きます。猫と同じ空間に入った瞬間に取得されます。",
     [MAKER_TOOL.goal]:
-      "ゴールを置きます。鍵取得後にプレイヤーと同じ空間へ入るとクリアです。",
+      "ゴールを置きます。魚取得後に猫と同じ空間へ入るとクリアです。",
     [MAKER_TOOL.bomb]:
-      "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
+      "犬を置きます。猫と同じ空間に入ると即ゲームオーバーです。",
     [MAKER_TOOL.disarm]:
-      "水入りバケツを置きます。プレイヤーのいない空間で爆弾と同数なら対消滅します。",
+      "骨を置きます。猫のいない空間で犬と同数ならおやすみします。",
     [MAKER_TOOL.warp]:
-      "ワープを置きます。2つで1組です。片方だけプレイヤーと同じ空間に入ると、もう片方へ移動します。",
+      "ワープを置きます。2つで1組です。片方だけ猫と同じ空間に入ると、もう片方へ移動します。",
     [MAKER_TOOL.lateWarp]:
-      "水色ワープを置きます。2つで1組です。爆弾・鍵・ゴールの判定後、最後に発動します。",
+      "猫トンネルを置きます。2つで1組です。犬・魚・ゴールの判定後、最後に発動します。",
     [MAKER_TOOL.wall]:
       "壁ブロックを置きます。線は通れず、外壁と組み合わせたループ形状にも影響します。",
     [MAKER_TOOL.erase]:
-      "爆弾、水入りバケツ、壁ブロックを消します。",
+      "犬、骨、壁ブロックを消します。",
   };
 
   return hints[tool] ?? "";
@@ -8898,11 +8811,11 @@ getMakerToolHint = function getMakerToolHintWithBuckets(tool) {
 const getMakerToolHintWithWarpTiming = getMakerToolHint;
 getMakerToolHint = function getMakerToolHintWithWarpTimingLabels(tool) {
   if (tool === MAKER_TOOL.warp) {
-    return "紫ワープを置きます。2つで1組です。爆弾・鍵・ゴールより先に発動します。";
+    return "紙袋を置きます。2つで1組です。犬・魚・ゴールより先に発動します。";
   }
 
   if (tool === MAKER_TOOL.lateWarp) {
-    return "水色ワープを置きます。2つで1組です。爆弾・鍵・ゴールの判定後、最後に発動します。";
+    return "猫トンネルを置きます。2つで1組です。犬・魚・ゴールの判定後、最後に発動します。";
   }
 
   return getMakerToolHintWithWarpTiming(tool);
@@ -8910,18 +8823,18 @@ getMakerToolHint = function getMakerToolHintWithWarpTimingLabels(tool) {
 
 buildMakerObjectSummary = function buildMakerObjectSummaryWithBuckets() {
   return [
-    `爆弾${gameState.bombs.length}個`,
-    `水入りバケツ${gameState.disarmItems.length}個`,
+    `犬${gameState.bombs.length}個`,
+    `骨${gameState.disarmItems.length}個`,
     `壁${gameState.wallBlocks.length}個`,
   ].join(" / ");
 };
 
 buildMakerObjectSummary = function buildMakerObjectSummaryWithWarps() {
   return [
-    `爆弾${gameState.bombs.length}個`,
-    `バケツ${gameState.disarmItems.length}個`,
-    `紫ワープ${gameState.warps.length}/2`,
-    `水色ワープ${gameState.lateWarps.length}/2`,
+    `犬${gameState.bombs.length}個`,
+    `骨${gameState.disarmItems.length}個`,
+    `紙袋${gameState.warps.length}/2`,
+    `猫トンネル${gameState.lateWarps.length}/2`,
     `壁${gameState.wallBlocks.length}個`,
   ].join(" / ");
 };
@@ -8930,18 +8843,18 @@ getHudInstructionText = function getHudInstructionTextWithBuckets() {
   if (gameState.mode === GAME_MODE.maker) {
     return gameState.maker.editing
       ? "配置ツールを選んでキャンバスをクリックするとオブジェクトを置けます。"
-      : "テストプレイ中です。プレイヤーは移動せず、ループの切り方だけで空間の所属を変えます。";
+      : "テストプレイ中です。猫は移動せず、ループの切り方だけで空間の所属を変えます。";
   }
 
   if (gameState.mode === GAME_MODE.tutorial) {
-    return "チュートリアルです。プレイヤーは移動せず、ループでプレイヤー側の空間を調整して各ルールを確認します。";
+    return "チュートリアルです。猫は移動せず、ループで猫側の空間を調整して各ルールを確認します。";
   }
 
   if (gameState.mode === getStageModeKey()) {
-    return "番号指定で読み込んだJSONステージです。プレイヤーは移動せず、ループだけで空間を切り替えます。";
+    return "番号指定で読み込んだJSONステージです。猫は移動せず、ループだけで空間を切り替えます。";
   }
 
-  return "ランダムモードです。オブジェクトのあるマスを避けて閉ループを作り、プレイヤーを含む空間に鍵とゴールをそろえます。プレイヤーのいない空間では、爆弾と水入りバケツが同数で対消滅します。"
+  return "ランダムモードです。オブジェクトのあるマスを避けて閉ループを作り、猫を含む空間に魚とゴールをそろえます。猫のいない空間では、犬と骨が同数でおやすみします。"
     + CONTROL_HINT_TEXT;
 };
 
@@ -9138,19 +9051,19 @@ function handleKeyDown(event) {
 function getMakerToolHint(tool) {
   const hints = {
     [MAKER_TOOL.player]:
-      "プレイヤー開始位置を置きます。このマスを含む空間がプレイヤー側として判定されます。",
+      "猫開始位置を置きます。このマスを含む空間が猫側として判定されます。",
     [MAKER_TOOL.key]:
-      "鍵を置きます。プレイヤーと同じ空間に入った瞬間に取得されます。",
+      "魚を置きます。猫と同じ空間に入った瞬間に取得されます。",
     [MAKER_TOOL.goal]:
-      "ゴールを置きます。鍵取得後にプレイヤーと同じ空間へ入るとクリアです。",
+      "ゴールを置きます。魚取得後に猫と同じ空間へ入るとクリアです。",
     [MAKER_TOOL.bomb]:
-      "爆弾を置きます。プレイヤーと同じ空間に入ると即ゲームオーバーです。",
+      "犬を置きます。猫と同じ空間に入ると即ゲームオーバーです。",
     [MAKER_TOOL.disarm]:
-      "水入りバケツを置きます。プレイヤーのいない空間で爆弾と同数なら対消滅します。",
+      "骨を置きます。猫のいない空間で犬と同数ならおやすみします。",
     [MAKER_TOOL.wall]:
       "壁ブロックを置きます。線は通れず、外壁と組み合わせたループ形状にも影響します。",
     [MAKER_TOOL.erase]:
-      "爆弾、水入りバケツ、壁ブロックを消します。",
+      "犬、骨、壁ブロックを消します。",
   };
 
   return hints[tool] ?? "";
@@ -9160,15 +9073,15 @@ function getHudInstructionText() {
   if (gameState.mode === GAME_MODE.maker) {
     return gameState.maker.editing
       ? "配置ツールを選んでキャンバスをクリックするとオブジェクトを置けます。"
-      : "テストプレイ中です。プレイヤーは移動せず、ループの切り方だけで空間の所属を変えます。";
+      : "テストプレイ中です。猫は移動せず、ループの切り方だけで空間の所属を変えます。";
   }
 
   if (gameState.mode === GAME_MODE.tutorial) {
-    return "チュートリアルです。プレイヤーは移動せず、ループでプレイヤー側の空間を調整して各ルールを確認します。";
+    return "チュートリアルです。猫は移動せず、ループで猫側の空間を調整して各ルールを確認します。";
   }
 
   if (gameState.mode === getStageModeKey()) {
-    return "番号指定で読み込んだJSONステージです。プレイヤーは移動せず、ループだけで空間を切り替えます。";
+    return "番号指定で読み込んだJSONステージです。猫は移動せず、ループだけで空間を切り替えます。";
   }
 
   return RANDOM_STAGE_INSTRUCTION_TEXT;

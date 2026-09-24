@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Closed Loop Dungeon</title>
+  <title>Closed-Loop Cat</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="cat-theme.css">
 </head>
 <body>
   <main class="page">
@@ -12,18 +13,19 @@
       <div class="home-layout">
         <div class="home-copy">
           <p id="homeKicker" class="home-kicker">Draw One Line</p>
-          <h2 id="homeTitle">Closed Loop Dungeon</h2>
+          <h2 id="homeTitle">Closed-Loop Cat</h2>
           <p id="homeLead">
             Draw loops to divide the dungeon, collect the key, and reach the goal.
           </p>
         </div>
 
-        <img
-          class="home-hero-image"
-          src="sozai/title_illustration.png"
-          alt=""
-          aria-hidden="true"
-        >
+        <div class="cat-room" role="img" aria-label="あたたかな部屋で、魚と段ボールに囲まれてくつろぐ猫">
+          <div class="room-window"></div><div class="room-note">Good cats.<br>Slow days.</div>
+          <div class="room-rug"></div><div class="room-loop"></div>
+          <img class="room-cat" src="assets/cats/cat-1.png" alt="">
+          <img class="room-fish" src="assets/cats/fish.png" alt="">
+          <img class="room-box" src="assets/cats/box-open.png" alt="">
+        </div><p class="cat-caption">SMALL PUZZLES. A LITTLE PAUSE. HAPPY CATS.</p>
 
         <div class="home-actions">
           <label class="language-field" for="languageSelect">
@@ -100,6 +102,7 @@
     </div>
 
     <section id="gameScreen" class="game-panel" hidden>
+      <p class="cat-game-brand">Closed-Loop Cat</p>
       <header class="panel-header">
         <div class="panel-action-row">
           <a id="gameHowtoButton" class="button-link secondary-button" href="howto.html">How to Play</a>
@@ -148,7 +151,13 @@
         </div>
       </div>
 
-      <section class="hud" aria-label="ゲーム情報">
+      <div class="cat-legend" aria-label="アイテム一覧">
+        <span><img src="assets/cats/cat-0.png" alt="">ねこ</span>
+        <span><img src="assets/cats/fish.png" alt="">おさかな</span>
+        <span><img src="assets/cats/box-open.png" alt="">おうち</span>
+        <span><img src="assets/cats/dog-1.png" alt="">いぬ</span>
+        <span><img src="assets/cats/bone.png" alt="">ほね</span>
+      </div><section class="hud" aria-label="ゲーム情報">
         <div class="button-row mode-row" aria-label="ゲームモード" hidden>
           <button id="randomModeButton" class="is-active" type="button" hidden>ランダムモード</button>
           <button id="tutorialModeButton" type="button" hidden>チュートリアル</button>
@@ -158,9 +167,9 @@
         <p id="instructionText" class="instructions" hidden></p>
 
         <div class="status-grid" hidden style="display: none;">
-          <p><span class="label">鍵</span><span id="keyStatus">未取得</span></p>
-          <p><span class="label">爆弾</span><span id="bombStatus">0個</span></p>
-          <p><span class="label">解除装置</span><span id="disarmStatus">0個</span></p>
+          <p><span class="label">魚</span><span id="keyStatus">未取得</span></p>
+          <p><span class="label">犬</span><span id="bombStatus">0個</span></p>
+          <p><span class="label">骨</span><span id="disarmStatus">0個</span></p>
           <p><span class="label">状態</span><span id="stateStatus">待機中</span></p>
         </div>
 
@@ -219,13 +228,13 @@
           </div>
 
           <div class="maker-palette" aria-label="配置ツール">
-            <button id="makerToolPlayer" class="maker-tool is-active" type="button">プレイヤー</button>
-            <button id="makerToolKey" class="maker-tool" type="button">鍵</button>
+            <button id="makerToolPlayer" class="maker-tool is-active" type="button">猫</button>
+            <button id="makerToolKey" class="maker-tool" type="button">魚</button>
             <button id="makerToolGoal" class="maker-tool" type="button">ゴール</button>
-            <button id="makerToolBomb" class="maker-tool" type="button">爆弾</button>
-            <button id="makerToolDisarm" class="maker-tool" type="button">解除装置</button>
-            <button id="makerToolWarp" class="maker-tool" type="button">紫ワープ</button>
-            <button id="makerToolLateWarp" class="maker-tool" type="button">水色ワープ</button>
+            <button id="makerToolBomb" class="maker-tool" type="button">犬</button>
+            <button id="makerToolDisarm" class="maker-tool" type="button">骨</button>
+            <button id="makerToolWarp" class="maker-tool" type="button">紙袋</button>
+            <button id="makerToolLateWarp" class="maker-tool" type="button">猫トンネル</button>
             <button id="makerToolWall" class="maker-tool" type="button">壁</button>
             <button id="makerToolErase" class="maker-tool" type="button">消しゴム</button>
           </div>
@@ -271,45 +280,45 @@
       <section class="rules-lead">
         <p>
           このゲームは、一筆書きでマスを塗ってループを作り、空間を切り分けていくパズルです。
-          プレイヤーが爆弾と同じ空間に入らないようにしながら、鍵を取り、ゴールと同じ空間へ入れればクリアです。
+          猫が犬と同じ空間に入らないようにしながら、魚を取り、ゴールと同じ空間へ入れればクリアです。
         </p>
       </section>
 
       <section class="rules-grid" aria-label="ルール一覧">
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="player" width="72" height="72" aria-hidden="true"></canvas>
-          <h3>プレイヤー</h3>
-          <p>青いキャラがあなたです。爆弾と同じ空間に入ったらゲームオーバーです</p>
+          <h3>猫</h3>
+          <p>青いキャラがあなたです。犬と同じ空間に入ったらゲームオーバーです</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="key" width="72" height="72" aria-hidden="true"></canvas>
-          <h3>鍵</h3>
-          <p>プレイヤーと同じ空間にはは入ると取得扱いになり、扉が開きます。</p>
+          <h3>魚</h3>
+          <p>猫と同じ空間にはは入ると取得扱いになり、段ボールが開きます。</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="goalClosed" width="72" height="72" aria-hidden="true"></canvas>
           <h3>閉じたゴール</h3>
-          <p>鍵を取る前のゴールです。まだ入ってもクリアにはなりません。</p>
+          <p>魚を取る前のゴールです。まだ入ってもクリアにはなりません。</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="goalOpen" width="72" height="72" aria-hidden="true"></canvas>
           <h3>開いたゴール</h3>
-          <p>プレイヤー同じ空間に入ればクリアです。</p>
+          <p>猫同じ空間に入ればクリアです。</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="bomb" width="72" height="72" aria-hidden="true"></canvas>
-          <h3>爆弾</h3>
-          <p>プレイヤーと同じ空間に爆弾があるとゲームオーバーです。水入りバケツで消すことが出来ます。</p>
+          <h3>犬</h3>
+          <p>猫と同じ空間に犬があるとゲームオーバーです。骨で消すことが出来ます。</p>
         </article>
 
         <article class="rule-card">
           <canvas class="rule-icon rule-sprite-icon" data-rule-sprite="waterBucket" width="72" height="72" aria-hidden="true"></canvas>
-          <h3>水入りバケツ</h3>
-          <p>爆弾と同じ数の水入りバケツが同じ空間に入ると、その空間の爆弾とバケツは対消滅します。どちらかが多くても消滅しません</p>
+          <h3>骨</h3>
+          <p>犬と同じ数の骨が同じ空間に入ると、その空間の犬と骨はおやすみします。どちらかが多くても消滅しません</p>
         </article>
 
         <article class="rule-card">
@@ -330,7 +339,7 @@
   </main>
 
   <script src="stage/manifest.js?v=stage-manifest-4"></script>
-  <script src="spotlight-tutorial.js?v=1"></script>
-  <script src="game.js?v=spotlight-1"></script>
+  <script src="spotlight-tutorial.js?v=cat-1"></script>
+  <script src="game.js?v=cat-1"></script>
 </body>
 </html>

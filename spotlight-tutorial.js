@@ -1,16 +1,16 @@
 (function (root) {
   "use strict";
 
-  const STORAGE_KEY = "closedLoopMechanicTutorial.v1";
+  const STORAGE_KEY = "closedLoopCatMechanicTutorial.v1";
   const LESSONS = [
-    { id: "line", field: "playerStart", ja: ["一筆書きで、空間を分けよう", "マスをドラッグして、ひと続きの線を引きます。線や盤面の端で空間を区切り、勇者とアイテムを同じ空間に入れましょう。"], en: ["One line, separate spaces", "Drag across cells to draw one continuous line. Use your line and the board edges to divide the dungeon into spaces containing the hero and items."] },
-    { id: "key", field: "keyPosition", ja: ["まずは鍵を手に入れよう", "勇者と鍵を同じ空間に入れると、鍵を自動で取得します。勇者を直接動かす必要はありません。"], en: ["Collect the key", "Put the hero and key in the same space to collect it automatically. You do not need to move the hero yourself."] },
-    { id: "goal", field: "goalPosition", ja: ["鍵を取ったら、ゴールへ", "鍵を取ると扉が開きます。次に勇者と扉を同じ空間に入れればクリア！クリア後は盤面をタップして次のステージへ進めます。"], en: ["Then reach the door", "The key opens the door. Put the hero and open door in the same space to clear the stage! Tap the board after clearing to continue."] },
-    { id: "bomb", field: "bombs", ja: ["爆弾から勇者を守ろう", "勇者と爆弾が同じ空間に入るとゲームオーバー。線で空間を分け、爆弾を勇者から切り離しましょう。"], en: ["Keep bombs away", "A bomb in the hero’s space causes a game over. Draw a line that keeps the hero and bombs in separate spaces."] },
-    { id: "bucket", field: "disarmItems", ja: ["水入りバケツで爆弾を消そう", "勇者のいない空間に、爆弾と水入りバケツを同じ数だけ入れると、両方が消えます。数が違うと消えません。勇者が一緒にいると先に爆発するので注意！"], en: ["Defuse bombs with water", "In a space without the hero, equal numbers of bombs and buckets cancel each other out. Unequal numbers remain. If the hero is there, the bombs explode first!"] },
+    { id: "line", field: "playerStart", ja: ["一筆書きで、空間を分けよう", "マスをドラッグして、ひと続きの線を引きます。線や盤面の端で空間を区切り、猫とアイテムを同じ空間に入れましょう。"], en: ["One line, separate spaces", "Drag across cells to draw one continuous line. Use your line and the board edges to divide the room into spaces containing the cat and items."] },
+    { id: "key", field: "keyPosition", ja: ["まずは魚を手に入れよう", "猫と魚を同じ空間に入れると、魚を自動で取得します。猫を直接動かす必要はありません。"], en: ["Collect the fish", "Put the cat and fish in the same space to collect it automatically. You do not need to move the cat yourself."] },
+    { id: "goal", field: "goalPosition", ja: ["魚を取ったら、ゴールへ", "魚を取ると段ボールが開きます。次に猫と段ボールを同じ空間に入れればクリア！クリア後は盤面をタップして次のステージへ進めます。"], en: ["Then reach the box", "The fish opens the box. Put the cat and open box in the same space to clear the stage! Tap the board after clearing to continue."] },
+    { id: "bomb", field: "bombs", ja: ["犬から猫を守ろう", "猫と犬が同じ空間に入るとゲームオーバー。線で空間を分け、犬を猫から切り離しましょう。"], en: ["Keep dogs away", "A dog in the cat’s space causes a game over. Draw a line that keeps the cat and dogs in separate spaces."] },
+    { id: "bucket", field: "disarmItems", ja: ["骨で犬を消そう", "猫のいない空間に、犬と骨を同じ数だけ入れると、両方が消えます。数が違うと消えません。猫が一緒にいると先にびっくりするので注意！"], en: ["Defuse dogs with water", "In a space without the cat, equal numbers of dogs and bones cancel each other out. Unequal numbers remain. If the cat is there, the dogs bark first!"] },
     { id: "wall", field: "wallBlocks", ja: ["壁も線の一部になる", "壁のマスには線を引けませんが、引いた線とつなげると壁も線の一部になります。壁を使いながら、分岐のないひと続きの線を作りましょう。"], en: ["Use walls in your line", "You cannot draw on a wall, but connected walls become part of your line. Use them to build one continuous line without branches."] },
-    { id: "warp", field: "warps", ja: ["紫ワープは、判定より先に移動", "勇者と片方の紫ワープを同じ空間に入れると、もう片方へ移動します。移動先で爆弾やゴールを判定します。両方のワープが勇者と同じ空間にあると移動しません。"], en: ["Purple warps move you first", "Put the hero with one purple warp to travel to its partner. Bombs and goals are checked after teleporting. Nothing happens if both warps share the hero’s space."] },
-    { id: "lateWarp", field: "lateWarps", ja: ["水色ワープは、判定のあとに移動", "水色ワープは爆弾やゴールの判定後に移動します。移動前に勇者と爆弾が同じ空間だと、ワープする前にゲームオーバー。両方が勇者と同じ空間にあると移動しません。"], en: ["Cyan warps move you afterward", "Cyan warps activate after bombs and goals are checked. A bomb in the hero’s starting space causes a game over before teleporting. Both warps in the hero’s space will not activate."] },
+    { id: "warp", field: "warps", ja: ["紙袋は、判定より先に移動", "猫と片方の紙袋を同じ空間に入れると、もう片方へ移動します。移動先で犬やゴールを判定します。両方のワープが猫と同じ空間にあると移動しません。"], en: ["paper bags move you first", "Put the cat with one paper bags to travel to its partner. dogs and goals are checked after teleporting. Nothing happens if both warps share the cat’s space."] },
+    { id: "lateWarp", field: "lateWarps", ja: ["猫トンネルは、判定のあとに移動", "猫トンネルは犬やゴールの判定後に移動します。移動前に猫と犬が同じ空間だと、ワープする前にゲームオーバー。両方が猫と同じ空間にあると移動しません。"], en: ["cat tunnels move you afterward", "cat tunnels activate after dogs and goals are checked. A dog in the cat’s starting space causes a game over before teleporting. Both warps in the cat’s space will not activate."] },
   ];
 
   function targetsFor(lesson, stage) {
@@ -172,7 +172,7 @@
       const ja = getLanguage() === "ja";
       const lesson = queue[index];
       const [title, description] = lesson[ja ? "ja" : "en"];
-      find(".spotlight-kicker").textContent = ja ? "冒険の手引き" : "DUNGEON GUIDE";
+      find(".spotlight-kicker").textContent = ja ? "冒険の手引き" : "room GUIDE";
       find(".spotlight-counter").textContent = `${index + 1} / ${queue.length}`;
       find("#spotlightTitle").textContent = title;
       find("#spotlightText").textContent = description;
