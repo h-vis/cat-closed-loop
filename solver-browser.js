@@ -297,11 +297,12 @@
   function createStateSignature(state) {
     const bombSignature = clonePositions(state.bombs).sort(compareGridPositions).map(getCellKey).join("|");
     const disarmSignature = clonePositions(state.disarmItems).sort(compareGridPositions).map(getCellKey).join("|");
-    return `${state.keyCollected ? 1 : 0}||${bombSignature}||${disarmSignature}`;
+    return `${state.playerPosition ? getCellKey(state.playerPosition) : ""}||${state.keyCollected ? 1 : 0}||${bombSignature}||${disarmSignature}`;
   }
 
   function createInitialState(stage) {
     return {
+      playerPosition: clonePosition(stage.playerStart),
       keyCollected: Boolean(stage.keyInitiallyCollected),
       bombs: clonePositions(stage.bombs),
       disarmItems: clonePositions(stage.disarmItems),
@@ -326,7 +327,7 @@
   }
 
   function applyLoop(state, loop, stage) {
-    const playerSpaceId = loop.spaceByCellKey.get(getCellKey(stage.playerStart));
+    const playerSpaceId = loop.spaceByCellKey.get(getCellKey(state.playerPosition || stage.playerStart));
     if (playerSpaceId === undefined) {
       return null;
     }
@@ -377,6 +378,7 @@
     }
 
     return {
+      playerPosition: clonePosition(clear ? stage.goalPosition : !state.keyCollected && nextKeyCollected ? stage.keyPosition : state.playerPosition || stage.playerStart),
       keyCollected: nextKeyCollected,
       bombs: nextBombs,
       disarmItems: nextDisarmItems,
@@ -387,7 +389,7 @@
 
   function buildBlockedDrawnCellSet(stage, state) {
     const blocked = new Set([
-      getCellKey(stage.playerStart),
+      getCellKey(state.playerPosition || stage.playerStart),
       getCellKey(stage.goalPosition),
     ].concat(
       clonePositions(stage.wallBlocks).map(getCellKey),
@@ -404,7 +406,7 @@
 
   function lineTouchesImportantObjects(loop, stage, state) {
     const importantKeys = new Set([
-      getCellKey(stage.playerStart),
+      getCellKey(state.playerPosition || stage.playerStart),
       getCellKey(stage.goalPosition),
     ].concat(state.bombs.map(getCellKey), state.disarmItems.map(getCellKey)));
 
@@ -423,7 +425,7 @@
 
   function createObjectivePoints(stage, state) {
     const target = state.keyCollected ? stage.goalPosition : stage.keyPosition;
-    return [stage.playerStart, target]
+    return [state.playerPosition || stage.playerStart, target]
       .concat(state.bombs, state.disarmItems, stage.wallBlocks || []);
   }
 
@@ -604,7 +606,7 @@
     }
 
     const targetPosition = state.keyCollected ? stage.goalPosition : stage.keyPosition;
-    const playerSpaceId = loop.spaceByCellKey.get(getCellKey(stage.playerStart));
+    const playerSpaceId = loop.spaceByCellKey.get(getCellKey(state.playerPosition || stage.playerStart));
     const targetSpaceId = loop.spaceByCellKey.get(getCellKey(targetPosition));
     const removedObjectCount =
       state.bombs.length - nextState.bombs.length +
@@ -614,6 +616,7 @@
       drawnCells: getUniqueCells(drawnCells),
       loop,
       nextState: {
+        playerPosition: nextState.playerPosition,
         keyCollected: nextState.keyCollected,
         bombs: nextState.bombs,
         disarmItems: nextState.disarmItems,

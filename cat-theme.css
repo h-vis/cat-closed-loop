@@ -80,3 +80,5 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   .cat-caption { font-size: .62rem; letter-spacing: .06em; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+.motion-caption { min-height: 1.5em; margin: 14px 0 0; text-align: center; font-size: .82rem; color: #8c705c; }

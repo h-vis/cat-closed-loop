@@ -149,7 +149,7 @@ const MAKER_EDIT_INSTRUCTION_TEXT =
   "ステージメーカーの編集モードです。下の配置ツールを選び、キャンバスをクリックしてオブジェクトを置きます。猫・魚・ゴールは1つずつ、犬・骨は複数置けます。サイズを変えたら「サイズを適用」、できたら「テストプレイ開始」で動作確認できます。";
 
 const MAKER_TEST_INSTRUCTION_TEXT =
-  "ステージメーカーのテストプレイ中です。猫は移動せず、ループで空間の分かれ方だけを調整します。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。";
+  "ステージメーカーのテストプレイ中です。猫はイベントに合わせて動き、ループで空間の分かれ方だけを調整します。Rでこの配置を最初から試し直し、「編集に戻る」で配置の調整へ戻れます。";
 
 // ルールを一つずつ確認できるチュートリアルステージ
 const TUTORIAL_STAGES = [
@@ -1472,6 +1472,12 @@ const REVIEW_UNLOCK_TAP_TARGET = 7;
 const REVIEW_UNLOCK_RESET_MS = 1800;
 
 const gameState = createInitialState(cloneStageDefinition(DEFAULT_START_STAGE));
+const eventMotion = CatMotion.create({
+  onFrame: () => render(),
+  onCue: text => { const caption = document.getElementById("motionCaption"); if (caption) caption.textContent = text; },
+  reduced: () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
+});
+
 const isMakerOnlyPage = document.body?.dataset?.appMode === "maker";
 const isAndroidWebViewPage =
   new URLSearchParams(globalThis.location?.search ?? "").get("android") === "1";
@@ -1486,6 +1492,7 @@ const spotlightTutorial = !isMakerOnlyPage && globalThis.DungeonSpotlight
   : null;
 
 function applyStage(stage) {
+  eventMotion.cancel();
   const stageJsonState = getStageJsonState();
   const nextStage = cloneStageDefinition(stage);
 
@@ -1739,6 +1746,7 @@ function returnToMakerEdit() {
 }
 
 function clearLoop() {
+  if (eventMotion.active) return;
   gameState.loop = null;
   gameState.drawing.active = false;
   gameState.drawing.cells = [];
@@ -2319,31 +2327,6 @@ function refreshPlayerSpaceFlags() {
   );
 }
 
-function applyWarpEffectInPlayerSpace(collectionKey) {
-  const warps = gameState[collectionKey] ?? [];
-  if (!gameState.loop || warps.length !== 2 || gameState.playerSpaceId === null) {
-    return false;
-  }
-
-  const warpsInPlayerSpace = warps.filter(isGridPositionInPlayerSpace);
-  if (warpsInPlayerSpace.length !== 1) {
-    return false;
-  }
-
-  const sourceWarpKey = getCellKey(warpsInPlayerSpace[0]);
-  const destinationWarp = warps.find(
-    (warp) => getCellKey(warp) !== sourceWarpKey
-  );
-
-  if (!destinationWarp) {
-    return false;
-  }
-
-  gameState.player = clonePosition(destinationWarp);
-  gameState[collectionKey] = [];
-  refreshPlayerSpaceFlags();
-  return true;
-}
 
 function canPlayerMoveInCurrentSpace() {
   if (gameState.playerSpaceId === null) {
@@ -2390,93 +2373,133 @@ function updateStatus() {
     : STATUS.outsideLoop;
 }
 
-// 猫空間ではシールド回収後に犬判定を行い、
-// シールドがなければ即死、あれば1回だけ耐えて犬を消す。
-// それ以外の空間では同数の犬と骨を相殺する。
-function applyLoopEffects() {
-  gameState.explodedBombs = [];
+function motionActor(sprite, id, from, to, extra = {}) {
+  return {sprite, id, path: CatMotion.findPath(from, to, gameState.loop.spaceByCellKey), ...extra};
+}
+
+async function animateWarp(sequence, collectionKey) {
+  const warps = gameState[collectionKey] ?? [];
+  const sources = warps.filter(isGridPositionInPlayerSpace);
+  if (warps.length !== 2 || sources.length !== 1) return true;
+  const source = sources[0];
+  const destination = warps.find(warp => !positionsMatch(warp, source));
+  const label = uiLanguage === "ja"
+    ? (collectionKey === "warps" ? "紙袋をくぐって、ひょっこり。" : "トンネルの向こうへ、とことこ。")
+    : "Through here… and peekaboo!";
+  if (!await sequence.play([motionActor("player", "cat", gameState.player, source, {exit:true})], "warp", label) || !sequence.alive()) return false;
+  gameState.player = clonePosition(destination);
+  if (!await sequence.play([{sprite:"player", id:"cat", path:[destination], enter:true}], "warp", label) || !sequence.alive()) return false;
+  gameState[collectionKey] = [];
   refreshPlayerSpaceFlags();
+  return true;
+}
 
-  if (gameState.playerSpaceId === null) {
-    updateStatus();
-    return;
-  }
+// Commit each result only after its movement. The sequence token prevents a reset
+// or stage switch from letting an old asynchronous event mutate the new board.
+async function applyLoopEffects() {
+  if (eventMotion.active) return false;
+  const sequence = eventMotion.begin();
+  const before = {
+    player: clonePosition(gameState.player), key: {...gameState.key},
+    bombs: clonePositions(gameState.bombs), disarmItems: clonePositions(gameState.disarmItems),
+    warps: clonePositions(gameState.warps), lateWarps: clonePositions(gameState.lateWarps),
+    clear: gameState.clear, gameOver: gameState.gameOver,
+  };
+  try {
+    gameState.explodedBombs = [];
+    refreshPlayerSpaceFlags();
+    if (gameState.playerSpaceId === null) return true;
+    if (!await animateWarp(sequence, "warps") || !sequence.alive()) return false;
 
-  applyWarpEffectInPlayerSpace("warps");
-
-  let bombsBySpace = groupPositionsBySpace(gameState.bombs);
-  let disarmBySpace = groupPositionsBySpace(gameState.disarmItems);
-  let bombsInPlayerSpace = bombsBySpace.get(gameState.playerSpaceId) || [];
-
-  if (bombsInPlayerSpace.length > 0) {
-    gameState.explodedBombs = clonePositions(bombsInPlayerSpace);
-    gameState.gameOver = true;
-    updateStatus();
-    return;
-  }
-
-  const removedBombKeys = new Set();
-  const removedDisarmKeys = new Set();
-  const targetSpaceIds = new Set([
-    ...bombsBySpace.keys(),
-    ...disarmBySpace.keys(),
-  ]);
-
-  for (const spaceId of targetSpaceIds) {
-    if (spaceId === gameState.playerSpaceId) {
-      continue;
+    const bombsBySpace = groupPositionsBySpace(gameState.bombs);
+    const disarmBySpace = groupPositionsBySpace(gameState.disarmItems);
+    const chasingDogs = bombsBySpace.get(gameState.playerSpaceId) || [];
+    if (chasingDogs.length) {
+      const actors = chasingDogs.map(dog => motionActor("bomb", `dog:${getCellKey(dog)}`, dog, gameState.player));
+      if (!await sequence.play(actors, "startled", uiLanguage === "ja" ? "わんっ！ ねこがびっくり。" : "Woof! A startled little cat.") || !sequence.alive()) return false;
+      const moved = buildCellKeySet(chasingDogs);
+      gameState.bombs = gameState.bombs.map(dog => moved.has(getCellKey(dog)) ? clonePosition(gameState.player) : dog);
+      gameState.gameOver = true;
+      return true;
     }
 
-    const bombsInSpace = bombsBySpace.get(spaceId) || [];
-    const disarmItemsInSpace = disarmBySpace.get(spaceId) || [];
-
-    if (
-      bombsInSpace.length > 0 &&
-      bombsInSpace.length === disarmItemsInSpace.length
-    ) {
-      for (const bomb of bombsInSpace) {
-        removedBombKeys.add(getCellKey(bomb));
+    const sleepyDogs = [], eatenBones = [], actors = [];
+    for (const [spaceId, dogs] of bombsBySpace) {
+      const bones = [...(disarmBySpace.get(spaceId) || [])];
+      if (spaceId === gameState.playerSpaceId || dogs.length !== bones.length) continue;
+      for (const dog of dogs) {
+        // Match the nearest reachable remaining bone; all pairs move together.
+        const routes = bones.map(bone => CatMotion.findPath(dog, bone, gameState.loop.spaceByCellKey));
+        const nearest = routes.reduce((best, path, index) => path && (!routes[best] || path.length < routes[best].length) ? index : best, 0);
+        const [bone] = bones.splice(nearest, 1);
+        actors.push({sprite:"bomb", id:`dog:${getCellKey(dog)}`, path:routes[nearest], exit:true});
+        sleepyDogs.push(dog);
+        eatenBones.push(bone);
       }
+    }
+    if (actors.length) {
+      if (!await sequence.play(actors, "sleep", uiLanguage === "ja" ? "ほねをもらって、おやすみなさい。" : "A bone, then a little nap.") || !sequence.alive()) return false;
+      const dogKeys = buildCellKeySet(sleepyDogs), boneKeys = buildCellKeySet(eatenBones);
+      gameState.bombs = gameState.bombs.filter(dog => !dogKeys.has(getCellKey(dog)));
+      gameState.disarmItems = gameState.disarmItems.filter(bone => !boneKeys.has(getCellKey(bone)));
+    }
 
-      for (const item of disarmItemsInSpace) {
-        removedDisarmKeys.add(getCellKey(item));
+    if (!gameState.key.collected && isGridPositionInPlayerSpace(gameState.key.position)) {
+      if (!await sequence.play([motionActor("player", "cat", gameState.player, gameState.key.position)], "fish", uiLanguage === "ja" ? "おさかな、いただきます。" : "A fish for me. Yummy!") || !sequence.alive()) return false;
+      gameState.player = clonePosition(gameState.key.position);
+      gameState.key.collected = true;
+      refreshPlayerSpaceFlags();
+    }
+    if (gameState.key.collected && isGridPositionInPlayerSpace(gameState.goal.position)) {
+      if (!await sequence.play([motionActor("player", "cat", gameState.player, gameState.goal.position, {exit:true})], "home", uiLanguage === "ja" ? "お気に入りの箱へ、ただいま。" : "My favorite box. Home sweet home.") || !sequence.alive()) return false;
+      gameState.player = clonePosition(gameState.goal.position);
+      gameState.clear = true;
+      if (gameState.mode === getStageModeKey()) {
+        rememberClearedStage(gameState.stage.stageDifficulty ?? getStageJsonState().selectedDifficulty, gameState.stage.stageNumber);
+        refreshStageNumberInputs();
       }
+      return true; // Reaching the box ends the turn before any late tunnel.
+    }
+    return await animateWarp(sequence, "lateWarps") && sequence.alive();
+  } catch (error) {
+    if (sequence.alive()) Object.assign(gameState, before);
+    console.error("Unable to animate the room event", error);
+    return false;
+  } finally {
+    if (sequence.alive()) {
+      refreshPlayerSpaceFlags();
+      updateStatus();
+      sequence.finish();
     }
   }
+}
 
-  if (removedBombKeys.size > 0 || removedDisarmKeys.size > 0) {
-    gameState.bombs = gameState.bombs.filter(
-      (bomb) => !removedBombKeys.has(getCellKey(bomb))
-    );
-    gameState.disarmItems = gameState.disarmItems.filter(
-      (item) => !removedDisarmKeys.has(getCellKey(item))
-    );
-  }
-
-  if (!gameState.key.collected && isGridPositionInPlayerSpace(gameState.key.position)) {
-    gameState.key.collected = true;
-  }
-
-  gameState.goalSharesPlayerSpace = isGridPositionInPlayerSpace(
-    gameState.goal.position
-  );
-
-  if (gameState.key.collected && gameState.goalSharesPlayerSpace) {
-    gameState.clear = true;
-    if (gameState.mode === getStageModeKey()) {
-      rememberClearedStage(
-        gameState.stage.stageDifficulty ?? getStageJsonState().selectedDifficulty,
-        gameState.stage.stageNumber
-      );
-      refreshStageNumberInputs();
+function drawEventMotion() {
+  for (const actor of eventMotion.actors) {
+    const size = CONFIG.cellSize;
+    const center = {x:(actor.x + .5) * size, y:(actor.y + .5) * size};
+    context.save();
+    context.translate(center.x, center.y);
+    context.rotate(actor.tilt);
+    context.scale(actor.scale / actor.stretch, actor.scale * actor.stretch);
+    context.globalAlpha = actor.alpha;
+    drawSpriteAtCell(actor.sprite, {x:-.5, y:-.5}, () => {});
+    context.restore();
+    if (actor.arrival > 0) {
+      context.save();
+      context.font = `bold ${size * .28}px sans-serif`;
+      context.textAlign = "center";
+      context.fillStyle = eventMotion.cue === "startled" ? "#ba8060" : "#c98d8f";
+      context.globalAlpha = Math.sin(actor.arrival * Math.PI);
+      const symbol = {fish:"♥", home:"♥", sleep:"Zz", warp:"♪", startled:"!"}[eventMotion.cue] || "♥";
+      context.fillText(symbol, center.x, center.y - size * (.4 + actor.arrival * .25));
+      context.restore();
     }
   }
-
-  applyWarpEffectInPlayerSpace("lateWarps");
-  updateStatus();
 }
 
 function attemptMove(deltaX, deltaY) {
+  if (eventMotion.active) return;
   if (
     gameState.gameOver ||
     gameState.clear ||
@@ -2605,6 +2628,7 @@ function appendDrawingPath(rawCell) {
 }
 
 function startDrawing(event) {
+  if (eventMotion.active) { preventTouchBrowserAction(event); return; }
   if (spotlightTutorial?.active) return;
   preventTouchBrowserAction(event);
 
@@ -2983,7 +3007,7 @@ function drawBombs() {
   const explodedBombKeys = buildCellKeySet(gameState.explodedBombs);
 
   for (const bomb of gameState.bombs) {
-    if (explodedBombKeys.has(getCellKey(bomb))) {
+    if (explodedBombKeys.has(getCellKey(bomb)) || eventMotion.actors.some(actor => actor.id === `dog:${getCellKey(bomb)}`)) {
       continue;
     }
 
@@ -3126,6 +3150,7 @@ function drawWarps() {
 }
 
 function drawOverlay() {
+  if (eventMotion.active) return;
   if (!gameState.gameOver && !gameState.clear) {
     return;
   }
@@ -3275,6 +3300,7 @@ function render() {
   drawWarps();
   drawKey();
   drawPlayer();
+  drawEventMotion();
   drawOverlay();
   syncHud();
 }
@@ -3945,6 +3971,7 @@ function setUiLanguage(nextLanguage) {
 }
 
 function showHomeScreen() {
+  eventMotion.cancel();
   spotlightTutorial?.close();
   const { homeScreen, gameScreen, rulesScreen } = getScreenUi();
   const { premiumStageOverlay } = getStageJsonUi();
@@ -5371,6 +5398,7 @@ function createMakerCaptureDataUrl() {
 }
 
 function applyStage(stage) {
+  eventMotion.cancel();
   spotlightTutorial?.close();
   const stageJsonState = getStageJsonState();
   const nextStage = cloneStageDefinition(stage);
@@ -5615,6 +5643,7 @@ function render() {
   drawWarps();
   drawKey();
   drawPlayer();
+  drawEventMotion();
   drawOverlay();
   syncHud();
 }
@@ -6820,6 +6849,7 @@ async function movePlayerAlongPath(path, runId) {
 }
 
 function clearLoopStateWithoutRender() {
+  eventMotion.cancel();
   gameState.loop = null;
   gameState.drawing.active = false;
   gameState.drawing.cells = [];
@@ -6885,7 +6915,7 @@ async function playAutoSolveSolution(stage, solution, runId) {
     gameState.loop = nextLoop;
     gameState.drawing.active = false;
     gameState.drawing.cells = [];
-    applyLoopEffects();
+    if (!await applyLoopEffects()) return false;
     render();
     await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopApplyMs);
   }
@@ -6940,7 +6970,7 @@ async function playStageRegionSolveSolution(stage, solution, runId) {
     gameState.loop = nextLoop;
     gameState.drawing.active = false;
     gameState.drawing.cells = [];
-    applyLoopEffects();
+    if (!await applyLoopEffects()) return false;
     render();
     await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopApplyMs);
   }
@@ -8744,6 +8774,7 @@ function drawWallBlocks() {
 }
 
 drawPlayer = function drawPlayerWithIcon() {
+  if (eventMotion.actors.some(actor => actor.id === "cat")) return;
   drawSpriteAtCell("player", gameState.player, () => {
     drawPlayerFallback();
   });
@@ -8773,7 +8804,7 @@ drawBombs = function drawBombsWithIcons() {
   const explodedBombKeys = buildCellKeySet(gameState.explodedBombs);
 
   for (const bomb of gameState.bombs) {
-    if (explodedBombKeys.has(getCellKey(bomb))) {
+    if (explodedBombKeys.has(getCellKey(bomb)) || eventMotion.actors.some(actor => actor.id === `dog:${getCellKey(bomb)}`)) {
       continue;
     }
 
@@ -8881,15 +8912,15 @@ getHudInstructionText = function getHudInstructionTextWithBuckets() {
   if (gameState.mode === GAME_MODE.maker) {
     return gameState.maker.editing
       ? "配置ツールを選んでキャンバスをクリックするとオブジェクトを置けます。"
-      : "テストプレイ中です。猫は移動せず、ループの切り方だけで空間の所属を変えます。";
+      : "テストプレイ中です。猫はイベントに合わせて動き、ループの切り方だけで空間の所属を変えます。";
   }
 
   if (gameState.mode === GAME_MODE.tutorial) {
-    return "チュートリアルです。猫は移動せず、ループで猫側の空間を調整して各ルールを確認します。";
+    return "チュートリアルです。猫はイベントに合わせて動き、ループで猫側の空間を調整して各ルールを確認します。";
   }
 
   if (gameState.mode === getStageModeKey()) {
-    return "番号指定で読み込んだJSONステージです。猫は移動せず、ループだけで空間を切り替えます。";
+    return "番号指定で読み込んだJSONステージです。猫はイベントに合わせて動き、ループだけで空間を切り替えます。";
   }
 
   return "ランダムモードです。オブジェクトのあるマスを避けて閉ループを作り、猫を含む空間に魚とゴールをそろえます。猫のいない空間では、犬と骨が同数でおやすみします。"
@@ -9111,15 +9142,15 @@ function getHudInstructionText() {
   if (gameState.mode === GAME_MODE.maker) {
     return gameState.maker.editing
       ? "配置ツールを選んでキャンバスをクリックするとオブジェクトを置けます。"
-      : "テストプレイ中です。猫は移動せず、ループの切り方だけで空間の所属を変えます。";
+      : "テストプレイ中です。猫はイベントに合わせて動き、ループの切り方だけで空間の所属を変えます。";
   }
 
   if (gameState.mode === GAME_MODE.tutorial) {
-    return "チュートリアルです。猫は移動せず、ループで猫側の空間を調整して各ルールを確認します。";
+    return "チュートリアルです。猫はイベントに合わせて動き、ループで猫側の空間を調整して各ルールを確認します。";
   }
 
   if (gameState.mode === getStageModeKey()) {
-    return "番号指定で読み込んだJSONステージです。猫は移動せず、ループだけで空間を切り替えます。";
+    return "番号指定で読み込んだJSONステージです。猫はイベントに合わせて動き、ループだけで空間を切り替えます。";
   }
 
   return RANDOM_STAGE_INSTRUCTION_TEXT;
@@ -9307,11 +9338,10 @@ function buildAutoSolveNextState(stage, currentState, loopCandidate) {
   const goalSharesPlayerSpace =
     getLoopSpaceIdFromPosition(loopCandidate, stage.goalPosition) === playerSpaceId;
 
-  const lateWarpResult = applyAutoSolveWarpEffect(
-    loopCandidate,
-    playerPosition,
-    nextLateWarps
-  );
+  if (!currentState.keyCollected && nextKeyCollected) playerPosition = clonePosition(stage.keyPosition);
+  const lateWarpResult = nextKeyCollected && goalSharesPlayerSpace
+    ? { playerPosition: clonePosition(stage.goalPosition), warps: nextLateWarps }
+    : applyAutoSolveWarpEffect(loopCandidate, playerPosition, nextLateWarps);
   playerPosition = lateWarpResult.playerPosition;
   nextLateWarps = lateWarpResult.warps;
 
@@ -9456,7 +9486,7 @@ async function playAutoSolveSolution(stage, solution, runId) {
     gameState.loop = nextLoop;
     gameState.drawing.active = false;
     gameState.drawing.cells = [];
-    applyLoopEffects();
+    if (!await applyLoopEffects()) return false;
     render();
     await waitForAutoSolveTick(AUTO_SOLVER_CONFIG.animationLoopApplyMs);
   }
@@ -9485,3 +9515,11 @@ async function playAutoSolveSolution(stage, solution, runId) {
   };
   if (typeof window.matchMedia === "function") watchDensity();
 })();
+
+for (const id of ["gameHowtoButton", "mechanicHelpButton", "openRulesButton", "makerEditButton", "makerExportJsonButton", "makerCapturePngButton", "makerAutoSolveButton"]) {
+  document.getElementById(id)?.addEventListener("click", event => {
+    if (!eventMotion.active) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
+}

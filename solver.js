@@ -430,7 +430,10 @@ function applyLoop(state, loop, stage) {
   const goalSpaceId = loop.spaceByCellKey.get(getCellKey(stage.goalPosition));
   const goalSharesPlayerSpace = goalSpaceId === playerSpaceId;
 
-  const lateWarpResult = applyWarpEffect(loop, playerPosition, nextLateWarps);
+  if (!state.keyCollected && nextKeyCollected) playerPosition = clonePosition(stage.keyPosition);
+  const lateWarpResult = nextKeyCollected && goalSharesPlayerSpace
+    ? { playerPosition: clonePosition(stage.goalPosition), warps: nextLateWarps }
+    : applyWarpEffect(loop, playerPosition, nextLateWarps);
   playerPosition = lateWarpResult.playerPosition;
   nextLateWarps = lateWarpResult.warps;
 
